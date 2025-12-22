@@ -57,8 +57,13 @@ def get_my_stats(
     week_session_ids = [s.id for s in sessions if s.date >= week_ago]
     month_session_ids = [s.id for s in sessions if s.date >= month_ago]
     
-    ascents_this_week = len([a for a in ascents if a.session_id in week_session_ids])
+    ascents_this_week = [a for a in ascents if a.session_id in week_session_ids]
     ascents_this_month = len([a for a in ascents if a.session_id in month_session_ids])
+    
+    # Sends and flashes this week
+    sends_this_week = len([a for a in ascents_this_week if a.status in [AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH]])
+    flashes_this_week = len([a for a in ascents_this_week if a.status == AscentStatus.FLASH])
+    ascents_this_week_count = len(ascents_this_week)
     
     # Max grade calculations
     max_grade_ever = None
@@ -186,10 +191,13 @@ def get_my_stats(
         max_grade_ever=max_grade_ever,
         max_relative_difficulty=max_relative_difficulty,
         current_max_grade=current_max_grade,
+        max_grade_label=max_grade_ever,  # Alias for frontend
         sessions_this_week=sessions_this_week,
         sessions_this_month=sessions_this_month,
-        ascents_this_week=ascents_this_week,
+        ascents_this_week=ascents_this_week_count,
         ascents_this_month=ascents_this_month,
+        sends_this_week=sends_this_week,
+        flashes_this_week=flashes_this_week,
         grade_distribution=grade_distribution,
         weekly_progress=weekly_progress,
         gym_breakdown=gym_breakdown

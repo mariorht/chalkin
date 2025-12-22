@@ -55,6 +55,9 @@ class UserStats(BaseModel):
     sessions_this_month: int
     ascents_this_week: int
     ascents_this_month: int
+    sends_this_week: int = 0
+    flashes_this_week: int = 0
+    max_grade_label: Optional[str] = None  # Alias for max_grade_ever for frontend
     
     # Streaks
     current_streak_days: int = 0
