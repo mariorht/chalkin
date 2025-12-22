@@ -1,13 +1,550 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello</title>
+    <title>Chalkin - Boulder Climbing Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo span {
+            font-size: 1.8rem;
+        }
+
+        nav {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 0.95rem;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Hero */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--dark) 0%, #16213E 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 107, 53, 0.1) 0%, transparent 50%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .tagline {
+            font-size: 1.5rem;
+            color: var(--gray);
+            margin-bottom: 2rem;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin: 3rem 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn-large {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+        }
+
+        /* Features */
+        .features {
+            padding: 6rem 2rem;
+            background: var(--light);
+            color: var(--dark);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .feature-card p {
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        /* How it works */
+        .how-it-works {
+            padding: 6rem 2rem;
+            background: var(--dark);
+        }
+
+        .steps {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .step {
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+            max-width: 280px;
+        }
+
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 auto 1rem;
+        }
+
+        .step h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .step p {
+            color: var(--gray);
+        }
+
+        /* Grades preview */
+        .grades-preview {
+            padding: 6rem 2rem;
+            background: linear-gradient(135deg, #16213E 0%, var(--dark) 100%);
+        }
+
+        .grades-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grade-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .grade-row:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(10px);
+        }
+
+        .grade-color {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+        }
+
+        .grade-info {
+            flex: 1;
+        }
+
+        .grade-name {
+            font-weight: 600;
+        }
+
+        .grade-scale {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .grade-difficulty {
+            background: rgba(46, 196, 182, 0.2);
+            color: var(--secondary);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 6rem 2rem;
+            background: var(--primary);
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .cta-section .btn {
+            background: white;
+            color: var(--primary);
+        }
+
+        .cta-section .btn:hover {
+            background: var(--dark);
+            color: white;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 2rem;
+            background: var(--dark);
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        footer p {
+            color: var(--gray);
+        }
+
+        footer a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero .tagline {
+                font-size: 1.1rem;
+            }
+
+            .hero-stats {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            nav {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Hello world</h1>
-    <button onclick="window.location.href='/hello'">Go to Hello router</button>
-    <script src="/static/scripts.js"></script>
+    <header>
+        <div class="logo">
+            <span>🧗</span> Chalkin
+        </div>
+        <nav>
+            <a href="/docs" class="btn btn-outline">API Docs</a>
+            <a href="#start" class="btn btn-primary">Empezar</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Track Your Sends</h1>
+            <p class="tagline">El Strava de los escaladores. Registra tus sesiones, sigue tu progreso y conquista nuevos grados.</p>
+            
+            <div class="hero-stats">
+                <div class="stat">
+                    <div class="stat-number">🏠</div>
+                    <div class="stat-label">Multi-gimnasio</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">📊</div>
+                    <div class="stat-label">Estadísticas</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">🎨</div>
+                    <div class="stat-label">Grados flexibles</div>
+                </div>
+            </div>
+
+            <div class="cta-buttons">
+                <a href="/docs" class="btn btn-primary btn-large">Explorar API →</a>
+                <a href="#features" class="btn btn-outline btn-large">Ver más</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <h2 class="section-title">¿Por qué Chalkin?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🏠</div>
+                <h3>Multi-gimnasio</h3>
+                <p>Escala en diferentes rocódromos y lleva el registro de todos. Cada uno con su propio sistema de grados.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3>Grados flexibles</h3>
+                <p>Colores, V-scale, Font... Configura el sistema de cada gimnasio y compara dificultades entre ellos.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Sigue tu progreso</h3>
+                <p>Visualiza tu evolución semana a semana. Cuántos bloques, qué grados, tus récords personales.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Flash, Send o Proyecto</h3>
+                <p>Registra cada intento: flash a la primera, send después de varios intentos, o proyecto para seguir trabajando.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>API REST</h3>
+                <p>API completa y documentada para construir tu propia app móvil o integrar con otros servicios.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <h3>Tus datos, tu control</h3>
+                <p>Self-hosted. Despliega en tu servidor y mantén el control total de tus datos de escalada.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works" id="start">
+        <h2 class="section-title">Cómo funciona</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Check-in</h3>
+                <p>Inicia sesión cuando llegues al rocódromo</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Registra</h3>
+                <p>Añade cada bloque que subas con su grado</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Analiza</h3>
+                <p>Revisa tus estadísticas y mejora</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="grades-preview">
+        <h2 class="section-title">Sistema de grados universal</h2>
+        <p style="text-align: center; color: var(--gray); margin-bottom: 2rem;">Compara tu nivel entre diferentes gimnasios</p>
+        <div class="grades-container">
+            <div class="grade-row">
+                <div class="grade-color" style="background: #22C55E;"></div>
+                <div class="grade-info">
+                    <div class="grade-name">Verde / V0-V1</div>
+                    <div class="grade-scale">Iniciación</div>
+                </div>
+                <div class="grade-difficulty">1-2</div>
+            </div>
+            <div class="grade-row">
+                <div class="grade-color" style="background: #3B82F6;"></div>
+                <div class="grade-info">
+                    <div class="grade-name">Azul / V2-V3</div>
+                    <div class="grade-scale">Intermedio</div>
+                </div>
+                <div class="grade-difficulty">3-4</div>
+            </div>
+            <div class="grade-row">
+                <div class="grade-color" style="background: #EF4444;"></div>
+                <div class="grade-info">
+                    <div class="grade-name">Rojo / V4-V5</div>
+                    <div class="grade-scale">Avanzado</div>
+                </div>
+                <div class="grade-difficulty">5-6</div>
+            </div>
+            <div class="grade-row">
+                <div class="grade-color" style="background: #1F2937;"></div>
+                <div class="grade-info">
+                    <div class="grade-name">Negro / V6-V7</div>
+                    <div class="grade-scale">Experto</div>
+                </div>
+                <div class="grade-difficulty">7-8</div>
+            </div>
+            <div class="grade-row">
+                <div class="grade-color" style="background: linear-gradient(135deg, #EC4899, #8B5CF6);"></div>
+                <div class="grade-info">
+                    <div class="grade-name">Rosa / V8+</div>
+                    <div class="grade-scale">Pro</div>
+                </div>
+                <div class="grade-difficulty">9+</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <h2>¿Listo para trackear?</h2>
+        <p>Empieza a registrar tus sesiones de escalada hoy</p>
+        <a href="/docs" class="btn btn-large">Ir a la API →</a>
+    </section>
+
+    <footer>
+        <p>Chalkin © 2024 · <a href="/docs">API Docs</a> · <a href="/redoc">ReDoc</a></p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem;">Made with 🧗 for climbers</p>
+    </footer>
 </body>
 </html>
