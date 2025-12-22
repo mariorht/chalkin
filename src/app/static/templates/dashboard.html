@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Chalkin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+            --error: #EF4444;
+            --success: #22C55E;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background: var(--dark);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .header-nav a {
+            color: var(--gray);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .header-nav a:hover {
+            color: white;
+        }
+
+        .header-nav a.active {
+            color: var(--primary);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid var(--gray);
+            color: var(--gray);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-logout:hover {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        /* Main */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Welcome */
+        .welcome-section {
+            margin-bottom: 2rem;
+        }
+
+        .welcome-section h1 {
+            color: var(--dark);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-section p {
+            color: var(--gray);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .stat-card .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .stat-card.highlight {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .stat-card.highlight .stat-value,
+        .stat-card.highlight .stat-label {
+            color: white;
+        }
+
+        /* Actions */
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--dark);
+            border: 2px solid #E5E7EB;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Sections */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            color: var(--dark);
+            font-size: 1.3rem;
+        }
+
+        .section-header a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Sessions List */
+        .sessions-list {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .session-item {
+            display: flex;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #F3F4F6;
+            transition: background 0.2s;
+        }
+
+        .session-item:last-child {
+            border-bottom: none;
+        }
+
+        .session-item:hover {
+            background: #F9FAFB;
+        }
+
+        .session-date {
+            width: 80px;
+            text-align: center;
+            margin-right: 1.5rem;
+        }
+
+        .session-date .day {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            line-height: 1;
+        }
+
+        .session-date .month {
+            font-size: 0.8rem;
+            color: var(--gray);
+            text-transform: uppercase;
+        }
+
+        .session-info {
+            flex: 1;
+        }
+
+        .session-gym {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .session-stats {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .session-stats span {
+            margin-right: 1rem;
+        }
+
+        .session-grade {
+            background: var(--secondary);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Gyms Grid */
+        .gyms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .gym-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .gym-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .gym-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--secondary), #1AA399);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .gym-info h3 {
+            color: var(--dark);
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .gym-info p {
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #E5E7EB;
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-nav {
+                display: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .session-item {
+                flex-wrap: wrap;
+            }
+
+            .session-grade {
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">
+            <span>🧗</span> Chalkin
+        </a>
+        <nav class="header-nav">
+            <a href="/dashboard" class="active">Dashboard</a>
+            <a href="/gyms/new">Añadir gimnasio</a>
+            <a href="/docs">API</a>
+        </nav>
+        <div class="user-menu">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <button class="btn-logout" onclick="logout()">Salir</button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="welcome-section">
+            <h1>👋 Hola, <span id="userName">escalador</span>!</h1>
+            <p id="welcomeMessage">Cargando tus estadísticas...</p>
+        </section>
+
+        <section class="stats-grid" id="statsGrid">
+            <div class="stat-card highlight">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-value" id="statSendsWeek">-</div>
+                <div class="stat-label">Sends esta semana</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-value" id="statFlashes">-</div>
+                <div class="stat-label">Flashes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-value" id="statSessions">-</div>
+                <div class="stat-label">Sesiones totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-value" id="statMaxGrade">-</div>
+                <div class="stat-label">Grado máximo</div>
+            </div>
+        </section>
+
+        <section class="quick-actions">
+            <a href="/sessions/new" class="btn btn-primary">
+                <span>▶️</span> Iniciar sesión
+            </a>
+            <a href="/gyms/new" class="btn btn-secondary">
+                <span>🏠</span> Añadir gimnasio
+            </a>
+        </section>
+
+        <section>
+            <div class="section-header">
+                <h2>📅 Sesiones recientes</h2>
+                <a href="/sessions">Ver todas</a>
+            </div>
+            <div class="sessions-list" id="sessionsList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Cargando sesiones...</p>
+                </div>
+            </div>
+        </section>
+
+        <section style="margin-top: 2rem;">
+            <div class="section-header">
+                <h2>🏠 Mis gimnasios</h2>
+                <a href="/gyms">Ver todos</a>
+            </div>
+            <div class="gyms-grid" id="gymsList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Cargando gimnasios...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const API_URL = '/api';
+        const token = localStorage.getItem('token');
+        let user = {};
+        try {
+            const userStr = localStorage.getItem('user');
+            if (userStr && userStr !== 'undefined') {
+                user = JSON.parse(userStr);
+            }
+        } catch (e) {
+            console.error('Error parsing user:', e);
+        }
+
+        // Check auth
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        // Set user info
+        document.getElementById('userName').textContent = user.username || 'escalador';
+        document.getElementById('userAvatar').textContent = (user.username || 'U')[0].toUpperCase();
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        async function fetchWithAuth(url) {
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.status === 401) {
+                logout();
+                return null;
+            }
+            return response;
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/stats/me`);
+                if (!response || !response.ok) return;
+                
+                const stats = await response.json();
+                
+                document.getElementById('statSendsWeek').textContent = stats.sends_this_week || 0;
+                document.getElementById('statFlashes').textContent = stats.flashes_this_week || 0;
+                document.getElementById('statSessions').textContent = stats.total_sessions || 0;
+                document.getElementById('statMaxGrade').textContent = stats.max_grade_label || '-';
+                
+                // Update welcome message
+                const message = stats.message || '¡A escalar!';
+                document.getElementById('welcomeMessage').textContent = message;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadSessions() {
+            const container = document.getElementById('sessionsList');
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/sessions?limit=5`);
+                if (!response || !response.ok) {
+                    container.innerHTML = '<div class="empty-state"><p>Error cargando sesiones</p></div>';
+                    return;
+                }
+                
+                const sessions = await response.json();
+                
+                if (sessions.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">🧗</div>
+                            <h3>Sin sesiones aún</h3>
+                            <p>¡Empieza tu primera sesión de escalada!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = sessions.map(session => {
+                    const date = new Date(session.date);
+                    const day = date.getDate();
+                    const month = date.toLocaleDateString('es', { month: 'short' });
+                    
+                    return `
+                        <div class="session-item">
+                            <div class="session-date">
+                                <div class="day">${day}</div>
+                                <div class="month">${month}</div>
+                            </div>
+                            <div class="session-info">
+                                <div class="session-gym">${session.gym_name || 'Gimnasio'}</div>
+                                <div class="session-stats">
+                                    <span>🪨 ${session.total_ascents || 0} bloques</span>
+                                    <span>⚡ ${session.flashes || 0} flashes</span>
+                                </div>
+                            </div>
+                            ${session.max_grade_label ? `<div class="session-grade">${session.max_grade_label}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                container.innerHTML = '<div class="empty-state"><p>Error cargando sesiones</p></div>';
+            }
+        }
+
+        async function loadGyms() {
+            const container = document.getElementById('gymsList');
+            
+            try {
+                const response = await fetch(`${API_URL}/gyms`);
+                if (!response.ok) {
+                    container.innerHTML = '<div class="empty-state"><p>Error cargando gimnasios</p></div>';
+                    return;
+                }
+                
+                const gyms = await response.json();
+                
+                if (gyms.length === 0) {
+                    container.innerHTML = `
+                        <div class="gym-card" onclick="window.location.href='/gyms/new'">
+                            <div class="gym-icon">➕</div>
+                            <div class="gym-info">
+                                <h3>Añadir gimnasio</h3>
+                                <p>Configura tu primer rocódromo</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = gyms.slice(0, 4).map(gym => `
+                    <div class="gym-card" onclick="selectGym(${gym.id})">
+                        <div class="gym-icon">🏠</div>
+                        <div class="gym-info">
+                            <h3>${gym.name}</h3>
+                            <p>${gym.location || gym.grading_system_type}</p>
+                        </div>
+                    </div>
+                `).join('') + `
+                    <div class="gym-card" onclick="window.location.href='/gyms/new'">
+                        <div class="gym-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">➕</div>
+                        <div class="gym-info">
+                            <h3>Añadir otro</h3>
+                            <p>Nuevo gimnasio</p>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading gyms:', error);
+                container.innerHTML = '<div class="empty-state"><p>Error cargando gimnasios</p></div>';
+            }
+        }
+
+        function selectGym(gymId) {
+            // Navigate to start session with this gym
+            window.location.href = `/sessions/new?gym=${gymId}`;
+        }
+
+        // Load all data
+        loadStats();
+        loadSessions();
+        loadGyms();
+    </script>
+</body>
+</html>

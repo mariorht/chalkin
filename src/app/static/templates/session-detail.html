@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesión activa - Chalkin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+            --error: #EF4444;
+            --success: #22C55E;
+            --flash: #F59E0B;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+
+        header {
+            background: var(--dark);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .session-timer {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .session-timer span {
+            color: var(--secondary);
+            font-weight: 700;
+        }
+
+        .main-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* Session info */
+        .session-info {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .session-info h1 {
+            color: var(--dark);
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .session-meta {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Stats summary */
+        .session-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        .mini-stat {
+            text-align: center;
+        }
+
+        .mini-stat .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .mini-stat .label {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        /* Grade selector */
+        .grade-selector {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .grade-selector h2 {
+            color: var(--dark);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .grades-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .grade-btn {
+            aspect-ratio: 1;
+            border: 3px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: white;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .grade-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .grade-btn.selected {
+            border-color: var(--dark);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .grade-btn .grade-name {
+            font-size: 0.9rem;
+        }
+
+        /* Status selector */
+        .status-selector {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .status-btn {
+            flex: 1;
+            padding: 0.8rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .status-btn:hover {
+            border-color: var(--gray);
+        }
+
+        .status-btn.selected {
+            border-color: var(--primary);
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .status-btn .emoji {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        .status-btn .label {
+            font-size: 0.85rem;
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .status-btn.flash.selected {
+            border-color: var(--flash);
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .status-btn.send.selected {
+            border-color: var(--success);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .status-btn.project.selected {
+            border-color: var(--secondary);
+            background: rgba(46, 196, 182, 0.1);
+        }
+
+        /* Add button */
+        .add-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: all 0.2s;
+        }
+
+        .add-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .add-btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+        }
+
+        /* Ascents list */
+        .ascents-section {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .ascents-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ascents-header h2 {
+            color: var(--dark);
+            font-size: 1rem;
+        }
+
+        .ascent-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #F3F4F6;
+            gap: 1rem;
+        }
+
+        .ascent-item:last-child {
+            border-bottom: none;
+        }
+
+        .ascent-grade {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 0.85rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .ascent-info {
+            flex: 1;
+        }
+
+        .ascent-info .grade-label {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .ascent-info .time {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .ascent-status {
+            font-size: 1.2rem;
+        }
+
+        .ascent-delete {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 0.5rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .ascent-delete:hover {
+            color: var(--error);
+        }
+
+        .empty-ascents {
+            padding: 2rem;
+            text-align: center;
+            color: var(--gray);
+        }
+
+        /* Fixed bottom bar */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+        }
+
+        .end-session-btn {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .end-session-btn:hover {
+            background: #DC2626;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/dashboard" class="logo">
+            <span>🧗</span> Chalkin
+        </a>
+        <div class="session-timer">
+            ⏱️ <span id="timer">00:00</span>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="session-info" id="sessionInfo">
+            <h1 id="gymName">Cargando...</h1>
+            <p class="session-meta" id="sessionMeta"></p>
+            
+            <div class="session-stats">
+                <div class="mini-stat">
+                    <div class="value" id="totalAscents">0</div>
+                    <div class="label">Bloques</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="value" id="totalFlashes">0</div>
+                    <div class="label">Flashes</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="value" id="maxGrade">-</div>
+                    <div class="label">Máx grado</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grade-selector" id="gradeSelector">
+            <h2>Registrar bloque</h2>
+            <div class="grades-grid" id="gradesGrid">
+                <div class="loading">Cargando grados...</div>
+            </div>
+            
+            <div class="status-selector">
+                <button type="button" class="status-btn flash" data-status="flash">
+                    <span class="emoji">⚡</span>
+                    <span class="label">Flash</span>
+                </button>
+                <button type="button" class="status-btn send" data-status="send">
+                    <span class="emoji">✅</span>
+                    <span class="label">Send</span>
+                </button>
+                <button type="button" class="status-btn project" data-status="project">
+                    <span class="emoji">🔄</span>
+                    <span class="label">Proyecto</span>
+                </button>
+            </div>
+            
+            <button class="add-btn" id="addAscentBtn" disabled>
+                + Añadir bloque
+            </button>
+        </section>
+
+        <section class="ascents-section">
+            <div class="ascents-header">
+                <h2>Bloques de hoy</h2>
+            </div>
+            <div id="ascentsList">
+                <div class="empty-ascents">
+                    Aún no has registrado ningún bloque
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="bottom-bar">
+        <button class="end-session-btn" onclick="endSession()">
+            🛑 Terminar sesión
+        </button>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        const token = localStorage.getItem('token');
+        const sessionId = window.location.pathname.split('/').pop();
+        
+        let session = null;
+        let grades = [];
+        let ascents = [];
+        let selectedGradeId = null;
+        let selectedStatus = 'send';
+        let startTime = null;
+
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        // Timer
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const now = new Date();
+            const diff = Math.floor((now - startTime) / 1000);
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            
+            let timeStr = '';
+            if (hours > 0) {
+                timeStr = `${hours}:${minutes.toString().padStart(2, '0')}h`;
+            } else {
+                timeStr = `${minutes} min`;
+            }
+            
+            document.getElementById('timer').textContent = timeStr;
+        }
+
+        setInterval(updateTimer, 10000);
+
+        async function fetchWithAuth(url, options = {}) {
+            return fetch(url, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
+
+        async function loadSession() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}`);
+                if (!response.ok) {
+                    window.location.href = '/dashboard';
+                    return;
+                }
+                
+                session = await response.json();
+                startTime = new Date(session.started_at);
+                
+                document.getElementById('gymName').textContent = session.gym_name || 'Sesión de escalada';
+                document.getElementById('sessionMeta').textContent = `${new Date(session.date).toLocaleDateString('es')} • ${session.notes || 'Sin notas'}`;
+                
+                updateTimer();
+                
+                // Load grades for this gym
+                loadGrades(session.gym_id);
+                
+                // Load ascents
+                loadAscents();
+            } catch (error) {
+                console.error('Error loading session:', error);
+            }
+        }
+
+        async function loadGrades(gymId) {
+            try {
+                const response = await fetch(`${API_URL}/gyms/${gymId}/grades`);
+                grades = await response.json();
+                
+                const container = document.getElementById('gradesGrid');
+                
+                if (grades.length === 0) {
+                    container.innerHTML = '<p>No hay grados configurados</p>';
+                    return;
+                }
+                
+                container.innerHTML = grades.map(grade => `
+                    <button type="button" class="grade-btn" 
+                            data-grade-id="${grade.id}"
+                            style="background: ${grade.color_hex || '#666'}">
+                        <span class="grade-name">${grade.label}</span>
+                    </button>
+                `).join('');
+                
+                // Add click handlers
+                document.querySelectorAll('.grade-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        selectedGradeId = parseInt(btn.dataset.gradeId);
+                        updateAddButton();
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading grades:', error);
+            }
+        }
+
+        async function loadAscents() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}/ascents`);
+                ascents = await response.json();
+                
+                updateAscentsList();
+                updateStats();
+            } catch (error) {
+                console.error('Error loading ascents:', error);
+            }
+        }
+
+        function updateAscentsList() {
+            const container = document.getElementById('ascentsList');
+            
+            if (ascents.length === 0) {
+                container.innerHTML = '<div class="empty-ascents">Aún no has registrado ningún bloque</div>';
+                return;
+            }
+            
+            container.innerHTML = ascents.map(ascent => {
+                const grade = grades.find(g => g.id === ascent.grade_id) || {};
+                const statusEmoji = {
+                    'flash': '⚡',
+                    'send': '✅',
+                    'project': '🔄'
+                }[ascent.status] || '✅';
+                
+                const time = new Date(ascent.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+                
+                return `
+                    <div class="ascent-item">
+                        <div class="ascent-grade" style="background: ${grade.color_hex || '#666'}">
+                            ${grade.label || '?'}
+                        </div>
+                        <div class="ascent-info">
+                            <div class="grade-label">${grade.label || 'Grado'}</div>
+                            <div class="time">${time}</div>
+                        </div>
+                        <div class="ascent-status">${statusEmoji}</div>
+                        <button class="ascent-delete" onclick="deleteAscent(${ascent.id})">🗑️</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const total = ascents.length;
+            const flashes = ascents.filter(a => a.status === 'flash').length;
+            
+            let maxGradeLabel = '-';
+            let maxDifficulty = 0;
+            
+            ascents.forEach(ascent => {
+                if (ascent.status !== 'project') {
+                    const grade = grades.find(g => g.id === ascent.grade_id);
+                    if (grade && grade.relative_difficulty > maxDifficulty) {
+                        maxDifficulty = grade.relative_difficulty;
+                        maxGradeLabel = grade.label;
+                    }
+                }
+            });
+            
+            document.getElementById('totalAscents').textContent = total;
+            document.getElementById('totalFlashes').textContent = flashes;
+            document.getElementById('maxGrade').textContent = maxGradeLabel;
+        }
+
+        // Status buttons
+        document.querySelectorAll('.status-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedStatus = btn.dataset.status;
+            });
+        });
+
+        // Default status
+        document.querySelector('.status-btn.send').classList.add('selected');
+
+        function updateAddButton() {
+            document.getElementById('addAscentBtn').disabled = !selectedGradeId;
+        }
+
+        document.getElementById('addAscentBtn').addEventListener('click', async () => {
+            if (!selectedGradeId) return;
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}/ascents`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        grade_id: selectedGradeId,
+                        status: selectedStatus
+                    })
+                });
+                
+                if (response.ok) {
+                    loadAscents();
+                    
+                    // Brief visual feedback
+                    const btn = document.getElementById('addAscentBtn');
+                    btn.textContent = '✓ Añadido!';
+                    setTimeout(() => {
+                        btn.textContent = '+ Añadir bloque';
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Error adding ascent:', error);
+            }
+        });
+
+        async function deleteAscent(ascentId) {
+            if (!confirm('¿Eliminar este bloque?')) return;
+            
+            try {
+                await fetchWithAuth(`${API_URL}/ascents/${ascentId}`, {
+                    method: 'DELETE'
+                });
+                loadAscents();
+            } catch (error) {
+                console.error('Error deleting ascent:', error);
+            }
+        }
+
+        async function endSession() {
+            if (!confirm('¿Terminar la sesión de hoy?')) return;
+            
+            try {
+                await fetchWithAuth(`${API_URL}/sessions/${sessionId}/end`, {
+                    method: 'POST'
+                });
+                window.location.href = '/dashboard';
+            } catch (error) {
+                console.error('Error ending session:', error);
+                window.location.href = '/dashboard';
+            }
+        }
+
+        loadSession();
+    </script>
+</body>
+</html>

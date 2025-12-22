@@ -10,7 +10,7 @@ from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.gym import Gym
 from app.models.grade import Grade
-from app.schemas.grade import GradeCreate, GradeResponse, GradeUpdate
+from app.schemas.grade import GradeCreate, GradeResponse, GradeUpdate, BulkGradeCreate
 
 router = APIRouter(prefix="/grades", tags=["Grades"])
 
@@ -107,30 +107,31 @@ def delete_grade(
 
 @router.post("/bulk", response_model=List[GradeResponse], status_code=status.HTTP_201_CREATED)
 def create_grades_bulk(
-    grades_data: List[GradeCreate],
+    bulk_data: BulkGradeCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Create multiple grades at once (useful for setting up a new gym).
     """
-    if not grades_data:
+    if not bulk_data.grades:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No grades provided"
         )
     
-    # Verify all gyms exist
-    gym_ids = set(g.gym_id for g in grades_data)
-    for gym_id in gym_ids:
-        gym = db.query(Gym).filter(Gym.id == gym_id).first()
-        if not gym:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Gym with id {gym_id} not found"
-            )
+    # Verify gym exists
+    gym = db.query(Gym).filter(Gym.id == bulk_data.gym_id).first()
+    if not gym:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Gym not found"
+        )
     
-    grades = [Grade(**g.model_dump()) for g in grades_data]
+    grades = [
+        Grade(gym_id=bulk_data.gym_id, **g.model_dump()) 
+        for g in bulk_data.grades
+    ]
     db.add_all(grades)
     db.commit()
     

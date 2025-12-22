@@ -70,7 +70,10 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes)
     )
     
-    return Token(access_token=access_token)
+    return Token(
+        access_token=access_token,
+        user={"id": user.id, "username": user.username, "email": user.email}
+    )
 
 
 @router.get("/me", response_model=UserResponse)
