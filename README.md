@@ -201,11 +201,127 @@ The `relative_difficulty` field (0-15) allows comparing grades across gyms:
 ## Technologies Used
 
 - **Backend:** FastAPI, SQLAlchemy, Alembic
-- **Database:** SQLite (easily swappable to PostgreSQL)
+- **Database:** SQLite (swappable to PostgreSQL)
 - **Auth:** JWT with passlib/bcrypt
-- **Frontend:** HTML and JavaScript (served as static files)
 - **Containerization:** Docker and Docker Compose
 - **Tests:** pytest
+
+---
+
+## 🚀 Production Deployment (Docker)
+
+### 1. Configure Environment
+
+```bash
+cp src/.env.example src/.env
+nano src/.env
+```
+
+**Cambios importantes para producción:**
+
+```dotenv
+# OBLIGATORIO: genera con 'openssl rand -hex 32'
+SECRET_KEY=tu-clave-secreta-segura-de-64-caracteres
+
+DEBUG=false
+```
+
+### 2. Build y Run
+
+```bash
+# Construir y arrancar
+docker-compose up -d --build
+
+# Ver logs
+docker-compose logs -f
+
+# Ejecutar migraciones (crear tablas)
+docker-compose exec api alembic upgrade head
+```
+
+### 3. Acceso
+
+- **API Docs**: http://localhost:8001/docs
+- **Web App**: http://localhost:8001
+
+### 4. Mantenimiento
+
+```bash
+# Parar
+docker-compose down
+
+# Backup de la base de datos
+docker cp chalkin_api:/app/chalkin.db ./backup.db
+
+# Actualizar después de cambios
+docker-compose up -d --build
+docker-compose exec api alembic upgrade head
+```
+
+---
+
+## 🛠️ Development (sin Docker)
+
+Para debug local usando virtual environment:
+
+### 1. Setup inicial
+
+```bash
+# Crear venv e instalar dependencias
+./setup_venv.sh
+
+# O manualmente:
+python3 -m venv venv
+source venv/bin/activate  # Linux/Mac
+pip install -r src/requirements.txt
+```
+
+### 2. Configurar y crear BD
+
+```bash
+cp src/.env.example src/.env
+
+cd src
+source ../venv/bin/activate
+alembic upgrade head
+```
+
+### 3. Iniciar servidor
+
+```bash
+./start_venv.sh
+
+# O manualmente:
+cd src
+source ../venv/bin/activate
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+```
+
+### 4. Ejecutar tests
+
+```bash
+./run_tests.sh
+```
+
+---
+
+## Database Migrations (Alembic)
+
+```bash
+cd src
+
+# Crear nueva migración (después de modificar models/)
+alembic revision --autogenerate -m "Descripción del cambio"
+
+# Aplicar migraciones
+alembic upgrade head
+
+# Rollback
+alembic downgrade -1
+
+# Ver versión actual
+alembic current
+```
 
 ---
 
