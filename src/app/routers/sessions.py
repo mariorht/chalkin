@@ -11,12 +11,54 @@ from app.db.base import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.gym import Gym
+from app.models.grade import Grade
 from app.models.session import Session as ClimbingSession
 from app.models.ascent import Ascent, AscentStatus
 from app.schemas.session import SessionCreate, SessionResponse, SessionUpdate, SessionWithAscents
 from app.schemas.ascent import AscentCreate, AscentResponse
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
+
+
+def enrich_session(session: ClimbingSession, db: Session) -> dict:
+    """Add computed fields to a session."""
+    # Get gym name
+    gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
+    gym_name = gym.name if gym else "Gimnasio"
+    
+    # Count ascents by status
+    ascents = db.query(Ascent).filter(Ascent.session_id == session.id).all()
+    total_ascents = len(ascents)
+    flashes = sum(1 for a in ascents if a.status == AscentStatus.FLASH)
+    sends = sum(1 for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.FLASH])
+    
+    # Get max grade
+    max_grade_label = None
+    if ascents:
+        max_difficulty = 0
+        for ascent in ascents:
+            if ascent.status != AscentStatus.PROJECT:
+                grade = db.query(Grade).filter(Grade.id == ascent.grade_id).first()
+                if grade and grade.relative_difficulty > max_difficulty:
+                    max_difficulty = grade.relative_difficulty
+                    max_grade_label = grade.label
+    
+    return {
+        "id": session.id,
+        "user_id": session.user_id,
+        "gym_id": session.gym_id,
+        "date": session.date,
+        "notes": session.notes,
+        "started_at": session.started_at,
+        "ended_at": session.ended_at,
+        "created_at": session.created_at,
+        "updated_at": session.updated_at,
+        "gym_name": gym_name,
+        "total_ascents": total_ascents,
+        "flashes": flashes,
+        "sends": sends,
+        "max_grade_label": max_grade_label
+    }
 
 
 @router.get("", response_model=List[SessionResponse])
@@ -46,7 +88,9 @@ def list_sessions(
         query = query.filter(ClimbingSession.date <= date_to)
     
     sessions = query.order_by(ClimbingSession.date.desc()).offset(skip).limit(limit).all()
-    return sessions
+    
+    # Enrich each session with computed fields
+    return [enrich_session(s, db) for s in sessions]
 
 
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
@@ -75,7 +119,7 @@ def create_session(
     db.commit()
     db.refresh(session)
     
-    return session
+    return enrich_session(session, db)
 
 
 @router.get("/{session_id}", response_model=SessionWithAscents)
@@ -98,15 +142,30 @@ def get_session(
             detail="Session not found"
         )
     
+    # Get gym name
+    gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
+    gym_name = gym.name if gym else "Gimnasio"
+    
     # Calculate summary stats
     ascents = session.ascents
-    response = SessionWithAscents.model_validate(session)
-    response.total_ascents = len(ascents)
-    response.sends = len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT]])
-    response.flashes = len([a for a in ascents if a.status == AscentStatus.FLASH])
-    response.projects = len([a for a in ascents if a.status == AscentStatus.PROJECT])
     
-    return response
+    return {
+        "id": session.id,
+        "user_id": session.user_id,
+        "gym_id": session.gym_id,
+        "date": session.date,
+        "notes": session.notes,
+        "started_at": session.started_at,
+        "ended_at": session.ended_at,
+        "created_at": session.created_at,
+        "updated_at": session.updated_at,
+        "gym_name": gym_name,
+        "ascents": ascents,
+        "total_ascents": len(ascents),
+        "sends": len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT]]),
+        "flashes": len([a for a in ascents if a.status == AscentStatus.FLASH]),
+        "projects": len([a for a in ascents if a.status == AscentStatus.PROJECT])
+    }
 
 
 @router.patch("/{session_id}", response_model=SessionResponse)
@@ -137,7 +196,34 @@ def update_session(
     db.commit()
     db.refresh(session)
     
-    return session
+    return enrich_session(session, db)
+
+
+@router.post("/{session_id}/end", response_model=SessionResponse)
+def end_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    End a climbing session (set ended_at to now).
+    """
+    session = db.query(ClimbingSession).filter(
+        ClimbingSession.id == session_id,
+        ClimbingSession.user_id == current_user.id
+    ).first()
+    
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found"
+        )
+    
+    session.ended_at = datetime.utcnow()
+    db.commit()
+    db.refresh(session)
+    
+    return enrich_session(session, db)
 
 
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)

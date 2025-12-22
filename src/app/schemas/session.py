@@ -34,6 +34,13 @@ class SessionResponse(SessionBase):
     ended_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
+    
+    # Extended fields for UI
+    gym_name: Optional[str] = None
+    total_ascents: int = 0
+    flashes: int = 0
+    sends: int = 0
+    max_grade_label: Optional[str] = None
 
     class Config:
         from_attributes = True

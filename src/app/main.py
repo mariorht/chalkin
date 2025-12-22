@@ -59,6 +59,54 @@ def serve_index():
     return os.path.join(template_dir, "index.html")
 
 
+@app.get("/login", response_class=FileResponse)
+def serve_login():
+    """Serve the login page."""
+    return os.path.join(template_dir, "login.html")
+
+
+@app.get("/register", response_class=FileResponse)
+def serve_register():
+    """Serve the registration page."""
+    return os.path.join(template_dir, "register.html")
+
+
+@app.get("/gyms/new", response_class=FileResponse)
+def serve_new_gym():
+    """Serve the new gym page."""
+    return os.path.join(template_dir, "gym-new.html")
+
+
+@app.get("/dashboard", response_class=FileResponse)
+def serve_dashboard():
+    """Serve the dashboard page."""
+    return os.path.join(template_dir, "dashboard.html")
+
+
+@app.get("/sessions/new", response_class=FileResponse)
+def serve_new_session():
+    """Serve the new session page."""
+    return os.path.join(template_dir, "session-new.html")
+
+
+@app.get("/sessions/{session_id}", response_class=FileResponse)
+def serve_session_detail(session_id: int):
+    """Serve the session detail page."""
+    return os.path.join(template_dir, "session-detail.html")
+
+
+@app.get("/gyms", response_class=FileResponse)
+def serve_gyms_list():
+    """Serve the gyms list page."""
+    return os.path.join(template_dir, "gyms.html")
+
+
+@app.get("/sessions", response_class=FileResponse)
+def serve_sessions_list():
+    """Serve the sessions list page."""
+    return os.path.join(template_dir, "sessions.html")
+
+
 @app.get("/health")
 def health_check():
     """Health check endpoint."""

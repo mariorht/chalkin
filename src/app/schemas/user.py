@@ -43,10 +43,21 @@ class UserLogin(BaseModel):
     password: str
 
 
+class TokenUser(BaseModel):
+    """User info included in token response."""
+    id: int
+    username: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
 class Token(BaseModel):
     """Schema for JWT token response."""
     access_token: str
     token_type: str = "bearer"
+    user: Optional[TokenUser] = None
 
 
 class TokenData(BaseModel):

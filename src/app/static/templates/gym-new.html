@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Añadir Gimnasio - Chalkin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+            --error: #EF4444;
+            --success: #22C55E;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--dark);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-name {
+            color: white;
+            font-weight: 500;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid var(--gray);
+            color: var(--gray);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            color: var(--dark);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--gray);
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .form-section h2 {
+            color: var(--dark);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--light);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .form-group .hint {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 0.3rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Grades section */
+        .grades-section {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .grades-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .grades-header h3 {
+            color: var(--dark);
+            font-size: 1rem;
+        }
+
+        .btn-add-grade {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add-grade:hover {
+            background: #25A89D;
+        }
+
+        .grade-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .grade-color-picker {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .grade-item input {
+            flex: 1;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .grade-item input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .grade-difficulty {
+            width: 80px;
+        }
+
+        .btn-remove-grade {
+            background: transparent;
+            border: none;
+            color: var(--error);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.3rem;
+            transition: transform 0.2s;
+        }
+
+        .btn-remove-grade:hover {
+            transform: scale(1.2);
+        }
+
+        .grade-labels {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+            padding: 0 0.5rem;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .grade-labels span:nth-child(1) { width: 50px; }
+        .grade-labels span:nth-child(2) { flex: 1; }
+        .grade-labels span:nth-child(3) { width: 80px; }
+        .grade-labels span:nth-child(4) { width: 30px; }
+
+        /* Buttons */
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--gray);
+            color: var(--gray);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--dark);
+            color: var(--dark);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--light);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Predefined colors */
+        .predefined-grades {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .preset-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .grade-item {
+                flex-wrap: wrap;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">
+            <span>🧗</span> Chalkin
+        </a>
+        <div class="user-menu">
+            <span class="user-name" id="userName">...</span>
+            <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="page-header">
+            <h1>🏠 Añadir nuevo gimnasio</h1>
+            <p>Añade un rocódromo con su sistema de grados personalizado</p>
+        </div>
+
+        <div class="card">
+            <div id="alert" class="alert"></div>
+
+            <form id="gymForm">
+                <div class="form-section">
+                    <h2>Información básica</h2>
+                    
+                    <div class="form-group">
+                        <label for="name">Nombre del gimnasio *</label>
+                        <input type="text" id="name" name="name" required placeholder="Ej: Sharma Climbing BCN">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">Ubicación</label>
+                            <input type="text" id="location" name="location" placeholder="Ej: Barcelona, España">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="grading_system_type">Sistema de grados *</label>
+                            <select id="grading_system_type" name="grading_system_type" required>
+                                <option value="colors">Colores</option>
+                                <option value="v_scale">V-Scale (V0-V17)</option>
+                                <option value="font">Font (4-9A)</option>
+                                <option value="circuit">Circuitos numerados</option>
+                                <option value="custom">Personalizado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Descripción (opcional)</label>
+                        <textarea id="description" name="description" placeholder="Notas sobre el gimnasio, horarios, etc."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2>Escala de grados</h2>
+                    <p class="hint" style="margin-bottom: 1rem;">Define los grados disponibles en este gimnasio. La dificultad relativa (1-15) permite comparar entre gimnasios.</p>
+
+                    <div class="predefined-grades">
+                        <button type="button" class="preset-btn" onclick="loadPreset('basic')">🎨 Básico (5 colores)</button>
+                        <button type="button" class="preset-btn" onclick="loadPreset('extended')">🌈 Extendido (8 colores)</button>
+                        <button type="button" class="preset-btn" onclick="loadPreset('vscale')">🔢 V-Scale</button>
+                    </div>
+
+                    <div class="grades-section">
+                        <div class="grades-header">
+                            <h3>Grados configurados</h3>
+                            <button type="button" class="btn-add-grade" onclick="addGrade()">+ Añadir grado</button>
+                        </div>
+
+                        <div class="grade-labels">
+                            <span>Color</span>
+                            <span>Nombre</span>
+                            <span>Dificultad</span>
+                            <span></span>
+                        </div>
+
+                        <div id="gradesList">
+                            <!-- Grades will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.history.back()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Crear gimnasio</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = '/api';
+        let token = localStorage.getItem('token');
+        let gradeCounter = 0;
+
+        // Check auth
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        // Load user info
+        let user = {};
+        try {
+            const userStr = localStorage.getItem('user');
+            if (userStr && userStr !== 'undefined') {
+                user = JSON.parse(userStr);
+            }
+        } catch (e) {
+            console.error('Error parsing user:', e);
+        }
+        document.getElementById('userName').textContent = user.username || 'Usuario';
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        const presets = {
+            basic: [
+                { color: '#22C55E', label: 'Verde', difficulty: 2 },
+                { color: '#3B82F6', label: 'Azul', difficulty: 4 },
+                { color: '#EAB308', label: 'Amarillo', difficulty: 5 },
+                { color: '#EF4444', label: 'Rojo', difficulty: 7 },
+                { color: '#1F2937', label: 'Negro', difficulty: 9 },
+            ],
+            extended: [
+                { color: '#FFFFFF', label: 'Blanco', difficulty: 1 },
+                { color: '#22C55E', label: 'Verde', difficulty: 2 },
+                { color: '#3B82F6', label: 'Azul', difficulty: 3 },
+                { color: '#EAB308', label: 'Amarillo', difficulty: 5 },
+                { color: '#F97316', label: 'Naranja', difficulty: 6 },
+                { color: '#EF4444', label: 'Rojo', difficulty: 7 },
+                { color: '#1F2937', label: 'Negro', difficulty: 9 },
+                { color: '#EC4899', label: 'Rosa', difficulty: 11 },
+            ],
+            vscale: [
+                { color: '#22C55E', label: 'V0-V1', difficulty: 1 },
+                { color: '#3B82F6', label: 'V2-V3', difficulty: 3 },
+                { color: '#EAB308', label: 'V4-V5', difficulty: 5 },
+                { color: '#F97316', label: 'V6-V7', difficulty: 7 },
+                { color: '#EF4444', label: 'V8-V9', difficulty: 9 },
+                { color: '#1F2937', label: 'V10+', difficulty: 11 },
+            ]
+        };
+
+        function loadPreset(name) {
+            const preset = presets[name];
+            if (!preset) return;
+
+            document.getElementById('gradesList').innerHTML = '';
+            gradeCounter = 0;
+
+            preset.forEach((grade, index) => {
+                addGrade(grade.color, grade.label, grade.difficulty);
+            });
+        }
+
+        function addGrade(color = '#3B82F6', label = '', difficulty = 5) {
+            const gradesList = document.getElementById('gradesList');
+            const gradeId = gradeCounter++;
+
+            const gradeHTML = `
+                <div class="grade-item" id="grade-${gradeId}">
+                    <input type="color" class="grade-color-picker" name="grade_color_${gradeId}" value="${color}">
+                    <input type="text" name="grade_label_${gradeId}" placeholder="Nombre del grado" value="${label}" required>
+                    <input type="number" class="grade-difficulty" name="grade_difficulty_${gradeId}" min="1" max="15" value="${difficulty}" placeholder="1-15" required>
+                    <button type="button" class="btn-remove-grade" onclick="removeGrade(${gradeId})">✕</button>
+                </div>
+            `;
+
+            gradesList.insertAdjacentHTML('beforeend', gradeHTML);
+        }
+
+        function removeGrade(id) {
+            const grade = document.getElementById(`grade-${id}`);
+            if (grade) {
+                grade.remove();
+            }
+        }
+
+        function getGrades() {
+            const grades = [];
+            const gradeItems = document.querySelectorAll('.grade-item');
+
+            gradeItems.forEach((item, index) => {
+                const color = item.querySelector('input[type="color"]').value;
+                const label = item.querySelector('input[type="text"]').value;
+                const difficulty = parseInt(item.querySelector('input[type="number"]').value);
+
+                if (label) {
+                    grades.push({
+                        label,
+                        color_hex: color,
+                        relative_difficulty: difficulty,
+                        order: index + 1
+                    });
+                }
+            });
+
+            return grades;
+        }
+
+        function showAlert(message, type = 'error') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            alert.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideAlert() {
+            document.getElementById('alert').className = 'alert';
+        }
+
+        function setLoading(loading) {
+            const btn = document.getElementById('submitBtn');
+            if (loading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span>Creando...';
+            } else {
+                btn.disabled = false;
+                btn.textContent = 'Crear gimnasio';
+            }
+        }
+
+        // Load default grades
+        loadPreset('basic');
+
+        // Form submit
+        document.getElementById('gymForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert();
+
+            const grades = getGrades();
+            if (grades.length === 0) {
+                showAlert('Añade al menos un grado');
+                return;
+            }
+
+            setLoading(true);
+
+            const gymData = {
+                name: document.getElementById('name').value,
+                location: document.getElementById('location').value || null,
+                grading_system_type: document.getElementById('grading_system_type').value,
+                description: document.getElementById('description').value || null
+            };
+
+            try {
+                // Create gym
+                const gymResponse = await fetch(`${API_URL}/gyms`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(gymData)
+                });
+
+                if (!gymResponse.ok) {
+                    const error = await gymResponse.json();
+                    throw new Error(error.detail || 'Error al crear el gimnasio');
+                }
+
+                const gym = await gymResponse.json();
+
+                // Create grades
+                const gradesResponse = await fetch(`${API_URL}/grades/bulk`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        gym_id: gym.id,
+                        grades: grades
+                    })
+                });
+
+                if (!gradesResponse.ok) {
+                    const error = await gradesResponse.json();
+                    throw new Error(error.detail || 'Error al crear los grados');
+                }
+
+                showAlert('¡Gimnasio creado correctamente!', 'success');
+
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1500);
+
+            } catch (error) {
+                showAlert(error.message);
+            } finally {
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gimnasios - Chalkin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--dark);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-weight: 500;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        .main-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            color: var(--dark);
+            font-size: 1.8rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .gyms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .gym-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .gym-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .gym-card h3 {
+            color: var(--dark);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .gym-location {
+            color: var(--gray);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .gym-grades {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            margin-bottom: 1rem;
+        }
+
+        .grade-pill {
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .gym-stats {
+            display: flex;
+            gap: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #E5E7EB;
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .gym-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-outline {
+            flex: 1;
+            padding: 0.6rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            background: white;
+            color: var(--dark);
+            text-decoration: none;
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--gray);
+        }
+
+        .empty-state h2 {
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/dashboard" class="logo">
+            <span>🧗</span> Chalkin
+        </a>
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/sessions">Sesiones</a>
+            <a href="/gyms">Gimnasios</a>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <div class="page-header">
+            <h1>🏋️ Gimnasios</h1>
+            <a href="/gyms/new" class="btn-primary">+ Nuevo gimnasio</a>
+        </div>
+
+        <div class="gyms-grid" id="gymsList">
+            <div class="loading">Cargando gimnasios...</div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = '/api';
+        const token = localStorage.getItem('token');
+
+        async function fetchWithAuth(url, options = {}) {
+            return fetch(url, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
+
+        async function loadGyms() {
+            try {
+                const response = await fetch(`${API_URL}/gyms`);
+                const gyms = await response.json();
+                
+                const container = document.getElementById('gymsList');
+                
+                if (gyms.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h2>No hay gimnasios</h2>
+                            <p>Añade tu primer gimnasio para empezar a registrar sesiones.</p>
+                            <a href="/gyms/new" class="btn-primary" style="display: inline-block; margin-top: 1rem;">
+                                + Añadir gimnasio
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Load grades for each gym
+                const gymsWithGrades = await Promise.all(gyms.map(async gym => {
+                    const gradesRes = await fetch(`${API_URL}/gyms/${gym.id}/grades`);
+                    const grades = await gradesRes.json();
+                    return { ...gym, grades };
+                }));
+                
+                container.innerHTML = gymsWithGrades.map(gym => {
+                    const gradesHtml = gym.grades.slice(0, 8).map(grade => 
+                        `<span class="grade-pill" style="background: ${grade.color_hex || '#666'}">${grade.label}</span>`
+                    ).join('');
+                    
+                    const moreGrades = gym.grades.length > 8 ? `<span class="grade-pill" style="background: #999">+${gym.grades.length - 8}</span>` : '';
+                    
+                    return `
+                        <div class="gym-card">
+                            <h3>${gym.name}</h3>
+                            <div class="gym-location">
+                                📍 ${gym.location || 'Sin ubicación'}
+                            </div>
+                            <div class="gym-grades">
+                                ${gradesHtml}${moreGrades}
+                            </div>
+                            <div class="gym-stats">
+                                <span>🎯 ${gym.grades.length} grados</span>
+                            </div>
+                            <div class="gym-actions">
+                                <a href="/sessions/new?gym=${gym.id}" class="btn-outline">🧗 Iniciar sesión</a>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading gyms:', error);
+                document.getElementById('gymsList').innerHTML = '<p>Error al cargar gimnasios</p>';
+            }
+        }
+
+        loadGyms();
+    </script>
+</body>
+</html>
