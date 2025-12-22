@@ -1,0 +1,40 @@
+"""
+Application configuration using Pydantic Settings.
+Loads from environment variables or .env file.
+"""
+from functools import lru_cache
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables."""
+    
+    # App info
+    app_name: str = "Chalkin"
+    app_version: str = "0.1.0"
+    debug: bool = False
+    
+    # Database
+    database_url: str = "sqlite:///./chalkin.db"
+    
+    # JWT Auth
+    secret_key: str = "your-secret-key-change-in-production"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24 * 7  # 1 week
+    
+    # File uploads
+    upload_dir: str = "uploads"
+    max_file_size: int = 5 * 1024 * 1024  # 5MB
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    """Cached settings instance."""
+    return Settings()
+
+
+settings = get_settings()

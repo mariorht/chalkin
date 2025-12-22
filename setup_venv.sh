@@ -17,6 +17,8 @@ if [ ! -d "$VENV_DIR" ]; then
     echo "Creando entorno virtual..."
     python3 -m venv $VENV_DIR
     echo "Entorno virtual creado en $VENV_DIR."
+else
+    echo "Entorno virtual ya existe en $VENV_DIR."
 fi
 
 # Activar el entorno virtual
@@ -34,10 +36,11 @@ else
     exit 1
 fi
 
-# Lanzar la aplicación
-echo "Iniciando servidor en local..."
-cd src
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
-
-# Desactivar el entorno virtual al terminar
-deactivate
+echo ""
+echo "✅ Setup completado!"
+echo ""
+echo "Para iniciar el servidor, ejecuta:"
+echo "  ./start_venv.sh"
+echo ""
+echo "Para ejecutar tests:"
+echo "  ./run_tests.sh"
