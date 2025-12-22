@@ -371,6 +371,8 @@
                             <p><a href="/gyms/new">Añade tu primer gimnasio</a> para empezar.</p>
                         </div>
                     `;
+                    // Disable submit button when no gyms
+                    document.getElementById('submitBtn').disabled = true;
                     return;
                 }
                 

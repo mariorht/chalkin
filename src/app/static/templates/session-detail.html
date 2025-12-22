@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sesión activa - Chalkin</title>
+    <title>Sesión - Chalkin</title>
     <style>
         * {
             margin: 0;
@@ -27,6 +27,9 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--light);
             min-height: 100vh;
+        }
+
+        body.active-session {
             padding-bottom: 100px;
         }
 
@@ -51,15 +54,36 @@
             gap: 0.5rem;
         }
 
-        .session-timer {
+        .header-right {
             color: white;
             font-size: 1.1rem;
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
-        .session-timer span {
+        .header-right span {
             color: var(--secondary);
             font-weight: 700;
+        }
+
+        .session-status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .session-status-badge.active {
+            background: var(--success);
+            color: white;
+        }
+
+        .session-status-badge.ended {
+            background: var(--gray);
+            color: white;
         }
 
         .main-container {
@@ -81,17 +105,27 @@
             color: var(--dark);
             font-size: 1.3rem;
             margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .session-meta {
             color: var(--gray);
             font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .session-duration {
+            color: var(--dark);
+            font-size: 0.9rem;
+            font-weight: 500;
         }
 
         /* Stats summary */
         .session-stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
             margin-top: 1rem;
             padding-top: 1rem;
@@ -358,6 +392,86 @@
             padding: 2rem;
             color: var(--gray);
         }
+
+        /* Summary section for ended sessions */
+        .summary-section {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-section h2 {
+            color: var(--dark);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .grade-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .grade-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .grade-row .grade-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 0.7rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .grade-row .grade-info {
+            flex: 1;
+        }
+
+        .grade-row .grade-name {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .grade-row .grade-count {
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        /* Back to dashboard button (for ended sessions) */
+        .back-btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            margin-top: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -365,15 +479,19 @@
         <a href="/dashboard" class="logo">
             <span>🧗</span> Chalkin
         </a>
-        <div class="session-timer">
-            ⏱️ <span id="timer">00:00</span>
+        <div class="header-right" id="headerRight">
+            <span class="session-status-badge active" id="statusBadge">En curso</span>
+            <span id="timerContainer">⏱️ <span id="timer">00:00</span></span>
         </div>
     </header>
 
     <main class="main-container">
         <section class="session-info" id="sessionInfo">
-            <h1 id="gymName">Cargando...</h1>
+            <h1>
+                <span id="gymName">Cargando...</span>
+            </h1>
             <p class="session-meta" id="sessionMeta"></p>
+            <p class="session-duration hidden" id="sessionDuration"></p>
             
             <div class="session-stats">
                 <div class="mini-stat">
@@ -385,9 +503,21 @@
                     <div class="label">Flashes</div>
                 </div>
                 <div class="mini-stat">
+                    <div class="value" id="totalSends">0</div>
+                    <div class="label">Sends</div>
+                </div>
+                <div class="mini-stat">
                     <div class="value" id="maxGrade">-</div>
                     <div class="label">Máx grado</div>
                 </div>
+            </div>
+        </section>
+
+        <!-- Summary section (only for ended sessions) -->
+        <section class="summary-section hidden" id="summarySection">
+            <h2>📊 Resumen por grado</h2>
+            <div class="grade-breakdown" id="gradeBreakdown">
+                <!-- Filled by JS -->
             </div>
         </section>
 
@@ -419,7 +549,7 @@
 
         <section class="ascents-section">
             <div class="ascents-header">
-                <h2>Bloques de hoy</h2>
+                <h2 id="ascentsTitle">Bloques de hoy</h2>
             </div>
             <div id="ascentsList">
                 <div class="empty-ascents">
@@ -427,9 +557,14 @@
                 </div>
             </div>
         </section>
+
+        <!-- Back button (only for ended sessions) -->
+        <a href="/dashboard" class="back-btn hidden" id="backBtn">
+            ← Volver al dashboard
+        </a>
     </main>
 
-    <div class="bottom-bar">
+    <div class="bottom-bar" id="bottomBar">
         <button class="end-session-btn" onclick="endSession()">
             🛑 Terminar sesión
         </button>
@@ -446,14 +581,15 @@
         let selectedGradeId = null;
         let selectedStatus = 'send';
         let startTime = null;
+        let isSessionEnded = false;
 
         if (!token) {
             window.location.href = '/login';
         }
 
-        // Timer
+        // Timer (only for active sessions)
         function updateTimer() {
-            if (!startTime) return;
+            if (!startTime || isSessionEnded) return;
             
             const now = new Date();
             const diff = Math.floor((now - startTime) / 1000);
@@ -483,6 +619,19 @@
             });
         }
 
+        function formatDuration(startedAt, endedAt) {
+            const start = new Date(startedAt);
+            const end = new Date(endedAt);
+            const diff = Math.floor((end - start) / 60000); // minutes
+            const hours = Math.floor(diff / 60);
+            const minutes = diff % 60;
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}min`;
+            }
+            return `${minutes} minutos`;
+        }
+
         async function loadSession() {
             try {
                 const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}`);
@@ -493,14 +642,39 @@
                 
                 session = await response.json();
                 startTime = new Date(session.started_at);
+                isSessionEnded = session.ended_at !== null;
+                
+                // Update UI based on session state
+                if (isSessionEnded) {
+                    showEndedSessionView();
+                } else {
+                    showActiveSessionView();
+                }
                 
                 document.getElementById('gymName').textContent = session.gym_name || 'Sesión de escalada';
-                document.getElementById('sessionMeta').textContent = `${new Date(session.date).toLocaleDateString('es')} • ${session.notes || 'Sin notas'}`;
                 
-                updateTimer();
+                const dateStr = new Date(session.date).toLocaleDateString('es', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                document.getElementById('sessionMeta').textContent = `📍 ${session.gym_name || 'Gimnasio'} • ${dateStr}`;
+                
+                if (session.notes) {
+                    document.getElementById('sessionMeta').textContent += ` • ${session.notes}`;
+                }
+                
+                if (isSessionEnded) {
+                    const duration = formatDuration(session.started_at, session.ended_at);
+                    document.getElementById('sessionDuration').textContent = `⏱️ Duración: ${duration}`;
+                    document.getElementById('sessionDuration').classList.remove('hidden');
+                } else {
+                    updateTimer();
+                }
                 
                 // Load grades for this gym
-                loadGrades(session.gym_id);
+                await loadGrades(session.gym_id);
                 
                 // Load ascents
                 loadAscents();
@@ -509,10 +683,38 @@
             }
         }
 
+        function showActiveSessionView() {
+            document.body.classList.add('active-session');
+            document.getElementById('statusBadge').textContent = '🟢 En curso';
+            document.getElementById('statusBadge').classList.remove('ended');
+            document.getElementById('statusBadge').classList.add('active');
+            document.getElementById('timerContainer').classList.remove('hidden');
+            document.getElementById('gradeSelector').classList.remove('hidden');
+            document.getElementById('bottomBar').classList.remove('hidden');
+            document.getElementById('ascentsTitle').textContent = 'Bloques de hoy';
+            document.getElementById('backBtn').classList.add('hidden');
+            document.getElementById('summarySection').classList.add('hidden');
+        }
+
+        function showEndedSessionView() {
+            document.body.classList.remove('active-session');
+            document.getElementById('statusBadge').textContent = '✓ Completada';
+            document.getElementById('statusBadge').classList.remove('active');
+            document.getElementById('statusBadge').classList.add('ended');
+            document.getElementById('timerContainer').classList.add('hidden');
+            document.getElementById('gradeSelector').classList.add('hidden');
+            document.getElementById('bottomBar').classList.add('hidden');
+            document.getElementById('ascentsTitle').textContent = 'Bloques registrados';
+            document.getElementById('backBtn').classList.remove('hidden');
+            document.getElementById('summarySection').classList.remove('hidden');
+        }
+
         async function loadGrades(gymId) {
             try {
                 const response = await fetch(`${API_URL}/gyms/${gymId}/grades`);
                 grades = await response.json();
+                
+                if (isSessionEnded) return; // Don't render grade selector for ended sessions
                 
                 const container = document.getElementById('gradesGrid');
                 
@@ -550,6 +752,10 @@
                 
                 updateAscentsList();
                 updateStats();
+                
+                if (isSessionEnded) {
+                    updateGradeBreakdown();
+                }
             } catch (error) {
                 console.error('Error loading ascents:', error);
             }
@@ -559,7 +765,7 @@
             const container = document.getElementById('ascentsList');
             
             if (ascents.length === 0) {
-                container.innerHTML = '<div class="empty-ascents">Aún no has registrado ningún bloque</div>';
+                container.innerHTML = '<div class="empty-ascents">No se registraron bloques en esta sesión</div>';
                 return;
             }
             
@@ -573,6 +779,9 @@
                 
                 const time = new Date(ascent.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
                 
+                // Only show delete button for active sessions
+                const deleteBtn = isSessionEnded ? '' : `<button class="ascent-delete" onclick="deleteAscent(${ascent.id})">🗑️</button>`;
+                
                 return `
                     <div class="ascent-item">
                         <div class="ascent-grade" style="background: ${grade.color_hex || '#666'}">
@@ -583,7 +792,7 @@
                             <div class="time">${time}</div>
                         </div>
                         <div class="ascent-status">${statusEmoji}</div>
-                        <button class="ascent-delete" onclick="deleteAscent(${ascent.id})">🗑️</button>
+                        ${deleteBtn}
                     </div>
                 `;
             }).join('');
@@ -592,6 +801,7 @@
         function updateStats() {
             const total = ascents.length;
             const flashes = ascents.filter(a => a.status === 'flash').length;
+            const sends = ascents.filter(a => a.status === 'send' || a.status === 'flash').length;
             
             let maxGradeLabel = '-';
             let maxDifficulty = 0;
@@ -608,10 +818,58 @@
             
             document.getElementById('totalAscents').textContent = total;
             document.getElementById('totalFlashes').textContent = flashes;
+            document.getElementById('totalSends').textContent = sends;
             document.getElementById('maxGrade').textContent = maxGradeLabel;
         }
 
-        // Status buttons
+        function updateGradeBreakdown() {
+            const container = document.getElementById('gradeBreakdown');
+            
+            // Group ascents by grade
+            const gradeMap = new Map();
+            ascents.forEach(ascent => {
+                const gradeId = ascent.grade_id;
+                if (!gradeMap.has(gradeId)) {
+                    gradeMap.set(gradeId, { flash: 0, send: 0, project: 0 });
+                }
+                gradeMap.get(gradeId)[ascent.status]++;
+            });
+            
+            if (gradeMap.size === 0) {
+                container.innerHTML = '<p style="color: var(--gray);">No hay bloques registrados</p>';
+                return;
+            }
+            
+            // Sort grades by difficulty
+            const sortedGrades = Array.from(gradeMap.entries())
+                .map(([gradeId, counts]) => {
+                    const grade = grades.find(g => g.id === gradeId) || {};
+                    return { grade, counts };
+                })
+                .sort((a, b) => (b.grade.relative_difficulty || 0) - (a.grade.relative_difficulty || 0));
+            
+            container.innerHTML = sortedGrades.map(({ grade, counts }) => {
+                const total = counts.flash + counts.send + counts.project;
+                let details = [];
+                if (counts.flash > 0) details.push(`${counts.flash} ⚡`);
+                if (counts.send > 0) details.push(`${counts.send} ✅`);
+                if (counts.project > 0) details.push(`${counts.project} 🔄`);
+                
+                return `
+                    <div class="grade-row">
+                        <div class="grade-color" style="background: ${grade.color_hex || '#666'}">
+                            ${grade.label || '?'}
+                        </div>
+                        <div class="grade-info">
+                            <div class="grade-name">${grade.label || 'Grado'}</div>
+                            <div class="grade-count">${total} bloque${total !== 1 ? 's' : ''} • ${details.join(' ')}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Status buttons (only for active sessions)
         document.querySelectorAll('.status-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('selected'));
@@ -628,7 +886,7 @@
         }
 
         document.getElementById('addAscentBtn').addEventListener('click', async () => {
-            if (!selectedGradeId) return;
+            if (!selectedGradeId || isSessionEnded) return;
             
             try {
                 const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}/ascents`, {
@@ -655,6 +913,7 @@
         });
 
         async function deleteAscent(ascentId) {
+            if (isSessionEnded) return;
             if (!confirm('¿Eliminar este bloque?')) return;
             
             try {
@@ -668,6 +927,7 @@
         }
 
         async function endSession() {
+            if (isSessionEnded) return;
             if (!confirm('¿Terminar la sesión de hoy?')) return;
             
             try {

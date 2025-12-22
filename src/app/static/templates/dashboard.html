@@ -246,6 +246,9 @@
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid #F3F4F6;
             transition: background 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
         }
 
         .session-item:last-child {
@@ -254,6 +257,27 @@
 
         .session-item:hover {
             background: #F9FAFB;
+        }
+
+        .session-item.active {
+            background: rgba(34, 197, 94, 0.05);
+            border-left: 4px solid var(--success);
+        }
+
+        .active-badge {
+            background: var(--success);
+            color: white;
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         .session-date {
@@ -575,22 +599,26 @@
                     const date = new Date(session.date);
                     const day = date.getDate();
                     const month = date.toLocaleDateString('es', { month: 'short' });
+                    const isActive = !session.ended_at;
                     
                     return `
-                        <div class="session-item">
+                        <a href="/sessions/${session.id}" class="session-item ${isActive ? 'active' : ''}">
                             <div class="session-date">
                                 <div class="day">${day}</div>
                                 <div class="month">${month}</div>
                             </div>
                             <div class="session-info">
-                                <div class="session-gym">${session.gym_name || 'Gimnasio'}</div>
+                                <div class="session-gym">
+                                    ${session.gym_name || 'Gimnasio'}
+                                    ${isActive ? '<span class="active-badge">🟢 En curso</span>' : ''}
+                                </div>
                                 <div class="session-stats">
                                     <span>🪨 ${session.total_ascents || 0} bloques</span>
                                     <span>⚡ ${session.flashes || 0} flashes</span>
                                 </div>
                             </div>
                             ${session.max_grade_label ? `<div class="session-grade">${session.max_grade_label}</div>` : ''}
-                        </div>
+                        </a>
                     `;
                 }).join('');
             } catch (error) {
