@@ -10,7 +10,7 @@ fi
 
 # Run the tests
 echo "Running tests..."
-python3 -m pytest tests
+python3 -m pytest tests -v --tb=short
 
 # Deactivate the virtual environment after running the tests
 if [ -d "venv" ]; then

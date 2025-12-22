@@ -1,9 +1,14 @@
-# FastAPI Project Template
+# Chalkin - Boulder Climbing Tracker 🧗
 
-![example workflow](https://github.com/mariorht/fastapi_template/actions/workflows/run-tests.yml/badge.svg)
+Track your climbing sessions, log boulder ascents, and monitor your progress. Like Strava, but for climbers.
 
+## Features
 
-**FastAPI Project Template** is a base structure for creating applications using FastAPI. It supports running either in a virtual environment or in Docker containers and provides examples of routing and static file handling.
+- 🏠 **Multi-gym support** - Track across different climbing gyms
+- 🎨 **Flexible grading** - Colors, V-scale, Font scale, or custom
+- 📊 **Progress tracking** - Weekly stats, grade distribution, PRs
+- 📸 **Photo logging** - Optional photos for your sends
+- 🔄 **Grade comparison** - Compare difficulty across gyms
 
 ---
 
@@ -13,101 +18,205 @@
 .
 ├── README.md                # Project documentation
 ├── docker-compose.yml       # Docker Compose configuration
-├── setup_venv.sh            # Script to set up and run the virtual environment
-├── src/                     # Project source code
+├── src/
 │   ├── Dockerfile           # Docker configuration for the backend
+│   ├── alembic/             # Database migrations
+│   │   ├── versions/        # Migration files
+│   │   └── env.py           # Alembic config
 │   ├── app/
 │   │   ├── main.py          # FastAPI server entry point
-│   │   ├── routers/
-│   │   │   ├── __init__.py  # Routes package initializer
-│   │   │   └── hello.py     # Example route
+│   │   ├── core/            # Config, security, dependencies
+│   │   ├── db/              # Database setup
+│   │   ├── models/          # SQLAlchemy models
+│   │   ├── routers/         # API endpoints
+│   │   ├── schemas/         # Pydantic schemas
 │   │   └── static/          # Static files and HTML templates
-│   │       ├── scripts.js   # JavaScript for the frontend
-│   │       └── templates/
-│   │           ├── hello.html # "Hello" example page
-│   │           └── index.html # Homepage
 │   └── requirements.txt     # Python dependencies
-├── start_docker.sh          # Script to launch Docker Compose
+├── tests/                   # Test suite
 └── start_venv.sh            # Script to run the virtual environment
 ```
 
 ---
 
-## Setup
+## Quick Start
 
-### Running in a Virtual Environment (Without Docker)
+### 1. Setup Environment
 
-1. **Prerequisites:**
-   - Ensure **Python 3.9** or higher is installed.
+```bash
+cd src
 
-2. **Use the `start_venv.sh` Script:**
+# Create virtual environment
+python -m venv venv
 
-   From the project's root directory, execute:
+# Activate (Windows)
+.\venv\Scripts\activate
 
-   ```bash
-   ./setup_venv.sh
-   ```
+# Activate (Unix/Mac)
+source venv/bin/activate
 
-   This script:
-   - Creates and activates a virtual environment.
-   - Installs dependencies from `src/requirements.txt`.
-   - Starts the FastAPI server at `http://127.0.0.1:8001`.
+# Install dependencies
+pip install -r requirements.txt
+```
 
-3. **Access the Application:**
+### 2. Configure
 
-   - Open your browser at `http://127.0.0.1:8001` to see the homepage (`index.html`).
-   - Navigate to `/hello` to view the basic "Hello" example.
+```bash
+# Copy environment template
+cp .env.example .env
 
-4. **Stop the Server:**
+# Edit .env with your settings (especially SECRET_KEY for production!)
+```
 
-   Press `Ctrl + C` in the terminal to stop the server.
+### 3. Database Migration
+
+```bash
+# Run migrations to create database
+alembic upgrade head
+```
+
+### 4. Run the Server
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Visit:
+- **API Docs**: http://localhost:8000/docs
+- **Web App**: http://localhost:8000
 
 ---
 
-### Running with Docker
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Create account
+- `POST /api/auth/login` - Get JWT token
+- `GET /api/auth/me` - Get profile
+
+### Gyms
+- `GET /api/gyms` - List gyms
+- `POST /api/gyms` - Create gym
+- `GET /api/gyms/{id}` - Get gym with grades
+- `GET /api/gyms/{id}/grades` - Get gym's grade scale
+
+### Sessions (Check-in)
+- `GET /api/sessions` - List my sessions
+- `POST /api/sessions` - Start session (check-in)
+- `GET /api/sessions/{id}` - Get session with ascents
+- `POST /api/sessions/{id}/end` - End session
+
+### Ascents (The core action!)
+- `POST /api/sessions/{id}/ascents` - Log a boulder
+- `PATCH /api/ascents/{id}` - Update ascent
+- `DELETE /api/ascents/{id}` - Remove ascent
+
+### Stats (The Strava magic 🪄)
+- `GET /api/stats/me` - Full statistics
+- `GET /api/stats/summary` - Quick dashboard summary
+
+---
+
+## Database Migrations
+
+Using Alembic for version control:
+
+```bash
+# Create a new migration after model changes
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
+alembic upgrade head
+
+# Rollback one version
+alembic downgrade -1
+
+# See current version
+alembic current
+
+# See history
+alembic history
+```
+
+---
+
+## Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# With coverage
+pytest --cov=app
+
+# Specific test file
+pytest tests/test_sessions.py -v
+```
+
+Or use the provided script:
+
+```bash
+./run_tests.sh
+```
+
+---
+
+## Grading System
+
+The `relative_difficulty` field (0-15) allows comparing grades across gyms:
+
+| relative_difficulty | V-Scale | Font | Colors (typical) |
+|---------------------|---------|------|------------------|
+| 1-2                 | V0-V1   | 4-5  | Green/Yellow     |
+| 3-4                 | V2-V3   | 5+-6A| Blue             |
+| 5-6                 | V4-V5   | 6B-6C| Red              |
+| 7-8                 | V6-V7   | 7A   | Black            |
+| 9-10                | V8-V9   | 7B-7C| White/Pink       |
+| 11+                 | V10+    | 8A+  | Pro circuit      |
+
+---
+
+## Running with Docker
 
 1. **Prerequisites:**
    - Ensure **Docker** and **Docker Compose** are installed.
 
 2. **Use the `start_docker.sh` Script:**
 
-   From the project's root directory, execute:
-
    ```bash
    ./start_docker.sh
    ```
 
-   This script automates the steps above:
-   - Builds the Docker image.
-   - Starts the container using `docker-compose`.
-
-4. **Access the Application:**
+3. **Access the Application:**
 
    Open your browser at `http://localhost:8001`.
 
-5. **Stop the Project:**
+4. **Stop the Project:**
 
-   To stop and remove containers, you can either:
-   - Run the command:
-     ```bash
-     docker-compose down
-     ```
-   - Or stop the Docker Compose process started by `start_docker.sh` by pressing `Ctrl + C` in the terminal.
+   ```bash
+   docker-compose down
+   ```
 
 ---
 
-## Running Tests
-
-To run the tests, you can use the provided script:
-
-```bash
-./run_tests.sh
-```
-
 ## Technologies Used
 
-- **Backend:** FastAPI
+- **Backend:** FastAPI, SQLAlchemy, Alembic
+- **Database:** SQLite (easily swappable to PostgreSQL)
+- **Auth:** JWT with passlib/bcrypt
 - **Frontend:** HTML and JavaScript (served as static files)
 - **Containerization:** Docker and Docker Compose
 - **Tests:** pytest
+
+---
+
+## Next Steps
+
+- [ ] Frontend web app (React/Vue)
+- [ ] Photo upload to S3/local storage
+- [ ] Social features (follow climbers, feed)
+- [ ] Gym admin panel
+- [ ] Mobile app (React Native)
+
+---
+¡A escalar! 🧗‍♂️
 
