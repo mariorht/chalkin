@@ -97,6 +97,12 @@ def serve_session_detail(session_id: int):
     return os.path.join(template_dir, "session-detail.html")
 
 
+@app.get("/gyms/edit", response_class=FileResponse)
+def serve_gym_edit():
+    """Serve the gym edit page."""
+    return os.path.join(template_dir, "gym-edit.html")
+
+
 @app.get("/gyms", response_class=FileResponse)
 def serve_gyms_list():
     """Serve the gyms list page."""
