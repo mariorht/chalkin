@@ -781,8 +781,8 @@
         }
 
         function selectGym(gymId) {
-            // Navigate to start session with this gym
-            window.location.href = `/sessions/new?gym=${gymId}`;
+            // Navigate to gym edit page
+            window.location.href = `/gyms/edit?id=${gymId}`;
         }
 
         async function loadFriendRequests() {

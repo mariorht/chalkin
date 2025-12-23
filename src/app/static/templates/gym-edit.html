@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Añadir Gimnasio - Chalkin</title>
+    <title>Editar Gimnasio - Chalkin</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -85,6 +85,9 @@
 
         .page-header {
             margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
         }
 
         .page-header h1 {
@@ -95,6 +98,22 @@
 
         .page-header p {
             color: var(--gray);
+        }
+
+        .btn-delete {
+            background: transparent;
+            border: 2px solid var(--error);
+            color: var(--error);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-delete:hover {
+            background: var(--error);
+            color: white;
         }
 
         .card {
@@ -350,27 +369,25 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Predefined colors */
-        .predefined-grades {
+        /* Loading state */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
             display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
         }
 
-        .preset-btn {
-            padding: 0.5rem 1rem;
-            border: 1px solid #E5E7EB;
-            border-radius: 20px;
-            background: white;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .preset-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
+        .loading-overlay .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #E5E7EB;
+            border-top-color: var(--primary);
         }
 
         @media (max-width: 600px) {
@@ -384,6 +401,11 @@
 
             .form-actions {
                 flex-direction: column;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 1rem;
             }
         }
 
@@ -491,11 +513,83 @@
         .search-result-item:last-child {
             border-bottom: none;
         }
+
+        /* Delete Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal h3 {
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .modal p {
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .modal-actions button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel {
+            background: var(--light);
+            border: none;
+            color: var(--dark);
+        }
+
+        .btn-confirm-delete {
+            background: var(--error);
+            border: none;
+            color: white;
+        }
+
+        .btn-confirm-delete:hover {
+            background: #dc2626;
+        }
     </style>
 </head>
 <body>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
     <header>
-        <a href="/" class="logo">
+        <a href="/dashboard" class="logo">
             <span>🧗</span> Chalkin
         </a>
         <div class="user-menu">
@@ -506,8 +600,11 @@
 
     <main class="main-container">
         <div class="page-header">
-            <h1>🏠 Añadir nuevo gimnasio</h1>
-            <p>Añade un rocódromo con su sistema de grados personalizado</p>
+            <div>
+                <h1>✏️ Editar gimnasio</h1>
+                <p>Modifica la información del rocódromo</p>
+            </div>
+            <button class="btn-delete" onclick="showDeleteModal()">🗑️ Eliminar</button>
         </div>
 
         <div class="card">
@@ -526,8 +623,8 @@
                         <label for="grading_system_type">Sistema de grados *</label>
                         <select id="grading_system_type" name="grading_system_type" required>
                             <option value="colors">Colores</option>
-                            <option value="v_scale">V-Scale (V0-V17)</option>
-                            <option value="font">Font (4-9A)</option>
+                            <option value="v-scale">V-Scale (V0-V17)</option>
+                            <option value="font-scale">Font (4-9A)</option>
                             <option value="circuit">Circuitos numerados</option>
                             <option value="custom">Personalizado</option>
                         </select>
@@ -551,22 +648,11 @@
                         <input type="hidden" id="latitude" name="latitude">
                         <input type="hidden" id="longitude" name="longitude">
                     </div>
-
-                    <div class="form-group">
-                        <label for="description">Descripción (opcional)</label>
-                        <textarea id="description" name="description" placeholder="Notas sobre el gimnasio, horarios, etc."></textarea>
-                    </div>
                 </div>
 
                 <div class="form-section">
                     <h2>Escala de grados</h2>
                     <p class="hint" style="margin-bottom: 1rem;">Define los grados disponibles en este gimnasio. La dificultad relativa (1-15) permite comparar entre gimnasios.</p>
-
-                    <div class="predefined-grades">
-                        <button type="button" class="preset-btn" onclick="loadPreset('basic')">🎨 Básico (5 colores)</button>
-                        <button type="button" class="preset-btn" onclick="loadPreset('extended')">🌈 Extendido (8 colores)</button>
-                        <button type="button" class="preset-btn" onclick="loadPreset('vscale')">🔢 V-Scale</button>
-                    </div>
 
                     <div class="grades-section">
                         <div class="grades-header">
@@ -582,18 +668,30 @@
                         </div>
 
                         <div id="gradesList">
-                            <!-- Grades will be added here -->
+                            <!-- Grades will be loaded here -->
                         </div>
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="window.history.back()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="submitBtn">Crear gimnasio</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/dashboard'">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Guardar cambios</button>
                 </div>
             </form>
         </div>
     </main>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal">
+            <h3>🗑️ ¿Eliminar gimnasio?</h3>
+            <p>Esta acción no se puede deshacer. Se eliminarán también todos los grados asociados.</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideDeleteModal()">Cancelar</button>
+                <button class="btn-confirm-delete" onclick="deleteGym()">Eliminar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Leaflet JS (must be before our script) -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -602,6 +700,16 @@
         const API_URL = '/api';
         let token = localStorage.getItem('token');
         let gradeCounter = 0;
+        let gymId = null;
+        let existingGrades = [];
+
+        // Get gym ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        gymId = urlParams.get('id');
+
+        if (!gymId) {
+            window.location.href = '/dashboard';
+        }
 
         // Check auth
         if (!token) {
@@ -626,56 +734,46 @@
             window.location.href = '/login';
         }
 
-        const presets = {
-            basic: [
-                { color: '#22C55E', label: 'Verde', difficulty: 2 },
-                { color: '#3B82F6', label: 'Azul', difficulty: 4 },
-                { color: '#EAB308', label: 'Amarillo', difficulty: 5 },
-                { color: '#EF4444', label: 'Rojo', difficulty: 7 },
-                { color: '#1F2937', label: 'Negro', difficulty: 9 },
-            ],
-            extended: [
-                { color: '#FFFFFF', label: 'Blanco', difficulty: 1 },
-                { color: '#22C55E', label: 'Verde', difficulty: 2 },
-                { color: '#3B82F6', label: 'Azul', difficulty: 3 },
-                { color: '#EAB308', label: 'Amarillo', difficulty: 5 },
-                { color: '#F97316', label: 'Naranja', difficulty: 6 },
-                { color: '#EF4444', label: 'Rojo', difficulty: 7 },
-                { color: '#1F2937', label: 'Negro', difficulty: 9 },
-                { color: '#EC4899', label: 'Rosa', difficulty: 11 },
-            ],
-            vscale: [
-                { color: '#22C55E', label: 'V0-V1', difficulty: 1 },
-                { color: '#3B82F6', label: 'V2-V3', difficulty: 3 },
-                { color: '#EAB308', label: 'V4-V5', difficulty: 5 },
-                { color: '#F97316', label: 'V6-V7', difficulty: 7 },
-                { color: '#EF4444', label: 'V8-V9', difficulty: 9 },
-                { color: '#1F2937', label: 'V10+', difficulty: 11 },
-            ]
-        };
-
-        function loadPreset(name) {
-            const preset = presets[name];
-            if (!preset) return;
-
-            document.getElementById('gradesList').innerHTML = '';
-            gradeCounter = 0;
-
-            preset.forEach((grade, index) => {
-                addGrade(grade.color, grade.label, grade.difficulty);
-            });
+        function showDeleteModal() {
+            document.getElementById('deleteModal').classList.add('show');
         }
 
-        function addGrade(color = '#3B82F6', label = '', difficulty = 5) {
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+        }
+
+        async function deleteGym() {
+            try {
+                const response = await fetch(`${API_URL}/gyms/${gymId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok || response.status === 204) {
+                    window.location.href = '/dashboard';
+                } else {
+                    const error = await response.json();
+                    showAlert(error.detail || 'Error al eliminar el gimnasio');
+                    hideDeleteModal();
+                }
+            } catch (error) {
+                showAlert('Error al eliminar el gimnasio');
+                hideDeleteModal();
+            }
+        }
+
+        function addGrade(color = '#3B82F6', label = '', difficulty = 5, gradeId = null) {
             const gradesList = document.getElementById('gradesList');
-            const gradeId = gradeCounter++;
+            const localId = gradeCounter++;
 
             const gradeHTML = `
-                <div class="grade-item" id="grade-${gradeId}">
-                    <input type="color" class="grade-color-picker" name="grade_color_${gradeId}" value="${color}">
-                    <input type="text" name="grade_label_${gradeId}" placeholder="Nombre del grado" value="${label}" required>
-                    <input type="number" class="grade-difficulty" name="grade_difficulty_${gradeId}" min="1" max="15" value="${difficulty}" placeholder="1-15" required>
-                    <button type="button" class="btn-remove-grade" onclick="removeGrade(${gradeId})">✕</button>
+                <div class="grade-item" id="grade-${localId}" data-grade-id="${gradeId || ''}">
+                    <input type="color" class="grade-color-picker" name="grade_color_${localId}" value="${color}">
+                    <input type="text" name="grade_label_${localId}" placeholder="Nombre del grado" value="${label}" required>
+                    <input type="number" class="grade-difficulty" name="grade_difficulty_${localId}" min="1" max="15" value="${difficulty}" placeholder="1-15" required>
+                    <button type="button" class="btn-remove-grade" onclick="removeGrade(${localId})">✕</button>
                 </div>
             `;
 
@@ -697,9 +795,11 @@
                 const color = item.querySelector('input[type="color"]').value;
                 const label = item.querySelector('input[type="text"]').value;
                 const difficulty = parseInt(item.querySelector('input[type="number"]').value);
+                const existingId = item.dataset.gradeId;
 
                 if (label) {
                     grades.push({
+                        id: existingId ? parseInt(existingId) : null,
                         label,
                         color_hex: color,
                         relative_difficulty: difficulty,
@@ -726,15 +826,69 @@
             const btn = document.getElementById('submitBtn');
             if (loading) {
                 btn.disabled = true;
-                btn.innerHTML = '<span class="spinner"></span>Creando...';
+                btn.innerHTML = '<span class="spinner"></span>Guardando...';
             } else {
                 btn.disabled = false;
-                btn.textContent = 'Crear gimnasio';
+                btn.textContent = 'Guardar cambios';
             }
         }
 
-        // Load default grades
-        loadPreset('basic');
+        function hideLoadingOverlay() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // Load gym data
+        async function loadGym() {
+            try {
+                const response = await fetch(`${API_URL}/gyms/${gymId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        showAlert('Gimnasio no encontrado');
+                        setTimeout(() => window.location.href = '/dashboard', 2000);
+                        return;
+                    }
+                    throw new Error('Error loading gym');
+                }
+
+                const gym = await response.json();
+
+                // Fill form
+                document.getElementById('name').value = gym.name;
+                document.getElementById('grading_system_type').value = gym.grading_system_type;
+                
+                if (gym.location) {
+                    document.getElementById('location').value = gym.location;
+                }
+                
+                if (gym.latitude && gym.longitude) {
+                    document.getElementById('latitude').value = gym.latitude;
+                    document.getElementById('longitude').value = gym.longitude;
+                }
+
+                // Load grades
+                existingGrades = gym.grades || [];
+                if (existingGrades.length > 0) {
+                    existingGrades.sort((a, b) => a.order - b.order);
+                    existingGrades.forEach(grade => {
+                        addGrade(grade.color_hex, grade.label, grade.relative_difficulty, grade.id);
+                    });
+                }
+
+                // Initialize map after loading data
+                initMap(gym.latitude, gym.longitude, gym.location);
+                hideLoadingOverlay();
+
+            } catch (error) {
+                console.error('Error loading gym:', error);
+                showAlert('Error al cargar el gimnasio');
+                hideLoadingOverlay();
+            }
+        }
 
         // Form submit
         document.getElementById('gymForm').addEventListener('submit', async (e) => {
@@ -758,9 +912,9 @@
             };
 
             try {
-                // Create gym
-                const gymResponse = await fetch(`${API_URL}/gyms`, {
-                    method: 'POST',
+                // Update gym
+                const gymResponse = await fetch(`${API_URL}/gyms/${gymId}`, {
+                    method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
@@ -770,12 +924,21 @@
 
                 if (!gymResponse.ok) {
                     const error = await gymResponse.json();
-                    throw new Error(error.detail || 'Error al crear el gimnasio');
+                    throw new Error(error.detail || 'Error al actualizar el gimnasio');
                 }
 
-                const gym = await gymResponse.json();
+                // Update grades - delete existing and create new ones
+                // First delete all existing grades
+                for (const grade of existingGrades) {
+                    await fetch(`${API_URL}/grades/${grade.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                }
 
-                // Create grades
+                // Create new grades
                 const gradesResponse = await fetch(`${API_URL}/grades/bulk`, {
                     method: 'POST',
                     headers: {
@@ -783,17 +946,17 @@
                         'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
-                        gym_id: gym.id,
+                        gym_id: parseInt(gymId),
                         grades: grades
                     })
                 });
 
                 if (!gradesResponse.ok) {
                     const error = await gradesResponse.json();
-                    throw new Error(error.detail || 'Error al crear los grados');
+                    throw new Error(error.detail || 'Error al actualizar los grados');
                 }
 
-                showAlert('¡Gimnasio creado correctamente!', 'success');
+                showAlert('¡Gimnasio actualizado correctamente!', 'success');
 
                 setTimeout(() => {
                     window.location.href = '/dashboard';
@@ -807,25 +970,31 @@
         });
 
         // ==================== MAP FUNCTIONALITY ====================
-        // Leaflet Map
         let map;
         let marker;
 
-        // Initialize map
-        function initMap() {
+        function initMap(existingLat = null, existingLng = null, existingLocation = null) {
             // Default center (Spain)
-            const defaultLat = 40.4168;
-            const defaultLng = -3.7038;
+            const defaultLat = existingLat || 40.4168;
+            const defaultLng = existingLng || -3.7038;
+            const defaultZoom = existingLat ? 15 : 6;
             
-            map = L.map('map').setView([defaultLat, defaultLng], 6);
+            map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
             
             // Add OpenStreetMap tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
             
-            // Try to get user's location
-            if (navigator.geolocation) {
+            // If there's existing coordinates, place marker
+            if (existingLat && existingLng) {
+                placeMarker(existingLat, existingLng);
+                if (existingLocation) {
+                    document.getElementById('selectedAddress').textContent = existingLocation;
+                    document.getElementById('coordsDisplay').style.display = 'flex';
+                }
+            } else if (navigator.geolocation) {
+                // Try to get user's location
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         map.setView([position.coords.latitude, position.coords.longitude], 13);
@@ -858,7 +1027,6 @@
             }
             
             updateCoords(lat, lng);
-            map.setView([lat, lng], 15);
         }
 
         function updateCoords(lat, lng) {
@@ -908,6 +1076,7 @@
             document.getElementById('location').value = displayName.split(',').slice(0, 3).join(',');
             document.getElementById('selectedAddress').textContent = displayName.split(',').slice(0, 2).join(',');
             placeMarker(lat, lng);
+            map.setView([lat, lng], 15);
         }
 
         async function reverseGeocode(lat, lng) {
@@ -944,8 +1113,8 @@
             }
         });
 
-        // Initialize map when DOM is ready
-        initMap();
+        // Load gym data when page loads
+        loadGym();
     </script>
 </body>
 </html>
