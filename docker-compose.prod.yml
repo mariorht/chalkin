@@ -1,0 +1,41 @@
+services:
+  api:
+    build: ./src
+    container_name: chalkin_api
+    environment:
+      # App Settings
+      - APP_NAME=${APP_NAME:-Chalkin}
+      - APP_VERSION=${APP_VERSION:-0.1.0}
+      - DEBUG=false
+      # Database
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./chalkin.db}
+      # JWT Auth (SECRET_KEY es OBLIGATORIO en producción)
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-10080}
+      # File Uploads
+      - UPLOAD_DIR=${UPLOAD_DIR:-uploads}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-5242880}
+    volumes:
+      - chalkin_data:/app/data
+    restart: unless-stopped
+    # No exponemos puertos directamente, nginx hace de proxy
+    expose:
+      - "8001"
+
+  nginx:
+    image: nginx:alpine
+    container_name: chalkin_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Para SSL (descomentar cuando tengas certificados)
+      # - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  chalkin_data:

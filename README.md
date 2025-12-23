@@ -249,54 +249,214 @@ The `relative_difficulty` field (0-15) allows comparing grades across gyms:
 
 ---
 
-## 🚀 Production Deployment (Docker)
+## 🚀 Deployment Guide
 
-### 1. Configure Environment
+### Archivos de configuración
+
+| Archivo | Propósito | ¿En Git? |
+|---------|-----------|----------|
+| `docker-compose.yml` | Desarrollo local con Docker | ✅ Sí |
+| `docker-compose.prod.yml` | Producción con Nginx | ✅ Sí |
+| `nginx/nginx.conf` | Configuración reverse proxy | ✅ Sí |
+| `.env.example` | Plantilla de variables | ✅ Sí |
+| `.env` | Variables reales (secretos) | ❌ No |
+| `nginx/ssl/` | Certificados SSL | ❌ No |
+
+### Variables de entorno
+
+| Variable | Descripción | Default | ¿Obligatoria en prod? |
+|----------|-------------|---------|----------------------|
+| `SECRET_KEY` | Clave para firmar JWT | - | ⚠️ **SÍ** |
+| `DEBUG` | Modo debug | `true` | No (usar `false`) |
+| `DATABASE_URL` | URL de la BD | `sqlite:///./chalkin.db` | No |
+| `ALGORITHM` | Algoritmo JWT | `HS256` | No |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiración token | `10080` (1 semana) | No |
+| `APP_NAME` | Nombre app | `Chalkin` | No |
+| `APP_VERSION` | Versión | `0.1.0` | No |
+
+---
+
+## 🖥️ Desarrollo Local (Docker)
+
+Para desarrollo rápido con hot-reload:
 
 ```bash
-cp src/.env.example src/.env
-nano src/.env
-```
+# 1. Clonar y entrar
+git clone https://github.com/tu-usuario/chalkin.git
+cd chalkin
 
-**Cambios importantes para producción:**
+# 2. (Opcional) Crear .env o usar defaults
+cp .env.example .env
 
-```dotenv
-# OBLIGATORIO: genera con 'openssl rand -hex 32'
-SECRET_KEY=tu-clave-secreta-segura-de-64-caracteres
-
-DEBUG=false
-```
-
-### 2. Build y Run
-
-```bash
-# Construir y arrancar
+# 3. Arrancar
 docker-compose up -d --build
 
-# Ver logs
+# 4. Crear tablas
+docker-compose exec api alembic upgrade head
+
+# 5. Ver logs
 docker-compose logs -f
-
-# Ejecutar migraciones (crear tablas)
-docker-compose exec api alembic upgrade head
 ```
 
-### 3. Acceso
+**Acceso:** http://localhost:8001
 
-- **API Docs**: http://localhost:8001/docs
-- **Web App**: http://localhost:8001
+---
 
-### 4. Mantenimiento
+## 🌐 Producción (VPS/Cloud)
+
+### Flujo de trabajo completo
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  TU MÁQUINA LOCAL                                           │
+│  ─────────────────                                          │
+│  1. Desarrollas código                                      │
+│  2. git commit && git push                                  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  SERVIDOR DE PRODUCCIÓN (VPS, EC2, DigitalOcean...)        │
+│  ───────────────────────────────────────────────────────    │
+│  1. git pull                                                │
+│  2. docker-compose -f docker-compose.prod.yml up -d --build│
+│  3. docker-compose exec api alembic upgrade head           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Paso 1: Preparar el servidor
 
 ```bash
-# Parar
-docker-compose down
+# Conectar al servidor
+ssh usuario@tu-servidor.com
 
+
+### Paso 2: Clonar el proyecto
+
+```bash
+# Clonar repositorio
+git clone https://github.com/tu-usuario/chalkin.git
+cd chalkin
+```
+
+### Paso 3: Configurar variables de entorno
+
+```bash
+# Generar SECRET_KEY segura
+SECRET_KEY=$(openssl rand -hex 32)
+
+# Crear archivo .env
+cat > .env << EOF
+SECRET_KEY=$SECRET_KEY
+DEBUG=false
+DATABASE_URL=sqlite:///./chalkin.db
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+EOF
+
+# Verificar
+cat .env
+```
+
+### Paso 4: Desplegar
+
+```bash
+# Construir y arrancar (primera vez)
+docker-compose -f docker-compose.prod.yml up -d --build
+
+# Ejecutar migraciones
+docker-compose -f docker-compose.prod.yml exec api alembic upgrade head
+
+# Verificar que todo funciona
+docker-compose -f docker-compose.prod.yml ps
+docker-compose -f docker-compose.prod.yml logs -f
+```
+
+**Acceso:** http://tu-servidor.com (puerto 80)
+
+### Paso 5: Configurar SSL (HTTPS)
+
+```bash
+# Instalar certbot
+sudo apt install certbot
+
+# Parar nginx temporalmente
+docker-compose -f docker-compose.prod.yml stop nginx
+
+# Obtener certificado (reemplaza tu-dominio.com)
+sudo certbot certonly --standalone -d tu-dominio.com
+
+# Copiar certificados al proyecto
+mkdir -p nginx/ssl
+sudo cp /etc/letsencrypt/live/tu-dominio.com/fullchain.pem nginx/ssl/
+sudo cp /etc/letsencrypt/live/tu-dominio.com/privkey.pem nginx/ssl/
+sudo chown -R $USER:$USER nginx/ssl
+```
+
+Editar `nginx/nginx.conf` para habilitar HTTPS (descomentar sección SSL) y reiniciar:
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+---
+
+## 🔄 Actualizar en Producción
+
+Cuando hagas cambios en el código:
+
+```bash
+# En tu máquina local
+git add .
+git commit -m "feat: nueva funcionalidad"
+git push origin main
+
+# En el servidor
+ssh usuario@tu-servidor.com
+cd chalkin
+git pull origin main
+docker-compose -f docker-compose.prod.yml up -d --build
+docker-compose -f docker-compose.prod.yml exec api alembic upgrade head
+```
+
+---
+
+## 🛡️ Comandos de Mantenimiento
+
+```bash
+# Ver estado
+docker-compose -f docker-compose.prod.yml ps
+
+# Ver logs en tiempo real
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Ver logs solo de la API
+docker-compose -f docker-compose.prod.yml logs -f api
+
+# Reiniciar todo
+docker-compose -f docker-compose.prod.yml restart
+
+# Reiniciar solo nginx (después de cambiar config)
+docker-compose -f docker-compose.prod.yml restart nginx
+
+# Parar todo
+docker-compose -f docker-compose.prod.yml down
+
+# Parar y eliminar volúmenes (¡BORRA LA BD!)
+docker-compose -f docker-compose.prod.yml down -v
+```
+
+---
+
+## 💾 Backups
+
+```bash
 # Backup de la base de datos
-docker cp chalkin_api:/app/chalkin.db ./backup.db
+docker cp chalkin_api:/app/chalkin.db ./backup-$(date +%Y%m%d).db
 
-# Actualizar después de cambios
-docker-compose up -d --build
-docker-compose exec api alembic upgrade head
+# Restaurar backup
+docker cp ./backup-20231223.db chalkin_api:/app/chalkin.db
+docker-compose -f docker-compose.prod.yml restart api
 ```
 
 ---
