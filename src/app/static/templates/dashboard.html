@@ -428,6 +428,99 @@
                 margin-top: 0.5rem;
             }
         }
+
+        /* Friend Requests Styles */
+        .friend-requests-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            color: white;
+        }
+
+        .friend-requests-card .section-header {
+            margin-bottom: 1rem;
+        }
+
+        .friend-requests-card .section-header h2 {
+            color: white;
+        }
+
+        .friend-requests-card .section-header a {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .friend-requests-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .friend-request-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.15);
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .friend-request-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .friend-avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .friend-request-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .friend-request-actions button {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .friend-request-actions button:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-accept {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-reject {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .nav-badge {
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            margin-left: 4px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -483,6 +576,17 @@
             <a href="/gyms/new" class="btn btn-secondary">
                 <span>🏠</span> Añadir gimnasio
             </a>
+        </section>
+
+        <!-- Friend Requests Section -->
+        <section id="friendRequestsSection" style="display: none; margin-bottom: 2rem;">
+            <div class="friend-requests-card">
+                <div class="section-header">
+                    <h2>👥 Solicitudes de amistad</h2>
+                    <a href="/friends">Ver todas</a>
+                </div>
+                <div id="friendRequestsList" class="friend-requests-list"></div>
+            </div>
         </section>
 
         <section>
@@ -681,10 +785,112 @@
             window.location.href = `/sessions/new?gym=${gymId}`;
         }
 
+        async function loadFriendRequests() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/social/friends/requests`);
+                if (!response || !response.ok) return;
+                
+                const requests = await response.json();
+                
+                // Update nav badge
+                const friendsLink = document.querySelector('a[href="/friends"]');
+                if (requests.length > 0 && friendsLink) {
+                    friendsLink.innerHTML = `Amigos <span class="nav-badge">${requests.length}</span>`;
+                }
+                
+                // Show section if there are requests
+                if (requests.length === 0) return;
+                
+                const section = document.getElementById('friendRequestsSection');
+                const container = document.getElementById('friendRequestsList');
+                
+                section.style.display = 'block';
+                
+                container.innerHTML = requests.slice(0, 3).map(req => `
+                    <div class="friend-request-item" id="request-${req.id}">
+                        <div class="friend-request-info">
+                            <div class="friend-avatar">${req.user_username.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <strong>${req.user_username}</strong>
+                                <div style="font-size: 0.8rem; opacity: 0.8;">quiere ser tu amigo</div>
+                            </div>
+                        </div>
+                        <div class="friend-request-actions">
+                            <button class="btn-accept" onclick="acceptRequest(${req.id})">✓ Aceptar</button>
+                            <button class="btn-reject" onclick="rejectRequest(${req.id})">✗</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                if (requests.length > 3) {
+                    container.innerHTML += `
+                        <a href="/friends" style="text-align: center; display: block; color: rgba(255,255,255,0.8); margin-top: 0.5rem;">
+                            Ver ${requests.length - 3} más...
+                        </a>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading friend requests:', error);
+            }
+        }
+
+        async function acceptRequest(requestId) {
+            try {
+                const response = await fetch(`${API_URL}/social/friends/requests/${requestId}/accept`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    document.getElementById(`request-${requestId}`).remove();
+                    // Check if section should be hidden
+                    const container = document.getElementById('friendRequestsList');
+                    if (container.querySelectorAll('.friend-request-item').length === 0) {
+                        document.getElementById('friendRequestsSection').style.display = 'none';
+                        // Update nav badge
+                        const friendsLink = document.querySelector('a[href="/friends"]');
+                        if (friendsLink) {
+                            friendsLink.innerHTML = 'Amigos';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error accepting request:', error);
+            }
+        }
+
+        async function rejectRequest(requestId) {
+            try {
+                const response = await fetch(`${API_URL}/social/friends/requests/${requestId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok || response.status === 204) {
+                    document.getElementById(`request-${requestId}`).remove();
+                    const container = document.getElementById('friendRequestsList');
+                    if (container.querySelectorAll('.friend-request-item').length === 0) {
+                        document.getElementById('friendRequestsSection').style.display = 'none';
+                        const friendsLink = document.querySelector('a[href="/friends"]');
+                        if (friendsLink) {
+                            friendsLink.innerHTML = 'Amigos';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error rejecting request:', error);
+            }
+        }
+
         // Load all data
         loadStats();
         loadSessions();
         loadGyms();
+        loadFriendRequests();
     </script>
 </body>
 </html>
