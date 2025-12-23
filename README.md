@@ -4,11 +4,12 @@ Track your climbing sessions, log boulder ascents, and monitor your progress. Li
 
 ## Features
 
-- 🏠 **Multi-gym support** - Track across different climbing gyms
+- 🏠 **Multi-gym support** - Track across different climbing gyms with maps
 - 🎨 **Flexible grading** - Colors, V-scale, Font scale, or custom
 - 📊 **Progress tracking** - Weekly stats, grade distribution, PRs
-- 📸 **Photo logging** - Optional photos for your sends
-- 🔄 **Grade comparison** - Compare difficulty across gyms
+- 👥 **Social features** - Follow friends, activity feed, friend requests
+- 🗺️ **Map integration** - Locate gyms with OpenStreetMap
+- 📱 **Web interface** - Full frontend included (no React needed!)
 
 ---
 
@@ -22,18 +23,49 @@ Track your climbing sessions, log boulder ascents, and monitor your progress. Li
 │   ├── Dockerfile           # Docker configuration for the backend
 │   ├── alembic/             # Database migrations
 │   │   ├── versions/        # Migration files
+│   │   │   ├── 001_initial.py
+│   │   │   └── 002_add_friendships.py
 │   │   └── env.py           # Alembic config
 │   ├── app/
 │   │   ├── main.py          # FastAPI server entry point
+│   │   ├── database.py      # Database connection
 │   │   ├── core/            # Config, security, dependencies
 │   │   ├── db/              # Database setup
 │   │   ├── models/          # SQLAlchemy models
+│   │   │   ├── user.py      # User model
+│   │   │   ├── gym.py       # Gym model
+│   │   │   ├── grade.py     # Grade model
+│   │   │   ├── session.py   # Session model
+│   │   │   ├── ascent.py    # Ascent model
+│   │   │   └── friendship.py # Friendship model
 │   │   ├── routers/         # API endpoints
+│   │   │   ├── auth.py      # Authentication
+│   │   │   ├── gyms.py      # Gym CRUD
+│   │   │   ├── grades.py    # Grade management
+│   │   │   ├── sessions.py  # Session management
+│   │   │   ├── ascents.py   # Ascent logging
+│   │   │   ├── stats.py     # Statistics
+│   │   │   └── social.py    # Friends & activity feed
 │   │   ├── schemas/         # Pydantic schemas
 │   │   └── static/          # Static files and HTML templates
+│   │       └── templates/   # Frontend pages
+│   │           ├── index.html
+│   │           ├── login.html
+│   │           ├── register.html
+│   │           ├── dashboard.html
+│   │           ├── gym-new.html
+│   │           ├── gym-edit.html
+│   │           ├── gyms.html
+│   │           ├── session-new.html
+│   │           ├── session-detail.html
+│   │           ├── sessions.html
+│   │           ├── friends.html
+│   │           └── feed.html
 │   └── requirements.txt     # Python dependencies
-├── tests/                   # Test suite
-└── start_venv.sh            # Script to run the virtual environment
+├── tests/                   # Test suite (69 tests)
+├── run_tests.sh             # Script to run tests
+├── setup_venv.sh            # Script to setup virtual environment
+└── start_venv.sh            # Script to run with venv
 ```
 
 ---
@@ -113,6 +145,15 @@ Visit:
 ### Stats (The Strava magic 🪄)
 - `GET /api/stats/me` - Full statistics
 - `GET /api/stats/summary` - Quick dashboard summary
+
+### Social 👥
+- `GET /api/social/users/search` - Search users
+- `POST /api/social/friends/request/{user_id}` - Send friend request
+- `GET /api/social/friends/requests` - Get pending requests
+- `POST /api/social/friends/requests/{id}/accept` - Accept request
+- `POST /api/social/friends/requests/{id}/reject` - Reject request
+- `GET /api/social/friends` - List friends
+- `GET /api/social/feed` - Activity feed
 
 ---
 
@@ -327,11 +368,30 @@ alembic current
 
 ## Next Steps
 
-- [ ] Frontend web app (React/Vue)
 - [ ] Photo upload to S3/local storage
-- [ ] Social features (follow climbers, feed)
+- [ ] Push notifications
 - [ ] Gym admin panel
 - [ ] Mobile app (React Native)
+- [ ] Achievements/badges system
+
+---
+
+## Web Pages
+
+| Page | URL | Description |
+|------|-----|-------------|
+| Landing | `/` | Welcome page |
+| Login | `/login` | User authentication |
+| Register | `/register` | Create account |
+| Dashboard | `/dashboard` | Main hub with stats |
+| New Gym | `/gyms/new` | Create gym with map |
+| Edit Gym | `/gyms/edit?id={id}` | Edit gym details |
+| Gyms List | `/gyms` | Browse all gyms |
+| New Session | `/sessions/new` | Start climbing session |
+| Session Detail | `/sessions/{id}` | Log ascents |
+| Sessions List | `/sessions` | Session history |
+| Friends | `/friends` | Manage friendships |
+| Feed | `/feed` | Social activity feed |
 
 ---
 ¡A escalar! 🧗‍♂️
