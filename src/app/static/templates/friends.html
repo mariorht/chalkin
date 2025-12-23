@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amigos - Chalkin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+        nav {
+            display: flex;
+            gap: 15px;
+        }
+        nav a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        nav a:hover {
+            color: white;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1, h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        h2 {
+            font-size: 1.2rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .search-box button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .search-box button:hover {
+            transform: scale(1.02);
+        }
+        .search-results, .friend-list, .requests-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .user-item, .friend-item, .request-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .username {
+            font-weight: 600;
+            color: #333;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+        .empty-state span {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .badge-friends {
+            background: #d4edda;
+            color: #155724;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #667eea;
+            background: transparent;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .request-count {
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            margin-left: 5px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/dashboard" class="logo">🧗 Chalkin</a>
+            <nav>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/feed">Feed</a>
+                <a href="/sessions">Sesiones</a>
+            </nav>
+        </header>
+
+        <div class="card">
+            <h1>👥 Amigos</h1>
+            
+            <!-- Search -->
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar usuarios...">
+                <button onclick="searchUsers()">🔍 Buscar</button>
+            </div>
+            
+            <div id="searchResults" class="search-results" style="display:none;"></div>
+        </div>
+
+        <div class="card">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showTab('friends')">
+                    Mis Amigos
+                </button>
+                <button class="tab-btn" onclick="showTab('requests')" id="requestsTabBtn">
+                    Solicitudes
+                </button>
+            </div>
+
+            <div id="friendsTab" class="tab-content active">
+                <div id="friendsList" class="friend-list">
+                    <div class="loading">Cargando...</div>
+                </div>
+            </div>
+
+            <div id="requestsTab" class="tab-content">
+                <div id="requestsList" class="requests-list">
+                    <div class="loading">Cargando...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let token = localStorage.getItem('token');
+
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        function getHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            if (tab === 'friends') {
+                document.querySelector('.tab-btn:first-child').classList.add('active');
+                document.getElementById('friendsTab').classList.add('active');
+            } else {
+                document.getElementById('requestsTabBtn').classList.add('active');
+                document.getElementById('requestsTab').classList.add('active');
+            }
+        }
+
+        async function searchUsers() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query.length < 2) {
+                alert('Escribe al menos 2 caracteres para buscar');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<div class="loading">Buscando...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/social/search?q=${encodeURIComponent(query)}`, {
+                    headers: getHeaders()
+                });
+
+                if (res.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const users = await res.json();
+
+                if (users.length === 0) {
+                    resultsDiv.innerHTML = '<div class="empty-state"><span>🔍</span>No se encontraron usuarios</div>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = users.map(user => `
+                    <div class="user-item">
+                        <div class="user-info">
+                            <div class="avatar">${user.username.charAt(0).toUpperCase()}</div>
+                            <span class="username">${user.username}</span>
+                            ${user.friendship_status ? `
+                                <span class="status-badge ${user.friendship_status === 'accepted' ? 'badge-friends' : 'badge-pending'}">
+                                    ${getStatusLabel(user.friendship_status)}
+                                </span>
+                            ` : ''}
+                        </div>
+                        ${renderSearchActions(user)}
+                    </div>
+                `).join('');
+            } catch (err) {
+                resultsDiv.innerHTML = '<div class="empty-state"><span>❌</span>Error al buscar</div>';
+            }
+        }
+
+        function getStatusLabel(status) {
+            switch(status) {
+                case 'accepted': return '✓ Amigos';
+                case 'pending': return 'Solicitud enviada';
+                case 'pending_received': return 'Te envió solicitud';
+                default: return '';
+            }
+        }
+
+        function renderSearchActions(user) {
+            if (!user.friendship_status) {
+                return `<button class="btn btn-primary" onclick="sendRequest(${user.id})">➕ Añadir</button>`;
+            }
+            if (user.friendship_status === 'pending_received') {
+                return `<button class="btn btn-success" onclick="acceptFromSearch(${user.id})">✓ Aceptar</button>`;
+            }
+            return '';
+        }
+
+        async function sendRequest(friendId) {
+            try {
+                const res = await fetch(`${API_URL}/social/friends`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ friend_id: friendId })
+                });
+
+                if (res.ok) {
+                    searchUsers(); // Refresh search results
+                    loadFriends();
+                } else {
+                    const data = await res.json();
+                    alert(data.detail || 'Error al enviar solicitud');
+                }
+            } catch (err) {
+                alert('Error de conexión');
+            }
+        }
+
+        async function acceptFromSearch(userId) {
+            // First we need to find the request ID
+            const res = await fetch(`${API_URL}/social/friends/requests`, {
+                headers: getHeaders()
+            });
+            const requests = await res.json();
+            const request = requests.find(r => r.user_id === userId);
+            if (request) {
+                await acceptRequest(request.id);
+                searchUsers();
+            }
+        }
+
+        async function loadFriends() {
+            const container = document.getElementById('friendsList');
+            
+            try {
+                const res = await fetch(`${API_URL}/social/friends`, {
+                    headers: getHeaders()
+                });
+
+                if (res.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const friends = await res.json();
+
+                if (friends.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><span>👋</span>Aún no tienes amigos. ¡Busca usuarios para añadir!</div>';
+                    return;
+                }
+
+                container.innerHTML = friends.map(friend => `
+                    <div class="friend-item">
+                        <div class="user-info">
+                            <div class="avatar">${friend.username.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <span class="username">${friend.username}</span>
+                                <div style="font-size: 0.8rem; color: #666;">
+                                    Amigos desde ${new Date(friend.since).toLocaleDateString('es-ES')}
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-danger" onclick="removeFriend(${friend.id}, '${friend.username}')">
+                            Eliminar
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = '<div class="empty-state"><span>❌</span>Error al cargar amigos</div>';
+            }
+        }
+
+        async function loadRequests() {
+            const container = document.getElementById('requestsList');
+            const tabBtn = document.getElementById('requestsTabBtn');
+            
+            try {
+                const res = await fetch(`${API_URL}/social/friends/requests`, {
+                    headers: getHeaders()
+                });
+
+                const requests = await res.json();
+
+                // Update tab button with count
+                if (requests.length > 0) {
+                    tabBtn.innerHTML = `Solicitudes <span class="request-count">${requests.length}</span>`;
+                } else {
+                    tabBtn.innerHTML = 'Solicitudes';
+                }
+
+                if (requests.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><span>📭</span>No tienes solicitudes pendientes</div>';
+                    return;
+                }
+
+                container.innerHTML = requests.map(req => `
+                    <div class="request-item">
+                        <div class="user-info">
+                            <div class="avatar">${req.user_username.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <span class="username">${req.user_username}</span>
+                                <div style="font-size: 0.8rem; color: #666;">
+                                    ${new Date(req.created_at).toLocaleDateString('es-ES')}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn-success" onclick="acceptRequest(${req.id})">✓ Aceptar</button>
+                            <button class="btn btn-danger" onclick="rejectRequest(${req.id})">✗ Rechazar</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = '<div class="empty-state"><span>❌</span>Error al cargar solicitudes</div>';
+            }
+        }
+
+        async function acceptRequest(requestId) {
+            try {
+                const res = await fetch(`${API_URL}/social/friends/requests/${requestId}/accept`, {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+
+                if (res.ok) {
+                    loadFriends();
+                    loadRequests();
+                } else {
+                    alert('Error al aceptar solicitud');
+                }
+            } catch (err) {
+                alert('Error de conexión');
+            }
+        }
+
+        async function rejectRequest(requestId) {
+            if (!confirm('¿Rechazar esta solicitud de amistad?')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/social/friends/requests/${requestId}/reject`, {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+
+                if (res.ok) {
+                    loadRequests();
+                } else {
+                    alert('Error al rechazar solicitud');
+                }
+            } catch (err) {
+                alert('Error de conexión');
+            }
+        }
+
+        async function removeFriend(friendId, username) {
+            if (!confirm(`¿Eliminar a ${username} de tus amigos?`)) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/social/friends/${friendId}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+
+                if (res.ok) {
+                    loadFriends();
+                } else {
+                    alert('Error al eliminar amigo');
+                }
+            } catch (err) {
+                alert('Error de conexión');
+            }
+        }
+
+        // Search on Enter key
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchUsers();
+        });
+
+        // Initial load
+        loadFriends();
+        loadRequests();
+    </script>
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed de Actividad - Chalkin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+        nav {
+            display: flex;
+            gap: 15px;
+        }
+        nav a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        nav a:hover {
+            color: white;
+        }
+        nav a.active {
+            color: white;
+            font-weight: 600;
+        }
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        .feed-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .feed-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+        }
+        .feed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .avatar {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .avatar.own {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .username {
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+        .username.own::after {
+            content: ' (tú)';
+            color: #667eea;
+            font-weight: normal;
+            font-size: 0.85rem;
+        }
+        .gym-name {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .date-badge {
+            background: #f0f0f0;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .session-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-ended {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        .feed-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+        .stat-value.flash {
+            color: #ffc107;
+        }
+        .stat-value.send {
+            color: #28a745;
+        }
+        .stat-value.grade {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 30px;
+            background: white;
+            border-radius: 16px;
+        }
+        .empty-state span {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 20px;
+        }
+        .empty-state h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .empty-state p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .empty-state a {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .load-more {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .load-more:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .time-ago {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 2px;
+        }
+        .duration {
+            color: #888;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/dashboard" class="logo">🧗 Chalkin</a>
+            <nav>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/feed" class="active">Feed</a>
+                <a href="/friends">Amigos</a>
+                <a href="/sessions">Sesiones</a>
+            </nav>
+        </header>
+
+        <h1>📰 Feed de Actividad</h1>
+
+        <div id="feedContainer">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Cargando actividades...</p>
+            </div>
+        </div>
+
+        <button id="loadMoreBtn" class="load-more" style="display:none;" onclick="loadMore()">
+            Cargar más actividades
+        </button>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let token = localStorage.getItem('token');
+        let currentSkip = 0;
+        const LIMIT = 20;
+        let hasMore = false;
+
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        function getHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Ahora mismo';
+            if (diffMins < 60) return `Hace ${diffMins} min`;
+            if (diffHours < 24) return `Hace ${diffHours}h`;
+            if (diffDays < 7) return `Hace ${diffDays} días`;
+            
+            return date.toLocaleDateString('es-ES', { 
+                day: 'numeric', 
+                month: 'short',
+                year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+            });
+        }
+
+        function formatDuration(startedAt, endedAt) {
+            if (!endedAt) return null;
+            const start = new Date(startedAt);
+            const end = new Date(endedAt);
+            const diffMs = end - start;
+            const hours = Math.floor(diffMs / 3600000);
+            const mins = Math.floor((diffMs % 3600000) / 60000);
+            
+            if (hours > 0) {
+                return `${hours}h ${mins}min`;
+            }
+            return `${mins} min`;
+        }
+
+        function renderFeedItem(item) {
+            const isActive = !item.ended_at;
+            const duration = formatDuration(item.started_at, item.ended_at);
+            
+            return `
+                <div class="feed-card" onclick="window.location.href='/sessions/${item.session_id}'">
+                    <div class="feed-header">
+                        <div class="user-info">
+                            <div class="avatar ${item.is_own ? 'own' : ''}">
+                                ${item.username.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="user-details">
+                                <span class="username ${item.is_own ? 'own' : ''}">${item.username}</span>
+                                <span class="gym-name">📍 ${item.gym_name}</span>
+                                ${isActive ? 
+                                    '<span class="session-status status-active"><span class="pulse"></span> En curso</span>' :
+                                    (duration ? `<span class="duration">⏱️ ${duration}</span>` : '')
+                                }
+                            </div>
+                        </div>
+                        <span class="date-badge">${formatDate(item.started_at)}</span>
+                    </div>
+                    
+                    <div class="feed-stats">
+                        <div class="stat">
+                            <div class="stat-value">${item.total_ascents}</div>
+                            <div class="stat-label">Bloques</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value flash">⚡ ${item.flashes}</div>
+                            <div class="stat-label">Flashes</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value send">✓ ${item.sends}</div>
+                            <div class="stat-label">Sends</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value grade">${item.max_grade_label || '-'}</div>
+                            <div class="stat-label">Máx. grado</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadFeed(append = false) {
+            const container = document.getElementById('feedContainer');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+            if (!append) {
+                container.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando actividades...</p>
+                    </div>
+                `;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/social/feed?skip=${currentSkip}&limit=${LIMIT}`, {
+                    headers: getHeaders()
+                });
+
+                if (res.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const data = await res.json();
+                hasMore = data.has_more;
+
+                if (!append && data.items.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span>📭</span>
+                            <h2>Tu feed está vacío</h2>
+                            <p>Empieza una sesión de escalada o añade amigos para ver su actividad.</p>
+                            <a href="/sessions/new">🧗 Empezar sesión</a>
+                            <br><br>
+                            <a href="/friends" style="background: transparent; border: 2px solid #667eea; color: #667eea;">
+                                👥 Buscar amigos
+                            </a>
+                        </div>
+                    `;
+                    loadMoreBtn.style.display = 'none';
+                    return;
+                }
+
+                const feedHTML = data.items.map(renderFeedItem).join('');
+
+                if (append) {
+                    container.innerHTML += feedHTML;
+                } else {
+                    container.innerHTML = feedHTML;
+                }
+
+                loadMoreBtn.style.display = hasMore ? 'block' : 'none';
+
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span>❌</span>
+                        <h2>Error al cargar</h2>
+                        <p>No pudimos cargar el feed. Inténtalo de nuevo.</p>
+                        <a href="javascript:location.reload()">Reintentar</a>
+                    </div>
+                `;
+            }
+        }
+
+        function loadMore() {
+            currentSkip += LIMIT;
+            loadFeed(true);
+        }
+
+        // Initial load
+        loadFeed();
+    </script>
+</body>
+</html>

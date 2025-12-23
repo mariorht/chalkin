@@ -3,7 +3,7 @@ Session schemas for request/response validation.
 """
 from datetime import datetime, date as date_type
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class SessionBase(BaseModel):
@@ -42,8 +42,7 @@ class SessionResponse(SessionBase):
     sends: int = 0
     max_grade_label: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SessionWithAscents(SessionResponse):
@@ -56,8 +55,7 @@ class SessionWithAscents(SessionResponse):
     flashes: int = 0
     projects: int = 0
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SessionSummary(BaseModel):

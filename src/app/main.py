@@ -17,6 +17,7 @@ from app.routers.grades import router as grades_router
 from app.routers.sessions import router as sessions_router
 from app.routers.ascents import router as ascents_router
 from app.routers.stats import router as stats_router
+from app.routers.social import router as social_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -43,6 +44,7 @@ app.include_router(grades_router, prefix="/api")
 app.include_router(sessions_router, prefix="/api")
 app.include_router(ascents_router, prefix="/api")
 app.include_router(stats_router, prefix="/api")
+app.include_router(social_router, prefix="/api")
 
 # Set the correct paths for static files and templates
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -105,6 +107,18 @@ def serve_gyms_list():
 def serve_sessions_list():
     """Serve the sessions list page."""
     return os.path.join(template_dir, "sessions.html")
+
+
+@app.get("/friends", response_class=FileResponse)
+def serve_friends():
+    """Serve the friends page."""
+    return os.path.join(template_dir, "friends.html")
+
+
+@app.get("/feed", response_class=FileResponse)
+def serve_feed():
+    """Serve the activity feed page."""
+    return os.path.join(template_dir, "feed.html")
 
 
 @app.get("/health")
