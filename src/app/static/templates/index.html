@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chalkin - Boulder Climbing Tracker</title>
+    <script>
+        // Redirect to dashboard if user is already logged in
+        if (localStorage.getItem('token')) {
+            window.location.href = '/dashboard';
+        }
+    </script>
     <style>
         * {
             margin: 0;

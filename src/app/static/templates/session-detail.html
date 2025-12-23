@@ -469,6 +469,28 @@
             background: var(--primary-dark);
         }
 
+        .btn-reopen {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            margin-top: 1.5rem;
+            margin-left: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-reopen:hover {
+            background: #25A89D;
+            transform: translateY(-2px);
+        }
+
         .hidden {
             display: none !important;
         }
@@ -707,6 +729,17 @@
             document.getElementById('ascentsTitle').textContent = 'Bloques registrados';
             document.getElementById('backBtn').classList.remove('hidden');
             document.getElementById('summarySection').classList.remove('hidden');
+            
+            // Show reopen button
+            if (!document.getElementById('reopenBtn')) {
+                const backBtn = document.getElementById('backBtn');
+                const reopenBtn = document.createElement('button');
+                reopenBtn.id = 'reopenBtn';
+                reopenBtn.className = 'btn-reopen';
+                reopenBtn.innerHTML = '✏️ Editar sesión';
+                reopenBtn.onclick = reopenSession;
+                backBtn.parentNode.insertBefore(reopenBtn, backBtn.nextSibling);
+            }
         }
 
         async function loadGrades(gymId) {
@@ -938,6 +971,26 @@
             } catch (error) {
                 console.error('Error ending session:', error);
                 window.location.href = '/dashboard';
+            }
+        }
+
+        async function reopenSession() {
+            if (!confirm('¿Reabrir esta sesión para editarla?')) return;
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}/reopen`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    // Reload page to show active session view
+                    window.location.reload();
+                } else {
+                    alert('Error al reabrir la sesión');
+                }
+            } catch (error) {
+                console.error('Error reopening session:', error);
+                alert('Error al reabrir la sesión');
             }
         }
 
