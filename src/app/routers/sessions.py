@@ -226,6 +226,34 @@ def end_session(
     return enrich_session(session, db)
 
 
+@router.post("/{session_id}/reopen", response_model=SessionResponse)
+def reopen_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Reopen a finished climbing session (clear ended_at).
+    Useful for editing ascents after accidentally ending a session.
+    """
+    session = db.query(ClimbingSession).filter(
+        ClimbingSession.id == session_id,
+        ClimbingSession.user_id == current_user.id
+    ).first()
+    
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found"
+        )
+    
+    session.ended_at = None
+    db.commit()
+    db.refresh(session)
+    
+    return enrich_session(session, db)
+
+
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_session(
     session_id: int,

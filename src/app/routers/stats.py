@@ -192,6 +192,7 @@ def get_my_stats(
         max_relative_difficulty=max_relative_difficulty,
         current_max_grade=current_max_grade,
         max_grade_label=max_grade_ever,  # Alias for frontend
+        message=_generate_motivational_message(sessions_this_week, sends_this_week, flashes_this_week),
         sessions_this_week=sessions_this_week,
         sessions_this_month=sessions_this_month,
         ascents_this_week=ascents_this_week_count,
@@ -254,11 +255,15 @@ def _generate_motivational_message(sessions: int, sends: int, flashes: int) -> s
     """Generate a fun motivational message based on activity."""
     if sessions == 0:
         return "¡Es hora de volver al rocódromo! 🧗"
+    elif sends == 0:
+        return f"🧗 ¡{sessions} sesión{'es' if sessions > 1 else ''} esta semana! Añade tus bloques para trackear tu progreso."
     elif flashes >= 3:
         return f"🔥 ¡{flashes} flashes esta semana! ¡Estás que ardes!"
     elif sends >= 10:
-        return f"💪 ¡{sends} bloques mandados! ¡Vas a tope para la Superliga!"
+        return f"💪 ¡{sends} bloques completados! ¡Vas a tope para la Superliga!"
+    elif flashes >= 1:
+        return f"⚡ ¡{sends} bloques y {flashes} flash{'es' if flashes > 1 else ''}! ¡Sigue así!"
     elif sessions >= 3:
         return "🎯 ¡Gran consistencia! El volumen es la clave."
     else:
-        return f"👍 ¡Buen trabajo! {sends} bloques encadenados esta semana."
+        return f"👍 ¡Buen trabajo! {sends} bloque{'s' if sends != 1 else ''} encadenado{'s' if sends != 1 else ''} esta semana."
