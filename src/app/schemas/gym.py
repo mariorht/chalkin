@@ -3,7 +3,7 @@ Gym schemas for request/response validation.
 """
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
 
@@ -45,16 +45,14 @@ class GymResponse(GymBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GymWithGrades(GymResponse):
     """Schema for gym with its grades included."""
     grades: List["GradeResponse"] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Forward reference resolution

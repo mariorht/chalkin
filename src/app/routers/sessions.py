@@ -250,33 +250,6 @@ def delete_session(
     db.commit()
 
 
-@router.post("/{session_id}/end", response_model=SessionResponse)
-def end_session(
-    session_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    End a session (sets ended_at to now).
-    """
-    session = db.query(ClimbingSession).filter(
-        ClimbingSession.id == session_id,
-        ClimbingSession.user_id == current_user.id
-    ).first()
-    
-    if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found"
-        )
-    
-    session.ended_at = datetime.utcnow()
-    db.commit()
-    db.refresh(session)
-    
-    return session
-
-
 # Ascents within a session
 @router.post("/{session_id}/ascents", response_model=AscentResponse, status_code=status.HTTP_201_CREATED)
 def add_ascent(

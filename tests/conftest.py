@@ -74,6 +74,26 @@ def test_user(db):
 
 
 @pytest.fixture
+def create_user(db):
+    """Factory fixture to create additional users."""
+    created_users = []
+    
+    def _create_user(username: str, email: str, password: str):
+        user = User(
+            username=username,
+            email=email,
+            password_hash=get_password_hash(password)
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        created_users.append(user)
+        return user
+    
+    return _create_user
+
+
+@pytest.fixture
 def auth_headers(test_user):
     """Get authorization headers for test user."""
     token = create_access_token(data={"sub": str(test_user.id)})
@@ -92,6 +112,23 @@ def test_gym(db):
     db.commit()
     db.refresh(gym)
     return gym
+
+
+@pytest.fixture
+def create_gym(db):
+    """Factory fixture to create additional gyms."""
+    def _create_gym(name: str, location: str):
+        gym = Gym(
+            name=name,
+            location=location,
+            grading_system_type=GradingSystemType.COLORS
+        )
+        db.add(gym)
+        db.commit()
+        db.refresh(gym)
+        return gym
+    
+    return _create_gym
 
 
 @pytest.fixture
