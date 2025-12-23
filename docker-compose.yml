@@ -1,10 +1,17 @@
-version: "3.9"
-
 services:
-  backend:
+  api:
     build: ./src
+    container_name: chalkin_api
     environment:
-      - ENVIRONMENT_VARIABLE=${ENVIRONMENT_VARIABLE}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - DATABASE_URL=sqlite:///./chalkin.db
+      - DEBUG=${DEBUG:-true}
     ports:
       - "8001:8001"
+    volumes:
+      - ./src:/app
+      - chalkin_data:/app/data
+    restart: unless-stopped
 
+volumes:
+  chalkin_data:
