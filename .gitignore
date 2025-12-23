@@ -1,8 +1,13 @@
-# Ignorar el archivo .env
+# Ignorar archivos .env en cualquier carpeta
 venv/
 .env
+**/.env
+*.env
 .vscode/
 .pytest_cache/
 **/__pycache__/
 *.pyc
 *.db
+
+# SSL certificates (producción)
+nginx/ssl/
