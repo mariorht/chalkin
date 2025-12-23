@@ -91,11 +91,14 @@ class TestGrades:
         """Test bulk creating grades."""
         response = client.post("/api/grades/bulk",
             headers=auth_headers,
-            json=[
-                {"gym_id": test_gym.id, "label": "V0", "relative_difficulty": 1, "order": 0},
-                {"gym_id": test_gym.id, "label": "V1", "relative_difficulty": 2, "order": 1},
-                {"gym_id": test_gym.id, "label": "V2", "relative_difficulty": 3, "order": 2},
-            ]
+            json={
+                "gym_id": test_gym.id,
+                "grades": [
+                    {"label": "V0", "relative_difficulty": 1, "order": 0},
+                    {"label": "V1", "relative_difficulty": 2, "order": 1},
+                    {"label": "V2", "relative_difficulty": 3, "order": 2},
+                ]
+            }
         )
         
         assert response.status_code == 201
