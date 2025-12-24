@@ -55,32 +55,32 @@
         /* Stats Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
         }
 
         .stat-card {
             background: white;
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
         }
 
         .stat-card .stat-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+            margin-bottom: 0.25rem;
         }
 
         .stat-card .stat-value {
-            font-size: 2rem;
+            font-size: 1.4rem;
             font-weight: 700;
             color: var(--dark);
         }
 
         .stat-card .stat-label {
             color: var(--gray);
-            font-size: 0.9rem;
+            font-size: 0.75rem;
         }
 
         .stat-card.highlight {
@@ -95,10 +95,12 @@
 
         /* Actions */
         .quick-actions {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .quick-actions .btn {
+            width: 100%;
+            justify-content: center;
         }
 
         .btn {
@@ -637,7 +639,7 @@
 
         <section class="quick-actions">
             <a href="/sessions/new" class="btn btn-primary">
-                <span>▶️</span> Iniciar sesión
+                <span>▶️</span> Iniciar actividad
             </a>
         </section>
 
@@ -1022,6 +1024,15 @@
         loadStats();
         loadActivityChart();
         loadFriendRequests();
+        
+        // Redimensionar gráfico al cambiar tamaño de ventana
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                loadActivityChart();
+            }, 250);
+        });
     </script>
 </body>
 </html>
