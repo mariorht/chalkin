@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
     
-    # Database
-    database_url: str = "sqlite:///./chalkin.db"
+    # Database - usar /app/data para persistencia con Docker volumes
+    database_url: str = "sqlite:///./data/chalkin.db"
     
     # JWT Auth
     secret_key: str = "your-secret-key-change-in-production"
