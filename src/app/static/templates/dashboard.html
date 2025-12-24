@@ -433,6 +433,174 @@
             color: white;
         }
 
+        /* Activity Chart */
+        .activity-chart-section {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+        }
+
+        .activity-chart-section h2 {
+            color: var(--dark);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            height: 200px;
+            position: relative;
+            padding: 10px 0;
+        }
+
+        .chart-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chart-line {
+            fill: none;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .chart-line.sends {
+            stroke: var(--primary);
+        }
+
+        .chart-line.sessions {
+            stroke: var(--secondary);
+        }
+
+        .chart-area {
+            opacity: 0.1;
+        }
+
+        .chart-area.sends {
+            fill: var(--primary);
+        }
+
+        .chart-area.sessions {
+            fill: var(--secondary);
+        }
+
+        .chart-dot {
+            r: 4;
+            stroke-width: 2;
+            stroke: white;
+            cursor: pointer;
+            transition: r 0.2s;
+        }
+
+        .chart-dot:hover {
+            r: 6;
+        }
+
+        .chart-dot.sends {
+            fill: var(--primary);
+        }
+
+        .chart-dot.sessions {
+            fill: var(--secondary);
+        }
+
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding: 0 5px;
+        }
+
+        .chart-label {
+            font-size: 0.7rem;
+            color: var(--gray);
+            text-align: center;
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-dot.sends {
+            background: var(--primary);
+        }
+
+        .legend-dot.sessions {
+            background: var(--secondary);
+        }
+
+        .chart-summary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        .chart-summary-item {
+            text-align: center;
+        }
+
+        .chart-summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .chart-summary-label {
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+
+        .chart-tooltip {
+            position: absolute;
+            background: var(--dark);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+            white-space: nowrap;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .chart-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid var(--dark);
+        }
+
     </style>
 </head>
 <body>
@@ -471,9 +639,36 @@
             <a href="/sessions/new" class="btn btn-primary">
                 <span>▶️</span> Iniciar sesión
             </a>
-            <a href="/gyms/new" class="btn btn-secondary">
-                <span>🏠</span> Añadir gimnasio
-            </a>
+        </section>
+
+        <!-- Activity Chart Section -->
+        <section class="activity-chart-section">
+            <h2>📊 Actividad últimas 8 semanas</h2>
+            <div class="chart-container" id="activityChart">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <div class="legend-dot sends"></div>
+                    <span>Bloques</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot sessions"></div>
+                    <span>Sesiones</span>
+                </div>
+            </div>
+            <div class="chart-summary" id="chartSummary">
+                <div class="chart-summary-item">
+                    <div class="chart-summary-value" id="totalSends">-</div>
+                    <div class="chart-summary-label">Bloques totales</div>
+                </div>
+                <div class="chart-summary-item">
+                    <div class="chart-summary-value" id="totalSessions">-</div>
+                    <div class="chart-summary-label">Sesiones</div>
+                </div>
+            </div>
         </section>
 
         <!-- Friend Requests Section -->
@@ -484,32 +679,6 @@
                     <a href="/friends">Ver todas</a>
                 </div>
                 <div id="friendRequestsList" class="friend-requests-list"></div>
-            </div>
-        </section>
-
-        <section>
-            <div class="section-header">
-                <h2>📅 Sesiones recientes</h2>
-                <a href="/sessions">Ver todas</a>
-            </div>
-            <div class="sessions-list" id="sessionsList">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Cargando sesiones...</p>
-                </div>
-            </div>
-        </section>
-
-        <section style="margin-top: 2rem;">
-            <div class="section-header">
-                <h2>🏠 Mis gimnasios</h2>
-                <a href="/gyms">Ver todos</a>
-            </div>
-            <div class="gyms-grid" id="gymsList">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Cargando gimnasios...</p>
-                </div>
             </div>
         </section>
     </main>
@@ -555,112 +724,203 @@
             }
         }
 
-        async function loadSessions() {
-            const container = document.getElementById('sessionsList');
+        async function loadActivityChart() {
+            const container = document.getElementById('activityChart');
             
             try {
-                const response = await fetchWithAuth(`${API_URL}/sessions?limit=5`);
+                const response = await fetchWithAuth(`${API_URL}/sessions?limit=50`);
                 if (!response || !response.ok) {
-                    container.innerHTML = '<div class="empty-state"><p>Error cargando sesiones</p></div>';
+                    container.innerHTML = '<div class="empty-state"><p>No hay datos</p></div>';
                     return;
                 }
                 
                 const sessions = await response.json();
                 
-                if (sessions.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <div class="icon">🧗</div>
-                            <h3>Sin sesiones aún</h3>
-                            <p>¡Empieza tu primera sesión de escalada!</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                container.innerHTML = sessions.map(session => {
-                    const date = new Date(session.date);
-                    const day = date.getDate();
-                    const month = date.toLocaleDateString('es', { month: 'short' });
-                    const isActive = !session.ended_at;
+                // Get last 8 weeks
+                const weeks = [];
+                const now = new Date();
+                for (let i = 7; i >= 0; i--) {
+                    const weekStart = new Date(now);
+                    weekStart.setDate(now.getDate() - (i * 7) - now.getDay());
+                    weekStart.setHours(0, 0, 0, 0);
                     
-                    return `
-                        <a href="/sessions/${session.id}" class="session-item ${isActive ? 'active' : ''}">
-                            <div class="session-date">
-                                <div class="day">${day}</div>
-                                <div class="month">${month}</div>
-                            </div>
-                            <div class="session-info">
-                                <div class="session-gym">
-                                    ${session.gym_name || 'Gimnasio'}
-                                    ${isActive ? '<span class="active-badge">🟢 En curso</span>' : ''}
-                                </div>
-                                <div class="session-stats">
-                                    <span>🪨 ${session.total_ascents || 0} bloques</span>
-                                    <span>⚡ ${session.flashes || 0} flashes</span>
-                                </div>
-                            </div>
-                            ${session.max_grade_label ? `<div class="session-grade">${session.max_grade_label}</div>` : ''}
-                        </a>
-                    `;
-                }).join('');
-            } catch (error) {
-                console.error('Error loading sessions:', error);
-                container.innerHTML = '<div class="empty-state"><p>Error cargando sesiones</p></div>';
-            }
-        }
-
-        async function loadGyms() {
-            const container = document.getElementById('gymsList');
-            
-            try {
-                const response = await fetch(`${API_URL}/gyms`);
-                if (!response.ok) {
-                    container.innerHTML = '<div class="empty-state"><p>Error cargando gimnasios</p></div>';
-                    return;
+                    const weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekStart.getDate() + 6);
+                    weekEnd.setHours(23, 59, 59, 999);
+                    
+                    weeks.push({
+                        start: weekStart,
+                        end: weekEnd,
+                        sends: 0,
+                        sessions: 0,
+                        label: `${weekStart.getDate()}/${weekStart.getMonth() + 1}`
+                    });
                 }
                 
-                const gyms = await response.json();
+                // Aggregate data by week
+                sessions.forEach(session => {
+                    const sessionDate = new Date(session.date);
+                    weeks.forEach(week => {
+                        if (sessionDate >= week.start && sessionDate <= week.end) {
+                            week.sends += session.total_ascents || 0;
+                            week.sessions += 1;
+                        }
+                    });
+                });
                 
-                if (gyms.length === 0) {
-                    container.innerHTML = `
-                        <div class="gym-card" onclick="window.location.href='/gyms/new'">
-                            <div class="gym-icon">➕</div>
-                            <div class="gym-info">
-                                <h3>Añadir gimnasio</h3>
-                                <p>Configura tu primer rocódromo</p>
-                            </div>
-                        </div>
-                    `;
-                    return;
-                }
+                // Find max values for scaling - independent scales for each line
+                const maxSends = Math.max(...weeks.map(w => w.sends), 1);
+                const maxSessions = Math.max(...weeks.map(w => w.sessions), 1);
                 
-                container.innerHTML = gyms.slice(0, 4).map(gym => `
-                    <div class="gym-card" onclick="selectGym(${gym.id})">
-                        <div class="gym-icon">🏠</div>
-                        <div class="gym-info">
-                            <h3>${gym.name}</h3>
-                            <p>${gym.location || gym.grading_system_type}</p>
-                        </div>
-                    </div>
-                `).join('') + `
-                    <div class="gym-card" onclick="window.location.href='/gyms/new'">
-                        <div class="gym-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">➕</div>
-                        <div class="gym-info">
-                            <h3>Añadir otro</h3>
-                            <p>Nuevo gimnasio</p>
-                        </div>
+                // SVG dimensions
+                const width = container.clientWidth || 300;
+                const height = 180;
+                const paddingLeft = 35;
+                const paddingRight = 35;
+                const paddingTop = 20;
+                const paddingBottom = 25;
+                const chartWidth = width - paddingLeft - paddingRight;
+                const chartHeight = height - paddingTop - paddingBottom;
+                
+                // Generate points - each line uses its OWN scale
+                const sendsPoints = weeks.map((week, i) => ({
+                    x: paddingLeft + (i * (chartWidth / (weeks.length - 1))),
+                    y: paddingTop + chartHeight - ((week.sends / maxSends) * chartHeight * 0.85),
+                    value: week.sends
+                }));
+                
+                const sessionsPoints = weeks.map((week, i) => ({
+                    x: paddingLeft + (i * (chartWidth / (weeks.length - 1))),
+                    y: paddingTop + chartHeight - ((week.sessions / maxSessions) * chartHeight * 0.85),
+                    value: week.sessions
+                }));
+                
+                // Y-axis labels (3 levels: 0, mid, max)
+                const sendsYLabels = [0, Math.round(maxSends / 2), maxSends];
+                const sessionsYLabels = [0, Math.round(maxSessions / 2), maxSessions];
+                
+                // Create path for line
+                const createLinePath = (points) => {
+                    return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+                };
+                
+                // Create smooth path using cubic bezier
+                const createSmoothPath = (points) => {
+                    if (points.length < 2) return '';
+                    let path = `M ${points[0].x} ${points[0].y}`;
+                    for (let i = 1; i < points.length; i++) {
+                        const prev = points[i - 1];
+                        const curr = points[i];
+                        const cpx = (prev.x + curr.x) / 2;
+                        path += ` C ${cpx} ${prev.y}, ${cpx} ${curr.y}, ${curr.x} ${curr.y}`;
+                    }
+                    return path;
+                };
+                
+                // Create area path
+                const createAreaPath = (points, bottomY) => {
+                    const linePath = createSmoothPath(points);
+                    return `${linePath} L ${points[points.length - 1].x} ${bottomY} L ${points[0].x} ${bottomY} Z`;
+                };
+                
+                const bottomY = paddingTop + chartHeight;
+                
+                // Render SVG
+                container.innerHTML = `
+                    <svg class="chart-svg" viewBox="0 0 ${width} ${height}">
+                        <!-- Grid lines -->
+                        <g class="chart-grid" stroke="#E5E7EB" stroke-width="1">
+                            ${[0, 0.5, 1].map(pct => `
+                                <line x1="${paddingLeft}" y1="${paddingTop + chartHeight * pct}" x2="${width - paddingRight}" y2="${paddingTop + chartHeight * pct}" stroke-dasharray="4,4" opacity="0.5"/>
+                            `).join('')}
+                        </g>
+                        
+                        <!-- Y-axis labels - Left (Bloques/naranja) -->
+                        <g class="y-axis-left" fill="#FF6B35" font-size="10" font-weight="600">
+                            <text x="${paddingLeft - 5}" y="${paddingTop + 4}" text-anchor="end">${sendsYLabels[2]}</text>
+                            <text x="${paddingLeft - 5}" y="${paddingTop + chartHeight * 0.5 + 4}" text-anchor="end">${sendsYLabels[1]}</text>
+                            <text x="${paddingLeft - 5}" y="${paddingTop + chartHeight + 4}" text-anchor="end">${sendsYLabels[0]}</text>
+                        </g>
+                        
+                        <!-- Y-axis labels - Right (Sesiones/turquesa) -->
+                        <g class="y-axis-right" fill="#2EC4B6" font-size="10" font-weight="600">
+                            <text x="${width - paddingRight + 5}" y="${paddingTop + 4}" text-anchor="start">${sessionsYLabels[2]}</text>
+                            <text x="${width - paddingRight + 5}" y="${paddingTop + chartHeight * 0.5 + 4}" text-anchor="start">${sessionsYLabels[1]}</text>
+                            <text x="${width - paddingRight + 5}" y="${paddingTop + chartHeight + 4}" text-anchor="start">${sessionsYLabels[0]}</text>
+                        </g>
+                        
+                        <!-- Area fills -->
+                        <path class="chart-area sends" d="${createAreaPath(sendsPoints, bottomY)}" fill="#FF6B35" opacity="0.15"/>
+                        <path class="chart-area sessions" d="${createAreaPath(sessionsPoints, bottomY)}" fill="#2EC4B6" opacity="0.1"/>
+                        
+                        <!-- Lines - Bloques (sends) first, then Sessions -->
+                        <path class="chart-line sends" d="${createSmoothPath(sendsPoints)}" fill="none" stroke="#FF6B35" stroke-width="3" stroke-linecap="round"/>
+                        <path class="chart-line sessions" d="${createSmoothPath(sessionsPoints)}" fill="none" stroke="#2EC4B6" stroke-width="3" stroke-linecap="round"/>
+                        
+                        <!-- Dots - Bloques (sends) -->
+                        ${sendsPoints.map((p, i) => `
+                            <circle class="chart-dot sends" cx="${p.x}" cy="${p.y}" r="6" fill="#FF6B35" stroke="white" stroke-width="2" data-week="${i}" data-label="${weeks[i].label}" style="cursor:pointer"/>
+                        `).join('')}
+                        <!-- Dots - Sessions -->
+                        ${sessionsPoints.map((p, i) => `
+                            <circle class="chart-dot sessions" cx="${p.x}" cy="${p.y}" r="5" fill="#2EC4B6" stroke="white" stroke-width="2" data-week="${i}" data-label="${weeks[i].label}" style="cursor:pointer"/>
+                        `).join('')}
+                    </svg>
+                    <div class="chart-tooltip" id="chartTooltip"></div>
+                    <div class="chart-labels">
+                        ${weeks.map(w => `<span class="chart-label">${w.label}</span>`).join('')}
                     </div>
                 `;
+                
+                // Add click/touch events to dots
+                container.querySelectorAll('.chart-dot').forEach(dot => {
+                    const showTooltip = (e) => {
+                        const tooltip = document.getElementById('chartTooltip');
+                        const weekIndex = parseInt(dot.dataset.week);
+                        const week = weeks[weekIndex];
+                        const label = dot.dataset.label;
+                        
+                        tooltip.innerHTML = `
+                            <div style="font-weight:600; margin-bottom:4px">Semana ${label}</div>
+                            <div><span style="color:#FF6B35">●</span> ${week.sends} bloques</div>
+                            <div><span style="color:#2EC4B6">●</span> ${week.sessions} sesiones</div>
+                        `;
+                        tooltip.style.opacity = '1';
+                        
+                        // Position tooltip
+                        const dotX = parseFloat(dot.getAttribute('cx'));
+                        const dotY = parseFloat(dot.getAttribute('cy'));
+                        
+                        tooltip.style.left = `${dotX}px`;
+                        tooltip.style.top = `${dotY - 60}px`;
+                        tooltip.style.transform = 'translateX(-50%)';
+                    };
+                    
+                    dot.addEventListener('click', showTooltip);
+                    dot.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        showTooltip(e);
+                    });
+                });
+                
+                // Hide tooltip on click outside
+                container.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('chart-dot')) {
+                        document.getElementById('chartTooltip').style.opacity = '0';
+                    }
+                });
+                
+                // Update summary
+                const totalSends = weeks.reduce((sum, w) => sum + w.sends, 0);
+                const totalSessions = weeks.reduce((sum, w) => sum + w.sessions, 0);
+                
+                document.getElementById('totalSends').textContent = totalSends;
+                document.getElementById('totalSessions').textContent = totalSessions;
+                
             } catch (error) {
-                console.error('Error loading gyms:', error);
-                container.innerHTML = '<div class="empty-state"><p>Error cargando gimnasios</p></div>';
+                console.error('Error loading activity chart:', error);
+                container.innerHTML = '<div class="empty-state"><p>Error cargando datos</p></div>';
             }
-        }
-
-        function selectGym(gymId) {
-            // Navigate to gym edit page
-            window.location.href = `/gyms/edit?id=${gymId}`;
         }
 
         async function loadFriendRequests() {
@@ -760,8 +1020,7 @@
 
         // Load all data
         loadStats();
-        loadSessions();
-        loadGyms();
+        loadActivityChart();
         loadFriendRequests();
     </script>
 </body>

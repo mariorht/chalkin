@@ -54,6 +54,10 @@ class SessionWithAscents(SessionResponse):
     sends: int = 0
     flashes: int = 0
     projects: int = 0
+    
+    # Owner info (for viewing friend's sessions)
+    owner_username: Optional[str] = None
+    is_own: bool = True
 
     model_config = ConfigDict(from_attributes=True)
 

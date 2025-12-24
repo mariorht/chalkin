@@ -5,7 +5,7 @@ from typing import List, Optional
 from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 
 from app.db.base import get_db
 from app.core.deps import get_current_user
@@ -14,10 +14,25 @@ from app.models.gym import Gym
 from app.models.grade import Grade
 from app.models.session import Session as ClimbingSession
 from app.models.ascent import Ascent, AscentStatus
+from app.models.friendship import Friendship, FriendshipStatus
 from app.schemas.session import SessionCreate, SessionResponse, SessionUpdate, SessionWithAscents
 from app.schemas.ascent import AscentCreate, AscentResponse
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
+
+
+def is_friend(db: Session, user_id: int, other_user_id: int) -> bool:
+    """Check if two users are friends."""
+    if user_id == other_user_id:
+        return True
+    friendship = db.query(Friendship).filter(
+        or_(
+            and_(Friendship.user_id == user_id, Friendship.friend_id == other_user_id),
+            and_(Friendship.user_id == other_user_id, Friendship.friend_id == user_id)
+        ),
+        Friendship.status == FriendshipStatus.ACCEPTED
+    ).first()
+    return friendship is not None
 
 
 def enrich_session(session: ClimbingSession, db: Session) -> dict:
@@ -130,10 +145,10 @@ def get_session(
 ):
     """
     Get a specific session with all its ascents.
+    Users can view their own sessions or sessions from friends.
     """
     session = db.query(ClimbingSession).filter(
-        ClimbingSession.id == session_id,
-        ClimbingSession.user_id == current_user.id
+        ClimbingSession.id == session_id
     ).first()
     
     if not session:
@@ -142,9 +157,21 @@ def get_session(
             detail="Session not found"
         )
     
+    # Check if user can view this session (own session or friend's session)
+    if session.user_id != current_user.id:
+        if not is_friend(db, current_user.id, session.user_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only view your own sessions or your friends' sessions"
+            )
+    
     # Get gym name
     gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
     gym_name = gym.name if gym else "Gimnasio"
+    
+    # Get session owner username
+    session_owner = db.query(User).filter(User.id == session.user_id).first()
+    owner_username = session_owner.username if session_owner else "Usuario"
     
     # Calculate summary stats
     ascents = session.ascents
@@ -164,7 +191,9 @@ def get_session(
         "total_ascents": len(ascents),
         "sends": len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT]]),
         "flashes": len([a for a in ascents if a.status == AscentStatus.FLASH]),
-        "projects": len([a for a in ascents if a.status == AscentStatus.PROJECT])
+        "projects": len([a for a in ascents if a.status == AscentStatus.PROJECT]),
+        "owner_username": owner_username,
+        "is_own": session.user_id == current_user.id
     }
 
 
