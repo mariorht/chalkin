@@ -5,181 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis sesiones - Chalkin</title>
     <link rel="stylesheet" href="/static/css/app-shell.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #FF6B35;
-            --primary-dark: #E55A2B;
-            --secondary: #2EC4B6;
-            --dark: #1A1A2E;
-            --light: #F7F7F7;
-            --gray: #6B7280;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--light);
-        }
-
-        /* Header styles in app-shell.css */
-
-        .main-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        h1 {
-            color: var(--dark);
-            font-size: 1.8rem;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
-
-        .sessions-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .session-card {
-            background: white;
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            gap: 1.5rem;
-            align-items: center;
-            text-decoration: none;
-            color: inherit;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .session-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-        }
-
-        .session-date {
-            text-align: center;
-            padding: 0.8rem 1rem;
-            background: var(--light);
-            border-radius: 12px;
-            min-width: 70px;
-        }
-
-        .session-date .day {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--dark);
-        }
-
-        .session-date .month {
-            font-size: 0.8rem;
-            color: var(--gray);
-            text-transform: uppercase;
-        }
-
-        .session-info h3 {
-            color: var(--dark);
-            font-size: 1.1rem;
-            margin-bottom: 0.3rem;
-        }
-
-        .session-meta {
-            color: var(--gray);
-            font-size: 0.9rem;
-        }
-
-        .session-stats {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .stat {
-            text-align: center;
-        }
-
-        .stat .value {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--dark);
-        }
-
-        .stat .label {
-            font-size: 0.75rem;
-            color: var(--gray);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: var(--gray);
-        }
-
-        .empty-state h2 {
-            margin-bottom: 1rem;
-            color: var(--dark);
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: var(--gray);
-        }
-
-        .month-header {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--gray);
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-            padding-left: 0.5rem;
-        }
-
-        .month-header:first-child {
-            margin-top: 0;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/cards.css">
 </head>
 <body class="has-app-shell">
-    <main class="main-container">
+    <div class="container">
         <div class="page-header">
             <h1>📅 Mis sesiones</h1>
-            <a href="/sessions/new" class="btn-primary">+ Nueva sesión</a>
+            <a href="/sessions/new" class="btn-new">+ Nueva</a>
         </div>
 
-        <div class="sessions-list" id="sessionsList">
-            <div class="loading">Cargando sesiones...</div>
+        <div id="sessionsList">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Cargando sesiones...</p>
+            </div>
         </div>
-    </main>
+    </div>
 
     <script src="/static/js/app-shell.js"></script>
+    <script src="/static/js/utils.js"></script>
     <script>
         // Inicializar App Shell
         AppShell.init({ activePage: 'sessions' });
@@ -187,45 +31,72 @@
         const API_URL = '/api';
         const token = AppShell.token;
 
-        async function fetchWithAuth(url, options = {}) {
-            return AppShell.fetchWithAuth(url, options);
-        }
-
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return {
-                day: date.getDate(),
-                month: date.toLocaleDateString('es', { month: 'short' }),
-                full: date.toLocaleDateString('es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-            };
-        }
-
-        function getMonthYear(dateStr) {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('es', { month: 'long', year: 'numeric' });
+        function renderSessionCard(session) {
+            const isActive = !session.ended_at;
+            const duration = Utils.formatDuration(session.started_at, session.ended_at);
+            const dateIcon = Utils.formatDateIcon(session.date);
+            
+            return `
+                <a href="/sessions/${session.id}" class="session-card">
+                    <div class="session-header">
+                        <div class="session-info">
+                            <div class="session-date-icon">
+                                <span class="day">${dateIcon.day}</span>
+                                <span class="month">${dateIcon.month}</span>
+                            </div>
+                            <div class="session-details">
+                                <span class="gym-name">📍 ${session.gym_name || 'Sesión'}</span>
+                                ${isActive ? 
+                                    '<span class="session-status status-active"><span class="pulse"></span> En curso</span>' :
+                                    (duration ? `<span class="duration">⏱️ ${duration}</span>` : '')
+                                }
+                            </div>
+                        </div>
+                        <span class="date-badge">${Utils.formatDateBadge(session.date)}</span>
+                    </div>
+                    
+                    <div class="session-stats">
+                        <div class="stat">
+                            <div class="stat-value">${session.total_ascents || 0}</div>
+                            <div class="stat-label">Bloques</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value flash">⚡ ${session.flashes || 0}</div>
+                            <div class="stat-label">Flashes</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value send">✓ ${(session.total_ascents || 0) - (session.flashes || 0)}</div>
+                            <div class="stat-label">Sends</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value grade">${session.max_grade_label || '-'}</div>
+                            <div class="stat-label">Máx. grado</div>
+                        </div>
+                    </div>
+                </a>
+            `;
         }
 
         async function loadSessions() {
+            const container = document.getElementById('sessionsList');
+            
             try {
-                const response = await fetchWithAuth(`${API_URL}/sessions?limit=50`);
+                const response = await AppShell.fetchWithAuth(`${API_URL}/sessions?limit=50`);
                 
-                if (response.status === 401) {
-                    localStorage.removeItem('token');
+                if (!response || response.status === 401) {
                     window.location.href = '/login';
                     return;
                 }
                 
                 const sessions = await response.json();
-                const container = document.getElementById('sessionsList');
                 
                 if (sessions.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
-                            <h2>Sin sesiones</h2>
-                            <p>Aún no has registrado ninguna sesión de escalada.</p>
-                            <a href="/sessions/new" class="btn-primary" style="display: inline-block; margin-top: 1rem;">
-                                + Iniciar primera sesión
-                            </a>
+                            <span>🧗</span>
+                            <h2>Sin sesiones aún</h2>
+                            <p>¡Empieza tu primera sesión de escalada!</p>
+                            <a href="/sessions/new">+ Iniciar sesión</a>
                         </div>
                     `;
                     return;
@@ -236,53 +107,28 @@
                 let html = '';
                 
                 sessions.forEach(session => {
-                    const monthYear = getMonthYear(session.date);
+                    const monthYear = Utils.getMonthYear(session.date);
                     
                     if (monthYear !== currentMonth) {
                         currentMonth = monthYear;
-                        html += `<div class="month-header">${monthYear.charAt(0).toUpperCase() + monthYear.slice(1)}</div>`;
+                        html += `<div class="month-divider">${monthYear}</div>`;
                     }
                     
-                    const dateInfo = formatDate(session.date);
-                    const duration = session.ended_at ? 
-                        Math.round((new Date(session.ended_at) - new Date(session.started_at)) / 60000) : null;
-                    const durationStr = duration ? `${Math.floor(duration / 60)}h ${duration % 60}m` : 'En curso';
-                    
-                    html += `
-                        <a href="/sessions/${session.id}" class="session-card">
-                            <div class="session-date">
-                                <div class="day">${dateInfo.day}</div>
-                                <div class="month">${dateInfo.month}</div>
-                            </div>
-                            <div class="session-info">
-                                <h3>${session.gym_name || 'Sesión'}</h3>
-                                <div class="session-meta">
-                                    ⏱️ ${durationStr}
-                                    ${session.notes ? ` • ${session.notes}` : ''}
-                                </div>
-                            </div>
-                            <div class="session-stats">
-                                <div class="stat">
-                                    <div class="value">${session.total_ascents || 0}</div>
-                                    <div class="label">Bloques</div>
-                                </div>
-                                <div class="stat">
-                                    <div class="value">${session.flashes || 0}</div>
-                                    <div class="label">Flashes</div>
-                                </div>
-                                <div class="stat">
-                                    <div class="value">${session.max_grade_label || '-'}</div>
-                                    <div class="label">Máx</div>
-                                </div>
-                            </div>
-                        </a>
-                    `;
+                    html += renderSessionCard(session);
                 });
                 
                 container.innerHTML = html;
+                
             } catch (error) {
                 console.error('Error loading sessions:', error);
-                document.getElementById('sessionsList').innerHTML = '<p>Error al cargar sesiones</p>';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span>❌</span>
+                        <h2>Error al cargar</h2>
+                        <p>No pudimos cargar tus sesiones. Inténtalo de nuevo.</p>
+                        <a href="javascript:location.reload()">Reintentar</a>
+                    </div>
+                `;
             }
         }
 
