@@ -171,6 +171,14 @@ body {
     font-size: 0.9rem;
 }
 
+/* Date Info Container */
+.date-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
 /* Date Badge */
 .date-badge {
     background: #f0f0f0;
@@ -178,6 +186,11 @@ body {
     border-radius: 20px;
     font-size: 0.8rem;
     color: #666;
+}
+
+.date-full {
+    font-size: 0.75rem;
+    color: #999;
 }
 
 /* Session Status */

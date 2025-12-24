@@ -35,14 +35,14 @@
             const duration = Utils.formatDuration(session.started_at, session.ended_at);
             const dateIcon = Utils.formatDateIcon(session.date);
             
+            const user = AppShell.user || {};
+            const initial = (user.username || 'U').charAt(0).toUpperCase();
+            
             return `
                 <a href="/sessions/${session.id}" class="session-card">
                     <div class="session-header">
                         <div class="session-info">
-                            <div class="session-date-icon">
-                                <span class="day">${dateIcon.day}</span>
-                                <span class="month">${dateIcon.month}</span>
-                            </div>
+                            <div class="avatar own">${initial}</div>
                             <div class="session-details">
                                 <span class="gym-name">📍 ${session.gym_name || 'Sesión'}</span>
                                 ${isActive ? 
@@ -51,7 +51,10 @@
                                 }
                             </div>
                         </div>
-                        <span class="date-badge">${Utils.formatDateBadge(session.date)}</span>
+                        <div class="date-info">
+                            <span class="date-badge">${Utils.formatDateBadge(session.date)}</span>
+                            <span class="date-full">${dateIcon.day} ${dateIcon.month}</span>
+                        </div>
                     </div>
                     
                     <div class="session-stats">
