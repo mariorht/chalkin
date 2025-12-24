@@ -31,8 +31,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # Para SSL (descomentar cuando tengas certificados)
-      # - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./certs:/etc/nginx/certs:ro
     depends_on:
       - api
     restart: unless-stopped
