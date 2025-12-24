@@ -1,0 +1,283 @@
+/* =============================================
+   App Shell - Estilos compartidos para Chalkin
+   Header superior + Bottom Navigation (estilo app móvil)
+   ============================================= */
+
+/* Variables CSS globales */
+:root {
+    --primary: #FF6B35;
+    --primary-dark: #E55A2B;
+    --secondary: #2EC4B6;
+    --dark: #1A1A2E;
+    --light: #F7F7F7;
+    --gray: #6B7280;
+    --error: #EF4444;
+    --success: #22C55E;
+    --header-height: 60px;
+    --bottom-nav-height: 70px;
+}
+
+/* Reset para páginas con app shell */
+body.has-app-shell {
+    padding-top: var(--header-height);
+    padding-bottom: var(--bottom-nav-height);
+    min-height: 100vh;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+html {
+    overflow-x: hidden;
+}
+
+/* =============================================
+   HEADER SUPERIOR
+   ============================================= */
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background: var(--dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.app-header .logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.app-header .logo-icon {
+    font-size: 1.6rem;
+}
+
+.app-header .user-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.app-header .user-avatar {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.app-header .user-avatar:hover {
+    transform: scale(1.05);
+}
+
+.app-header .user-name {
+    color: white;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.app-header .btn-logout {
+    background: transparent;
+    border: 1px solid var(--gray);
+    color: var(--gray);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+}
+
+.app-header .btn-logout:hover {
+    border-color: var(--error);
+    color: var(--error);
+}
+
+/* Mostrar nombre de usuario solo en pantallas grandes */
+@media (max-width: 480px) {
+    .app-header .user-name {
+        display: none;
+    }
+}
+
+/* =============================================
+   BOTTOM NAVIGATION BAR
+   ============================================= */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottom-nav-height);
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+    border-top: 1px solid #E5E7EB;
+}
+
+.bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--gray);
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    min-width: 60px;
+    position: relative;
+}
+
+.bottom-nav a:hover {
+    color: var(--primary);
+    background: rgba(255, 107, 53, 0.08);
+}
+
+.bottom-nav a.active {
+    color: var(--primary);
+}
+
+.bottom-nav a.active .nav-icon {
+    transform: scale(1.1);
+}
+
+.bottom-nav .nav-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+    transition: transform 0.2s;
+}
+
+.bottom-nav .nav-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Badge para notificaciones */
+.bottom-nav .nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 8px;
+    background: var(--error);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+
+/* Efecto de indicador activo */
+.bottom-nav a.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 0 0 3px 3px;
+}
+
+/* =============================================
+   AJUSTES RESPONSIVE
+   ============================================= */
+
+/* Tablets y desktop */
+@media (min-width: 768px) {
+    .bottom-nav {
+        max-width: 500px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 20px 20px 0 0;
+        bottom: 0;
+    }
+
+    .bottom-nav a {
+        padding: 0.5rem 1.5rem;
+    }
+
+    .bottom-nav .nav-label {
+        font-size: 0.75rem;
+    }
+}
+
+/* Desktop grande - podría convertirse en sidebar */
+@media (min-width: 1024px) {
+    :root {
+        --bottom-nav-height: 75px;
+    }
+    
+    .bottom-nav {
+        max-width: 600px;
+    }
+}
+
+/* =============================================
+   UTILIDADES PARA CONTENIDO PRINCIPAL
+   ============================================= */
+.app-main {
+    background: var(--light);
+}
+
+/* Container estándar */
+.app-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+/* Para páginas con sesión activa que necesitan más padding */
+body.has-active-session {
+    padding-bottom: calc(var(--bottom-nav-height) + 80px);
+}
+
+/* =============================================
+   ANIMACIONES
+   ============================================= */
+@keyframes nav-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+.bottom-nav a:active .nav-icon {
+    animation: nav-bounce 0.3s ease;
+}
+
+/* Safe area para dispositivos con notch */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .bottom-nav {
+        padding-bottom: env(safe-area-inset-bottom);
+        height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+    }
+    
+    body.has-app-shell {
+        padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+    }
+}
