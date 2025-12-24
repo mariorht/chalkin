@@ -1,0 +1,362 @@
+/* cards.css - Estilos compartidos para cards de sesiones y feed */
+
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: var(--light);
+}
+
+/* Container */
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+    color: var(--dark);
+    font-size: 1.5rem;
+}
+
+.page-title {
+    color: var(--dark);
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Botón Nueva */
+.btn-new {
+    background: var(--primary);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.btn-new:hover {
+    background: var(--primary-dark);
+}
+
+/* Card base - se usa con .feed-card o .session-card */
+.feed-card,
+.session-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    display: block;
+    color: inherit;
+}
+
+.feed-card:hover,
+.session-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+}
+
+/* Card Header */
+.feed-header,
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+/* User/Session Info */
+.user-info,
+.session-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Avatar (para feed) */
+.avatar {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.avatar.own {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* Date Icon (para sessions) */
+.session-date-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+}
+
+.session-date-icon .day {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.session-date-icon .month {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
+/* Details */
+.user-details,
+.session-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.username {
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+}
+
+.username.own::after {
+    content: ' (tú)';
+    color: #667eea;
+    font-weight: normal;
+    font-size: 0.85rem;
+}
+
+.gym-name {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.session-details .gym-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+}
+
+.session-meta {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Date Badge */
+.date-badge {
+    background: #f0f0f0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Session Status */
+.session-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-ended {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+/* Pulse animation */
+.pulse {
+    width: 8px;
+    height: 8px;
+    background: #28a745;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+/* Duration */
+.duration {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.time-ago {
+    font-size: 0.8rem;
+    color: #999;
+    margin-top: 2px;
+}
+
+/* Stats Grid */
+.feed-stats,
+.session-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.stat-value.flash {
+    color: #ffc107;
+}
+
+.stat-value.send {
+    color: #28a745;
+}
+
+.stat-value.grade {
+    color: var(--primary, #667eea);
+    font-size: 1.1rem;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 30px;
+    background: white;
+    border-radius: 16px;
+}
+
+.empty-state span {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 20px;
+}
+
+.empty-state h2 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.empty-state a {
+    display: inline-block;
+    padding: 12px 24px;
+    background: var(--primary, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.empty-state a.secondary {
+    background: transparent;
+    border: 2px solid #667eea;
+    color: #667eea;
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--gray, #888);
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e0e0e0;
+    border-top-color: var(--primary, #667eea);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Month Divider */
+.month-divider {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--gray, #888);
+    margin: 1.5rem 0 1rem;
+    text-transform: capitalize;
+}
+
+.month-divider:first-child {
+    margin-top: 0;
+}
+
+/* Load More Button */
+.load-more {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    background: var(--primary, #667eea);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin-top: 16px;
+}
+
+.load-more:hover {
+    background: var(--primary-dark, #5a6fd6);
+}
