@@ -450,14 +450,25 @@ docker-compose -f docker-compose.prod.yml down -v
 
 ## 💾 Backups
 
+La base de datos SQLite se almacena en un volumen Docker persistente en `/app/data/chalkin.db`.
+
 ```bash
 # Backup de la base de datos
-docker cp chalkin_api:/app/chalkin.db ./backup-$(date +%Y%m%d).db
+docker cp chalkin_api:/app/data/chalkin.db ./backup-$(date +%Y%m%d).db
 
 # Restaurar backup
-docker cp ./backup-20231223.db chalkin_api:/app/chalkin.db
+docker cp ./backup-20231223.db chalkin_api:/app/data/chalkin.db
 docker-compose -f docker-compose.prod.yml restart api
+
+# Verificar que existe la BD
+docker-compose -f docker-compose.prod.yml exec api ls -la /app/data/
+
+# Backup automático diario (añadir a crontab)
+# crontab -e
+# 0 3 * * * docker cp chalkin_api:/app/data/chalkin.db /home/usuario/backups/chalkin-$(date +\%Y\%m\%d).db
 ```
+
+⚠️ **Importante**: No uses `docker-compose down -v` ya que esto elimina los volúmenes y la base de datos.
 
 ---
 
