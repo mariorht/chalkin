@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sesión - Chalkin</title>
+    <link rel="stylesheet" href="/static/css/app-shell.css">
     <style>
         * {
             margin: 0;
@@ -26,64 +27,12 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--light);
-            min-height: 100vh;
         }
+
+        /* Header base styles in app-shell.css */
 
         body.active-session {
-            padding-bottom: 100px;
-        }
-
-        header {
-            background: var(--dark);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .header-right {
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .header-right span {
-            color: var(--secondary);
-            font-weight: 700;
-        }
-
-        .session-status-badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .session-status-badge.active {
-            background: var(--success);
-            color: white;
-        }
-
-        .session-status-badge.ended {
-            background: var(--gray);
-            color: white;
+            padding-bottom: 180px; /* Extra space for end session button */
         }
 
         .main-container {
@@ -358,10 +307,10 @@
             color: var(--gray);
         }
 
-        /* Fixed bottom bar */
+        /* Fixed bottom bar (above bottom nav) */
         .bottom-bar {
             position: fixed;
-            bottom: 0;
+            bottom: var(--bottom-nav-height, 70px);
             left: 0;
             right: 0;
             background: white;
@@ -369,6 +318,7 @@
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: center;
+            z-index: 999;
         }
 
         .end-session-btn {
@@ -497,17 +447,13 @@
     </style>
 </head>
 <body>
-    <header>
-        <a href="/dashboard" class="logo">
-            <span>🧗</span> Chalkin
-        </a>
-        <div class="header-right" id="headerRight">
-            <span class="session-status-badge active" id="statusBadge">En curso</span>
-            <span id="timerContainer">⏱️ <span id="timer">00:00</span></span>
-        </div>
-    </header>
+    <!-- Session status bar -->
+    <div id="sessionStatusBar" style="position: fixed; top: var(--header-height, 60px); left: 0; right: 0; background: var(--dark); padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 999; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <span class="session-status-badge active" id="statusBadge" style="background: var(--success); color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">En curso</span>
+        <span id="timerContainer" style="color: var(--secondary); font-weight: 700;">⏱️ <span id="timer">00:00</span></span>
+    </div>
 
-    <main class="main-container">
+    <main class="main-container" style="padding-top: 40px;">
         <section class="session-info" id="sessionInfo">
             <h1>
                 <span id="gymName">Cargando...</span>
@@ -592,9 +538,13 @@
         </button>
     </div>
 
+    <script src="/static/js/app-shell.js"></script>
     <script>
+        // Inicializar App Shell
+        AppShell.init({ activePage: 'sessions' });
+        
         const API_URL = '/api';
-        const token = localStorage.getItem('token');
+        const token = AppShell.token;
         const sessionId = window.location.pathname.split('/').pop();
         
         let session = null;
@@ -604,10 +554,6 @@
         let selectedStatus = 'send';
         let startTime = null;
         let isSessionEnded = false;
-
-        if (!token) {
-            window.location.href = '/login';
-        }
 
         // Timer (only for active sessions)
         function updateTimer() {

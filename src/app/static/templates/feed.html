@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feed de Actividad - Chalkin</title>
+    <link rel="stylesheet" href="/static/css/app-shell.css">
     <style>
         * {
             margin: 0;
@@ -12,41 +13,13 @@
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            background: var(--light);
         }
+        /* Header styles in app-shell.css */
         .container {
             max-width: 600px;
             margin: 0 auto;
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: white;
-            text-decoration: none;
-        }
-        nav {
-            display: flex;
-            gap: 15px;
-        }
-        nav a {
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-        nav a:hover {
-            color: white;
-        }
-        nav a.active {
-            color: white;
-            font-weight: 600;
+            padding: 20px;
         }
         h1 {
             color: white;
@@ -249,19 +222,9 @@
         }
     </style>
 </head>
-<body>
+<body class="has-app-shell">
     <div class="container">
-        <header>
-            <a href="/dashboard" class="logo">🧗 Chalkin</a>
-            <nav>
-                <a href="/dashboard">Dashboard</a>
-                <a href="/feed" class="active">Feed</a>
-                <a href="/friends">Amigos</a>
-                <a href="/sessions">Sesiones</a>
-            </nav>
-        </header>
-
-        <h1>📰 Feed de Actividad</h1>
+        <h1 style="color: var(--dark); margin-bottom: 1.5rem;">📰 Feed de Actividad</h1>
 
         <div id="feedContainer">
             <div class="loading">
@@ -275,16 +238,16 @@
         </button>
     </div>
 
+    <script src="/static/js/app-shell.js"></script>
     <script>
+        // Inicializar App Shell
+        AppShell.init({ activePage: 'feed' });
+        
         const API_URL = '/api';
-        let token = localStorage.getItem('token');
+        let token = AppShell.token;
         let currentSkip = 0;
         const LIMIT = 20;
         let hasMore = false;
-
-        if (!token) {
-            window.location.href = '/login';
-        }
 
         function getHeaders() {
             return {

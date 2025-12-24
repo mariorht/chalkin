@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Chalkin</title>
+    <link rel="stylesheet" href="/static/css/app-shell.css">
     <style>
         * {
             margin: 0;
@@ -25,85 +26,9 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--light);
-            min-height: 100vh;
         }
 
-        /* Header */
-        header {
-            background: var(--dark);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .header-nav {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .header-nav a {
-            color: var(--gray);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-
-        .header-nav a:hover {
-            color: white;
-        }
-
-        .header-nav a.active {
-            color: var(--primary);
-        }
-
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            background: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-        }
-
-        .btn-logout {
-            background: transparent;
-            border: 1px solid var(--gray);
-            color: var(--gray);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .btn-logout:hover {
-            border-color: var(--error);
-            color: var(--error);
-        }
+        /* Header styles now in app-shell.css */
 
         /* Main */
         .main-container {
@@ -412,10 +337,6 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            .header-nav {
-                display: none;
-            }
-
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -512,33 +433,10 @@
             color: white;
         }
 
-        .nav-badge {
-            background: #dc3545;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 0.7rem;
-            margin-left: 4px;
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
-    <header>
-        <a href="/" class="logo">
-            <span>🧗</span> Chalkin
-        </a>
-        <nav class="header-nav">
-            <a href="/dashboard" class="active">Dashboard</a>
-            <a href="/feed">Feed</a>
-            <a href="/friends">Amigos</a>
-            <a href="/gyms/new">Añadir gimnasio</a>
-        </nav>
-        <div class="user-menu">
-            <div class="user-avatar" id="userAvatar">?</div>
-            <button class="btn-logout" onclick="logout()">Salir</button>
-        </div>
-    </header>
+    <!-- Header y navegación se inyectan por app-shell.js -->
 
     <main class="main-container">
         <section class="welcome-section">
@@ -616,45 +514,25 @@
         </section>
     </main>
 
+    <script src="/static/js/app-shell.js"></script>
     <script>
+        // Inicializar App Shell
+        AppShell.init({ activePage: 'dashboard' });
+        
         const API_URL = '/api';
-        const token = localStorage.getItem('token');
-        let user = {};
-        try {
-            const userStr = localStorage.getItem('user');
-            if (userStr && userStr !== 'undefined') {
-                user = JSON.parse(userStr);
-            }
-        } catch (e) {
-            console.error('Error parsing user:', e);
-        }
-
-        // Check auth
-        if (!token) {
-            window.location.href = '/login';
-        }
+        const token = AppShell.token;
+        const user = AppShell.user || {};
 
         // Set user info
         document.getElementById('userName').textContent = user.username || 'escalador';
-        document.getElementById('userAvatar').textContent = (user.username || 'U')[0].toUpperCase();
 
+        // Usar funciones del AppShell
         function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+            AppShell.logout();
         }
 
         async function fetchWithAuth(url) {
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            if (response.status === 401) {
-                logout();
-                return null;
-            }
-            return response;
+            return AppShell.fetchWithAuth(url);
         }
 
         async function loadStats() {
@@ -792,11 +670,8 @@
                 
                 const requests = await response.json();
                 
-                // Update nav badge
-                const friendsLink = document.querySelector('a[href="/friends"]');
-                if (requests.length > 0 && friendsLink) {
-                    friendsLink.innerHTML = `Amigos <span class="nav-badge">${requests.length}</span>`;
-                }
+                // Update nav badge using AppShell
+                AppShell.updateFriendsBadge(requests.length);
                 
                 // Show section if there are requests
                 if (requests.length === 0) return;
@@ -847,14 +722,12 @@
                     document.getElementById(`request-${requestId}`).remove();
                     // Check if section should be hidden
                     const container = document.getElementById('friendRequestsList');
-                    if (container.querySelectorAll('.friend-request-item').length === 0) {
+                    const remaining = container.querySelectorAll('.friend-request-item').length;
+                    if (remaining === 0) {
                         document.getElementById('friendRequestsSection').style.display = 'none';
-                        // Update nav badge
-                        const friendsLink = document.querySelector('a[href="/friends"]');
-                        if (friendsLink) {
-                            friendsLink.innerHTML = 'Amigos';
-                        }
                     }
+                    // Update nav badge using AppShell
+                    AppShell.updateFriendsBadge(remaining);
                 }
             } catch (error) {
                 console.error('Error accepting request:', error);
@@ -873,13 +746,12 @@
                 if (response.ok || response.status === 204) {
                     document.getElementById(`request-${requestId}`).remove();
                     const container = document.getElementById('friendRequestsList');
-                    if (container.querySelectorAll('.friend-request-item').length === 0) {
+                    const remaining = container.querySelectorAll('.friend-request-item').length;
+                    if (remaining === 0) {
                         document.getElementById('friendRequestsSection').style.display = 'none';
-                        const friendsLink = document.querySelector('a[href="/friends"]');
-                        if (friendsLink) {
-                            friendsLink.innerHTML = 'Amigos';
-                        }
                     }
+                    // Update nav badge using AppShell
+                    AppShell.updateFriendsBadge(remaining);
                 }
             } catch (error) {
                 console.error('Error rejecting request:', error);
