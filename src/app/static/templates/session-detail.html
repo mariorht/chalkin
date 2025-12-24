@@ -525,11 +525,6 @@
                 </div>
             </div>
         </section>
-
-        <!-- Back button (only for ended sessions) -->
-        <a href="/dashboard" class="back-btn hidden" id="backBtn">
-            ← Volver al dashboard
-        </a>
     </main>
 
     <div class="bottom-bar" id="bottomBar">
@@ -604,6 +599,9 @@
             try {
                 const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}`);
                 if (!response.ok) {
+                    if (response.status === 403) {
+                        alert('No tienes permiso para ver esta sesión');
+                    }
                     window.location.href = '/dashboard';
                     return;
                 }
@@ -612,14 +610,24 @@
                 startTime = new Date(session.started_at);
                 isSessionEnded = session.ended_at !== null;
                 
-                // Update UI based on session state
-                if (isSessionEnded) {
+                // Check if this is someone else's session
+                const isOwnSession = session.is_own !== false;
+                
+                // Update UI based on session state and ownership
+                if (!isOwnSession) {
+                    showFriendSessionView();
+                } else if (isSessionEnded) {
                     showEndedSessionView();
                 } else {
                     showActiveSessionView();
                 }
                 
-                document.getElementById('gymName').textContent = session.gym_name || 'Sesión de escalada';
+                // Show owner name for friend's sessions
+                let gymTitle = session.gym_name || 'Sesión de escalada';
+                if (!isOwnSession && session.owner_username) {
+                    gymTitle = `${session.owner_username} en ${gymTitle}`;
+                }
+                document.getElementById('gymName').textContent = gymTitle;
                 
                 const dateStr = new Date(session.date).toLocaleDateString('es', { 
                     weekday: 'long', 
@@ -633,10 +641,12 @@
                     document.getElementById('sessionMeta').textContent += ` • ${session.notes}`;
                 }
                 
-                if (isSessionEnded) {
-                    const duration = formatDuration(session.started_at, session.ended_at);
-                    document.getElementById('sessionDuration').textContent = `⏱️ Duración: ${duration}`;
-                    document.getElementById('sessionDuration').classList.remove('hidden');
+                if (isSessionEnded || !isOwnSession) {
+                    if (session.ended_at) {
+                        const duration = formatDuration(session.started_at, session.ended_at);
+                        document.getElementById('sessionDuration').textContent = `⏱️ Duración: ${duration}`;
+                        document.getElementById('sessionDuration').classList.remove('hidden');
+                    }
                 } else {
                     updateTimer();
                 }
@@ -651,6 +661,28 @@
             }
         }
 
+        function showFriendSessionView() {
+            // View-only mode for friend's sessions
+            document.body.classList.remove('active-session');
+            
+            const isActive = !session.ended_at;
+            if (isActive) {
+                document.getElementById('statusBadge').textContent = '🟢 En curso';
+                document.getElementById('statusBadge').classList.add('active');
+                document.getElementById('statusBadge').classList.remove('ended');
+            } else {
+                document.getElementById('statusBadge').textContent = '✓ Completada';
+                document.getElementById('statusBadge').classList.remove('active');
+                document.getElementById('statusBadge').classList.add('ended');
+            }
+            
+            document.getElementById('timerContainer').classList.add('hidden');
+            document.getElementById('gradeSelector').classList.add('hidden');
+            document.getElementById('bottomBar').classList.add('hidden');
+            document.getElementById('ascentsTitle').textContent = 'Bloques registrados';
+            document.getElementById('summarySection').classList.remove('hidden');
+        }
+
         function showActiveSessionView() {
             document.body.classList.add('active-session');
             document.getElementById('statusBadge').textContent = '🟢 En curso';
@@ -660,7 +692,6 @@
             document.getElementById('gradeSelector').classList.remove('hidden');
             document.getElementById('bottomBar').classList.remove('hidden');
             document.getElementById('ascentsTitle').textContent = 'Bloques de hoy';
-            document.getElementById('backBtn').classList.add('hidden');
             document.getElementById('summarySection').classList.add('hidden');
         }
 
@@ -673,18 +704,18 @@
             document.getElementById('gradeSelector').classList.add('hidden');
             document.getElementById('bottomBar').classList.add('hidden');
             document.getElementById('ascentsTitle').textContent = 'Bloques registrados';
-            document.getElementById('backBtn').classList.remove('hidden');
             document.getElementById('summarySection').classList.remove('hidden');
             
             // Show reopen button
             if (!document.getElementById('reopenBtn')) {
-                const backBtn = document.getElementById('backBtn');
+                const summarySection = document.getElementById('summarySection');
                 const reopenBtn = document.createElement('button');
                 reopenBtn.id = 'reopenBtn';
                 reopenBtn.className = 'btn-reopen';
                 reopenBtn.innerHTML = '✏️ Editar sesión';
                 reopenBtn.onclick = reopenSession;
-                backBtn.parentNode.insertBefore(reopenBtn, backBtn.nextSibling);
+                reopenBtn.style.marginTop = '1.5rem';
+                summarySection.appendChild(reopenBtn);
             }
         }
 
