@@ -290,3 +290,46 @@ class TestActivityFeed:
         data = response.json()
         assert isinstance(data["items"], list)
         assert isinstance(data["has_more"], bool)
+
+    def test_feed_includes_title_subtitle(self, client: TestClient, auth_headers, create_gym):
+        """Test that feed items include title and subtitle fields."""
+        gym = create_gym(name="Title Test Gym", location="Test")
+        
+        # Create session with title and subtitle
+        client.post(
+            "/api/sessions",
+            headers=auth_headers,
+            json={
+                "gym_id": gym.id,
+                "title": "Mi sesión especial",
+                "subtitle": "Día de volumen"
+            }
+        )
+        
+        response = client.get("/api/social/feed", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Find the session we just created
+        session_item = next((i for i in data["items"] if i["gym_name"] == "Title Test Gym"), None)
+        assert session_item is not None
+        assert session_item["title"] == "Mi sesión especial"
+        assert session_item["subtitle"] == "Día de volumen"
+
+    def test_feed_includes_gym_location(self, client: TestClient, auth_headers, create_gym):
+        """Test that feed items include gym_location field."""
+        gym = create_gym(name="Location Test Gym", location="Calle Test 123")
+        
+        client.post(
+            "/api/sessions",
+            headers=auth_headers,
+            json={"gym_id": gym.id}
+        )
+        
+        response = client.get("/api/social/feed", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        
+        session_item = next((i for i in data["items"] if i["gym_name"] == "Location Test Gym"), None)
+        assert session_item is not None
+        assert session_item["gym_location"] == "Calle Test 123"

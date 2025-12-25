@@ -43,6 +43,7 @@ class SessionResponse(SessionBase):
     
     # Extended fields for UI
     gym_name: Optional[str] = None
+    gym_location: Optional[str] = None
     total_ascents: int = 0
     flashes: int = 0
     sends: int = 0
