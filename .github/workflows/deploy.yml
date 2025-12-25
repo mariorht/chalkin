@@ -24,14 +24,29 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          # Para IPv6, usar formato directo sin -H (que no funciona bien con IPv6)
+          ssh-keyscan ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
       
       - name: Deploy to server
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            cd ~/chalkin
-            git pull origin main
-            docker compose -f docker-compose.prod.yml up -d --build
-            docker compose -f docker-compose.prod.yml exec -T api alembic upgrade head
-            echo "✅ Deployed at $(date)"
+          # Si SERVER_HOST contiene ':', es IPv6 y necesita corchetes para SSH
+          if [[ $SERVER_HOST == *":"* ]]; then
+            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
+              cd ~/chalkin
+              git pull origin main
+              docker compose -f docker-compose.prod.yml up -d --build
+              docker compose -f docker-compose.prod.yml exec -T api alembic upgrade head
+              echo "✅ Deployed at $(date)"
           EOF
+          else
+            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
+              cd ~/chalkin
+              git pull origin main
+              docker compose -f docker-compose.prod.yml up -d --build
+              docker compose -f docker-compose.prod.yml exec -T api alembic upgrade head
+              echo "✅ Deployed at $(date)"
+          EOF
+          fi
