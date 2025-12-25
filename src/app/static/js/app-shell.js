@@ -57,6 +57,11 @@ const AppShell = {
         return '?';
     },
     
+    // Obtener foto de perfil
+    getProfilePicture: function() {
+        return (this.user && this.user.profile_picture) || null;
+    },
+    
     // Obtener nombre de usuario
     getUsername: function() {
         return (this.user && this.user.username) || 'Usuario';
@@ -71,6 +76,12 @@ const AppShell = {
         
         const header = document.createElement('header');
         header.className = 'app-header';
+        
+        const profilePic = this.getProfilePicture();
+        const avatarContent = profilePic 
+            ? `<img src="${profilePic}" alt="Perfil">` 
+            : this.getUserInitial();
+        
         header.innerHTML = `
             <a href="/dashboard" class="logo">
                 <span class="logo-icon">🧗</span>
@@ -78,7 +89,7 @@ const AppShell = {
             </a>
             <div class="user-section">
                 <span class="user-name">${this.getUsername()}</span>
-                <div class="user-avatar" title="${this.getUsername()}">${this.getUserInitial()}</div>
+                <a href="/profile" class="user-avatar" title="${this.getUsername()}">${avatarContent}</a>
                 <button class="btn-logout" onclick="AppShell.logout()">Salir</button>
             </div>
         `;

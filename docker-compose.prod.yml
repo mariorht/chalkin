@@ -9,6 +9,8 @@ services:
       - DEBUG=false
       # Database - Usar ruta en volumen persistente
       - DATABASE_URL=${DATABASE_URL:-sqlite:///./data/chalkin.db}
+      # Data directory for persistent files
+      - DATA_DIR=/app/data
       # JWT Auth (SECRET_KEY es OBLIGATORIO en producción)
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM:-HS256}

@@ -372,6 +372,7 @@ def get_activity_feed(
             session_id=session.id,
             user_id=session.user_id,
             username=user.username if user else "Usuario",
+            profile_picture=user.profile_picture if user else None,
             gym_id=session.gym_id,
             gym_name=gym.name if gym else "Gimnasio",
             gym_location=gym.location if gym else None,

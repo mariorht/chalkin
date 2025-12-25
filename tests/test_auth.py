@@ -99,3 +99,83 @@ class TestAuth:
         
         assert response.status_code == 200
         assert response.json()["username"] == "updatedname"
+
+
+class TestProfilePicture:
+    """Tests for profile picture upload/delete."""
+    
+    def test_upload_profile_picture(self, client, auth_headers):
+        """Test uploading a profile picture."""
+        # Create a fake image file
+        from io import BytesIO
+        fake_image = BytesIO(b'\x89PNG\r\n\x1a\n' + b'\x00' * 100)  # Minimal PNG header
+        fake_image.name = 'test.png'
+        
+        response = client.post(
+            "/api/auth/me/picture",
+            headers=auth_headers,
+            files={"file": ("test.png", fake_image, "image/png")}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["profile_picture"] is not None
+        assert "/data/uploads/profiles/" in data["profile_picture"]
+    
+    def test_upload_invalid_file_type(self, client, auth_headers):
+        """Test uploading non-image file fails."""
+        from io import BytesIO
+        fake_file = BytesIO(b'not an image')
+        
+        response = client.post(
+            "/api/auth/me/picture",
+            headers=auth_headers,
+            files={"file": ("test.txt", fake_file, "text/plain")}
+        )
+        
+        assert response.status_code == 400
+        assert "image" in response.json()["detail"].lower()
+    
+    def test_delete_profile_picture(self, client, auth_headers):
+        """Test deleting profile picture."""
+        # First upload a picture
+        from io import BytesIO
+        fake_image = BytesIO(b'\x89PNG\r\n\x1a\n' + b'\x00' * 100)
+        
+        client.post(
+            "/api/auth/me/picture",
+            headers=auth_headers,
+            files={"file": ("test.png", fake_image, "image/png")}
+        )
+        
+        # Now delete it
+        response = client.delete("/api/auth/me/picture", headers=auth_headers)
+        
+        assert response.status_code == 200
+        assert response.json()["profile_picture"] is None
+    
+    def test_delete_nonexistent_picture(self, client, auth_headers):
+        """Test deleting when no picture exists."""
+        response = client.delete("/api/auth/me/picture", headers=auth_headers)
+        
+        # Should succeed even if no picture
+        assert response.status_code == 200
+    
+    def test_profile_picture_in_login_response(self, client, test_user, db):
+        """Test that profile_picture is included in login response."""
+        # Set a profile picture directly
+        test_user.profile_picture = "/data/uploads/profiles/test.png"
+        db.commit()
+        db.refresh(test_user)
+        
+        response = client.post("/api/auth/login", json={
+            "email": "test@example.com",
+            "password": "testpass123"
+        })
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "user" in data
+        # Check that profile_picture key exists in user object
+        assert "profile_picture" in data["user"]
+        assert data["user"]["profile_picture"] == "/data/uploads/profiles/test.png"

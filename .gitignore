@@ -8,6 +8,7 @@ venv/
 **/__pycache__/
 *.pyc
 *.db
-
+data/
+uploads/
 # SSL certificates (producción)
 nginx/ssl/

@@ -51,8 +51,26 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 static_dir = os.path.join(base_dir, "static")
 template_dir = os.path.join(static_dir, "templates")
 
+# Ensure data/uploads directory exists
+data_dir = os.path.abspath(settings.data_dir)
+uploads_dir = os.path.join(data_dir, "uploads")
+profiles_dir = os.path.join(uploads_dir, "profiles")
+try:
+    os.makedirs(profiles_dir, exist_ok=True)
+except PermissionError:
+    # Fallback to a directory relative to the app
+    uploads_dir = os.path.join(base_dir, "uploads")
+    profiles_dir = os.path.join(uploads_dir, "profiles")
+    os.makedirs(profiles_dir, exist_ok=True)
+
 # Serve static files
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# Serve uploaded files from uploads directory
+try:
+    app.mount("/data/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+except RuntimeError:
+    pass  # Directory doesn't exist yet, will be created on first upload
 
 
 @app.get("/", response_class=FileResponse)
@@ -131,6 +149,12 @@ def serve_feed():
 def serve_stats():
     """Serve the statistics page."""
     return os.path.join(template_dir, "stats.html")
+
+
+@app.get("/profile", response_class=FileResponse)
+def serve_profile():
+    """Serve the profile edit page."""
+    return os.path.join(template_dir, "profile.html")
 
 
 @app.get("/health")

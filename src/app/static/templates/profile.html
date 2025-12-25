@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Chalkin</title>
+    <link rel="stylesheet" href="/static/css/app-shell.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+            --gray-light: #E5E7EB;
+            --error: #EF4444;
+            --success: #22C55E;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+        }
+
+        .main-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            color: var(--dark);
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            color: var(--dark);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Profile Picture */
+        .profile-picture-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .profile-picture-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .profile-picture {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary);
+            background: var(--gray-light);
+        }
+
+        .profile-picture-placeholder {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            font-weight: 700;
+            border: 4px solid var(--primary);
+        }
+
+        .picture-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-upload {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-upload:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-remove {
+            background: var(--gray-light);
+            color: var(--gray);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-remove:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--gray-light);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .form-group input:disabled {
+            background: var(--gray-light);
+            color: var(--gray);
+        }
+
+        .form-hint {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 0.3rem;
+        }
+
+        .btn-save {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-save:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        /* Password change section */
+        .password-section {
+            border-top: 1px solid var(--gray-light);
+            padding-top: 1.25rem;
+            margin-top: 1.25rem;
+        }
+
+        .password-section h3 {
+            color: var(--dark);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Stats summary */
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .stat-item {
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 10px;
+        }
+
+        .stat-item .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-item .label {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        /* Member since */
+        .member-since {
+            text-align: center;
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body class="has-app-shell">
+    <main class="main-container">
+        <div class="page-header">
+            <h1>👤 Mi Perfil</h1>
+        </div>
+
+        <div id="alertSuccess" class="alert alert-success"></div>
+        <div id="alertError" class="alert alert-error"></div>
+
+        <!-- Profile Picture Card -->
+        <div class="card">
+            <h2>📷 Foto de perfil</h2>
+            <div class="profile-picture-section">
+                <div class="profile-picture-container">
+                    <img id="profilePicture" class="profile-picture" src="" alt="Foto de perfil" style="display: none;">
+                    <div id="profilePlaceholder" class="profile-picture-placeholder">U</div>
+                </div>
+                <div class="picture-actions">
+                    <input type="file" id="fileInput" accept="image/*">
+                    <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
+                        📤 Cambiar foto
+                    </button>
+                    <button class="btn-remove" id="removePictureBtn" onclick="removePicture()" style="display: none;">
+                        🗑️ Quitar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Info Card -->
+        <div class="card">
+            <h2>✏️ Información</h2>
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="username">Nombre de usuario</label>
+                    <input type="text" id="username" name="username" required minlength="3" maxlength="50">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="homeGym">Gimnasio principal</label>
+                    <select id="homeGym" name="home_gym_id">
+                        <option value="">Sin gimnasio principal</option>
+                    </select>
+                    <p class="form-hint">Tu gimnasio habitual para acceso rápido</p>
+                </div>
+
+                <div class="password-section">
+                    <h3>🔒 Cambiar contraseña</h3>
+                    <div class="form-group">
+                        <label for="newPassword">Nueva contraseña</label>
+                        <input type="password" id="newPassword" name="password" minlength="6" placeholder="Dejar vacío para no cambiar">
+                        <p class="form-hint">Mínimo 6 caracteres</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-save" id="saveBtn">
+                    💾 Guardar cambios
+                </button>
+            </form>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="card">
+            <h2>📊 Resumen</h2>
+            <div class="stats-summary">
+                <div class="stat-item">
+                    <div class="value" id="totalSessions">-</div>
+                    <div class="label">Sesiones</div>
+                </div>
+                <div class="stat-item">
+                    <div class="value" id="totalAscents">-</div>
+                    <div class="label">Bloques</div>
+                </div>
+                <div class="stat-item">
+                    <div class="value" id="maxGrade">-</div>
+                    <div class="label">Máx. grado</div>
+                </div>
+            </div>
+            <p class="member-since" id="memberSince"></p>
+        </div>
+    </main>
+
+    <script src="/static/js/app-shell.js"></script>
+    <script>
+        AppShell.init({ activePage: 'profile' });
+        
+        const API_URL = '/api';
+        const token = AppShell.token;
+        let currentUser = null;
+
+        function showAlert(type, message) {
+            const alert = document.getElementById(type === 'success' ? 'alertSuccess' : 'alertError');
+            alert.textContent = message;
+            alert.classList.add('show');
+            setTimeout(() => alert.classList.remove('show'), 3000);
+        }
+
+        async function fetchWithAuth(url, options = {}) {
+            return fetch(url, {
+                ...options,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    ...options.headers
+                }
+            });
+        }
+
+        async function loadProfile() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/auth/me`);
+                currentUser = await response.json();
+                
+                // Fill form
+                document.getElementById('username').value = currentUser.username;
+                document.getElementById('email').value = currentUser.email;
+                
+                // Profile picture
+                updateProfilePicture();
+                
+                // Member since
+                const memberDate = new Date(currentUser.created_at);
+                document.getElementById('memberSince').textContent = 
+                    `Miembro desde ${memberDate.toLocaleDateString('es', { month: 'long', year: 'numeric' })}`;
+                
+                // Load gyms for selector
+                await loadGyms();
+                
+                // Load stats
+                await loadStats();
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        function updateProfilePicture() {
+            const img = document.getElementById('profilePicture');
+            const placeholder = document.getElementById('profilePlaceholder');
+            const removeBtn = document.getElementById('removePictureBtn');
+            
+            if (currentUser.profile_picture) {
+                img.src = currentUser.profile_picture;
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+                removeBtn.style.display = 'block';
+            } else {
+                img.style.display = 'none';
+                placeholder.style.display = 'flex';
+                placeholder.textContent = currentUser.username.charAt(0).toUpperCase();
+                removeBtn.style.display = 'none';
+            }
+        }
+
+        function updateLocalStorage() {
+            // Update localStorage user data
+            const userForStorage = {
+                id: currentUser.id,
+                username: currentUser.username,
+                email: currentUser.email,
+                profile_picture: currentUser.profile_picture
+            };
+            localStorage.setItem('user', JSON.stringify(userForStorage));
+            
+            // Update AppShell if available
+            if (AppShell && AppShell.user) {
+                AppShell.user = userForStorage;
+            }
+        }
+
+        async function loadGyms() {
+            try {
+                const response = await fetch(`${API_URL}/gyms`);
+                const gyms = await response.json();
+                
+                const select = document.getElementById('homeGym');
+                gyms.forEach(gym => {
+                    const option = document.createElement('option');
+                    option.value = gym.id;
+                    option.textContent = gym.name;
+                    if (currentUser.home_gym_id === gym.id) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading gyms:', error);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/stats/me`);
+                const stats = await response.json();
+                
+                document.getElementById('totalSessions').textContent = stats.total_sessions || 0;
+                document.getElementById('totalAscents').textContent = stats.total_ascents || 0;
+                document.getElementById('maxGrade').textContent = stats.max_grade_ever || '-';
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // File upload handler
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // Validate size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('error', 'La imagen no puede superar 5MB');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/me/picture`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    currentUser = await response.json();
+                    updateProfilePicture();
+                    // Update localStorage
+                    updateLocalStorage();
+                    showAlert('success', 'Foto actualizada');
+                } else {
+                    const error = await response.json();
+                    showAlert('error', error.detail || 'Error al subir la foto');
+                }
+            } catch (error) {
+                showAlert('error', 'Error al subir la foto');
+            }
+            
+            // Clear input
+            e.target.value = '';
+        });
+
+        async function removePicture() {
+            if (!confirm('¿Quitar tu foto de perfil?')) return;
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/auth/me/picture`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    currentUser = await response.json();
+                    updateProfilePicture();
+                    // Update localStorage
+                    updateLocalStorage();
+                    showAlert('success', 'Foto eliminada');
+                } else {
+                    showAlert('error', 'Error al eliminar la foto');
+                }
+            } catch (error) {
+                showAlert('error', 'Error al eliminar la foto');
+            }
+        }
+
+        // Form submit
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Guardando...';
+            
+            const data = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                home_gym_id: document.getElementById('homeGym').value || null
+            };
+            
+            const newPassword = document.getElementById('newPassword').value;
+            if (newPassword) {
+                data.password = newPassword;
+            }
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/auth/me`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    currentUser = await response.json();
+                    showAlert('success', 'Perfil actualizado');
+                    document.getElementById('newPassword').value = '';
+                    
+                    // Update localStorage and app shell
+                    updateLocalStorage();
+                } else {
+                    const error = await response.json();
+                    showAlert('error', error.detail || 'Error al guardar');
+                }
+            } catch (error) {
+                showAlert('error', 'Error al guardar');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💾 Guardar cambios';
+            }
+        });
+
+        loadProfile();
+    </script>
+</body>
+</html>

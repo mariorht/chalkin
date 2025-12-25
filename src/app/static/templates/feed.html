@@ -39,6 +39,9 @@
             const dateIcon = Utils.formatDateIcon(item.started_at);
             
             const initial = item.username.charAt(0).toUpperCase();
+            const avatarContent = item.profile_picture 
+                ? `<img src="${item.profile_picture}" alt="${item.username}">` 
+                : initial;
             
             // Title logic: use custom title or default to gym name
             const displayTitle = item.title || `📍 ${item.gym_name}`;
@@ -50,7 +53,7 @@
                 <div class="feed-card" onclick="window.location.href='/sessions/${item.session_id}'">
                     <div class="feed-header">
                         <div class="user-info">
-                            <div class="avatar ${item.is_own ? 'own' : ''}">${initial}</div>
+                            <div class="avatar ${item.is_own ? 'own' : ''}">${avatarContent}</div>
                             <div class="user-details">
                                 <span class="username ${item.is_own ? 'own' : ''}">${item.username}</span>
                                 <span class="gym-name">${displayTitle}</span>

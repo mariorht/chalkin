@@ -14,8 +14,12 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
     
-    # Database - usar /app/data para persistencia con Docker volumes
+    # Database
     database_url: str = "sqlite:///./data/chalkin.db"
+    
+    # Data directory for uploads and persistent files
+    # In Docker: /app/data, Local: ./data (relative to src/)
+    data_dir: str = "./data"
     
     # JWT Auth
     secret_key: str = "your-secret-key-change-in-production"

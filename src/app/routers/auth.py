@@ -1,8 +1,10 @@
 """
 Authentication router - register, login, profile.
 """
+import os
+import uuid
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 
 from app.db.base import get_db
@@ -13,6 +15,18 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserLogin, Token, UserUpdate
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+# Directory for profile pictures (inside data_dir for persistence)
+# With fallback to app/uploads if data_dir is not writable
+_data_dir = os.path.abspath(settings.data_dir)
+_base_dir = os.path.dirname(os.path.abspath(__file__))
+try:
+    _test_dir = os.path.join(_data_dir, "uploads", "profiles")
+    os.makedirs(_test_dir, exist_ok=True)
+    PROFILE_PICS_DIR = _test_dir
+except PermissionError:
+    PROFILE_PICS_DIR = os.path.join(os.path.dirname(_base_dir), "uploads", "profiles")
+    os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -72,7 +86,7 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     
     return Token(
         access_token=access_token,
-        user={"id": user.id, "username": user.username, "email": user.email}
+        user={"id": user.id, "username": user.username, "email": user.email, "profile_picture": user.profile_picture}
     )
 
 
@@ -121,5 +135,71 @@ def update_profile(
     
     db.commit()
     db.refresh(current_user)
+    
+    return current_user
+
+
+@router.post("/me/picture", response_model=UserResponse)
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload a profile picture.
+    """
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an image (JPEG, PNG, GIF, or WebP)"
+        )
+    
+    # Create directory if it doesn't exist
+    os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
+    
+    # Generate unique filename
+    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    filename = f"{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
+    filepath = os.path.join(PROFILE_PICS_DIR, filename)
+    
+    # Delete old profile picture if exists
+    if current_user.profile_picture:
+        old_path = os.path.join(PROFILE_PICS_DIR, os.path.basename(current_user.profile_picture))
+        if os.path.exists(old_path):
+            os.remove(old_path)
+    
+    # Save new file
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    
+    # Update user
+    current_user.profile_picture = f"/data/uploads/profiles/{filename}"
+    db.commit()
+    db.refresh(current_user)
+    
+    return current_user
+
+
+@router.delete("/me/picture", response_model=UserResponse)
+def delete_profile_picture(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete profile picture.
+    """
+    if current_user.profile_picture:
+        # Delete file
+        filepath = os.path.join(PROFILE_PICS_DIR, os.path.basename(current_user.profile_picture))
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        
+        # Clear from database
+        current_user.profile_picture = None
+        db.commit()
+        db.refresh(current_user)
     
     return current_user
