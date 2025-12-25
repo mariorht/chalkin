@@ -1,5 +1,8 @@
 # Chalkin - Boulder Climbing Tracker 🧗
 
+[![Run Tests](https://github.com/mariorht/chalkin/actions/workflows/run-tests.yml/badge.svg)](https://github.com/mariorht/chalkin/actions/workflows/run-tests.yml)
+[![Deploy](https://github.com/mariorht/chalkin/actions/workflows/deploy.yml/badge.svg)](https://github.com/mariorht/chalkin/actions/workflows/deploy.yml)
+
 Track your climbing sessions, log boulder ascents, and monitor your progress. Like Strava, but for climbers.
 
 ## Features
