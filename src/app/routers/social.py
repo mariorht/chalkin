@@ -66,6 +66,7 @@ def search_users(
         results.append(UserSearchResult(
             id=user.id,
             username=user.username,
+            profile_picture=user.profile_picture,
             friendship_status=friendship_status
         ))
     
