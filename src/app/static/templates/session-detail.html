@@ -444,6 +444,26 @@
             transform: translateY(-2px);
         }
 
+        .btn-primary {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
         .btn-delete {
             display: inline-block;
             background: var(--error);
@@ -574,6 +594,7 @@
         let selectedStatus = 'send';
         let startTime = null;
         let isSessionEnded = false;
+        let isEditMode = false;
 
         // Timer (only for active sessions)
         function updateTimer() {
@@ -731,23 +752,24 @@
             document.getElementById('ascentsTitle').textContent = 'Bloques registrados';
             document.getElementById('summarySection').classList.remove('hidden');
             
-            // Show reopen and delete buttons
-            if (!document.getElementById('reopenBtn')) {
+            // Show edit and delete buttons
+            if (!document.getElementById('editModeBtn')) {
                 const summarySection = document.getElementById('summarySection');
                 
                 const buttonsContainer = document.createElement('div');
+                buttonsContainer.id = 'sessionActionButtons';
                 buttonsContainer.style.display = 'flex';
                 buttonsContainer.style.gap = '1rem';
                 buttonsContainer.style.marginTop = '1.5rem';
                 buttonsContainer.style.flexWrap = 'wrap';
                 
-                const reopenBtn = document.createElement('button');
-                reopenBtn.id = 'reopenBtn';
-                reopenBtn.className = 'btn-reopen';
-                reopenBtn.innerHTML = '✏️ Editar sesión';
-                reopenBtn.onclick = reopenSession;
-                reopenBtn.style.marginTop = '0';
-                reopenBtn.style.marginLeft = '0';
+                const editBtn = document.createElement('button');
+                editBtn.id = 'editModeBtn';
+                editBtn.className = 'btn-reopen';
+                editBtn.innerHTML = '✏️ Editar bloques';
+                editBtn.onclick = toggleEditMode;
+                editBtn.style.marginTop = '0';
+                editBtn.style.marginLeft = '0';
                 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.id = 'deleteSessionBtn';
@@ -757,9 +779,35 @@
                 deleteBtn.style.marginTop = '0';
                 deleteBtn.style.marginLeft = '0';
                 
-                buttonsContainer.appendChild(reopenBtn);
+                buttonsContainer.appendChild(editBtn);
                 buttonsContainer.appendChild(deleteBtn);
                 summarySection.appendChild(buttonsContainer);
+            }
+        }
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const editBtn = document.getElementById('editModeBtn');
+            const gradeSelector = document.getElementById('gradeSelector');
+            
+            if (isEditMode) {
+                editBtn.innerHTML = '✓ Terminar edición';
+                editBtn.classList.remove('btn-reopen');
+                editBtn.classList.add('btn-primary');
+                gradeSelector.classList.remove('hidden');
+                document.getElementById('statusBadge').textContent = '✏️ Editando';
+                document.getElementById('statusBadge').style.background = 'var(--flash)';
+                // Reload ascents to show delete buttons
+                updateAscentsList();
+            } else {
+                editBtn.innerHTML = '✏️ Editar bloques';
+                editBtn.classList.add('btn-reopen');
+                editBtn.classList.remove('btn-primary');
+                gradeSelector.classList.add('hidden');
+                document.getElementById('statusBadge').textContent = '✓ Completada';
+                document.getElementById('statusBadge').style.background = '';
+                // Reload ascents to hide delete buttons
+                updateAscentsList();
             }
         }
 
@@ -768,8 +816,7 @@
                 const response = await fetch(`${API_URL}/gyms/${gymId}/grades`);
                 grades = await response.json();
                 
-                if (isSessionEnded) return; // Don't render grade selector for ended sessions
-                
+                // Render grade selector (hidden initially for ended sessions)
                 const container = document.getElementById('gradesGrid');
                 
                 if (grades.length === 0) {
@@ -834,7 +881,9 @@
                 const time = new Date(ascent.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
                 
                 // Only show delete button for active sessions
-                const deleteBtn = isSessionEnded ? '' : `<button class="ascent-delete" onclick="deleteAscent(${ascent.id})">🗑️</button>`;
+                // Show delete button if session is active OR in edit mode
+                const showDelete = !isSessionEnded || isEditMode;
+                const deleteBtn = showDelete ? `<button class="ascent-delete" onclick="deleteAscent(${ascent.id})">🗑️</button>` : '';
                 
                 return `
                     <div class="ascent-item">
@@ -940,7 +989,8 @@
         }
 
         document.getElementById('addAscentBtn').addEventListener('click', async () => {
-            if (!selectedGradeId || isSessionEnded) return;
+            // Allow adding if session is active OR in edit mode
+            if (!selectedGradeId || (isSessionEnded && !isEditMode)) return;
             
             try {
                 const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}/ascents`, {
@@ -991,26 +1041,6 @@
             } catch (error) {
                 console.error('Error ending session:', error);
                 window.location.href = '/dashboard';
-            }
-        }
-
-        async function reopenSession() {
-            if (!confirm('¿Reabrir esta sesión para editarla?')) return;
-            
-            try {
-                const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}/reopen`, {
-                    method: 'POST'
-                });
-                
-                if (response.ok) {
-                    // Reload page to show active session view
-                    window.location.reload();
-                } else {
-                    alert('Error al reabrir la sesión');
-                }
-            } catch (error) {
-                console.error('Error reopening session:', error);
-                alert('Error al reabrir la sesión');
             }
         }
 

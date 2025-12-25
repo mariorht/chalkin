@@ -267,6 +267,35 @@
             margin-bottom: 1rem;
         }
 
+        /* Period Toggle */
+        .period-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            background: var(--gray-light);
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .period-btn {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .period-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
         /* Loading */
         .loading {
             text-align: center;
@@ -482,6 +511,10 @@
 
         <!-- Friends Comparison Tab -->
         <div id="tab-friends" class="tab-content">
+            <div class="period-toggle">
+                <button class="period-btn active" data-period="total">📊 Total</button>
+                <button class="period-btn" data-period="year">📅 Último año</button>
+            </div>
             <div id="friendsContainer" class="loading">Cargando...</div>
         </div>
     </main>
@@ -677,6 +710,7 @@
 
         function renderGradeDistribution(grades) {
             const container = document.getElementById('gradeDistribution');
+            container.classList.remove('loading');
             
             if (grades.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>No hay datos de grados</p></div>';
@@ -700,6 +734,7 @@
 
         function renderGymBreakdown(gyms) {
             const container = document.getElementById('gymBreakdown');
+            container.classList.remove('loading');
             
             if (gyms.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">🏠</div><p>No hay datos de gimnasios</p></div>';
@@ -766,12 +801,30 @@
             `).join('');
         }
 
+        // Friends period state
+        let friendsPeriod = 'total';
+
+        // Period toggle handler
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                friendsPeriod = btn.dataset.period;
+                
+                // Reload friends data
+                const container = document.getElementById('friendsContainer');
+                container.innerHTML = 'Cargando...';
+                container.classList.add('loading');
+                loadFriendsComparison();
+            });
+        });
+
         // Load friends comparison
         async function loadFriendsComparison() {
             const container = document.getElementById('friendsContainer');
             
             try {
-                const response = await fetchWithAuth(`${API_URL}/stats/friends-leaderboard`);
+                const response = await fetchWithAuth(`${API_URL}/stats/friends-leaderboard?period=${friendsPeriod}`);
                 const data = await response.json();
                 
                 renderGymCharts(data.gyms || []);
@@ -788,6 +841,7 @@
 
         function renderGymCharts(gyms) {
             const container = document.getElementById('friendsContainer');
+            container.classList.remove('loading');
             
             if (gyms.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>Añade amigos para comparar</p></div>';
