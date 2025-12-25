@@ -50,6 +50,7 @@ class FeedItem(BaseModel):
     session_id: int
     user_id: int
     username: str
+    profile_picture: Optional[str] = None
     gym_id: int
     gym_name: str
     gym_location: Optional[str] = None

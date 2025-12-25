@@ -22,6 +22,7 @@ class User(Base):
     home_gym_id = Column(Integer, ForeignKey("gyms.id"), nullable=True)
     
     # Profile info
+    profile_picture = Column(String(255), nullable=True)  # URL or path to profile picture
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

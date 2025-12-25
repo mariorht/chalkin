@@ -333,3 +333,43 @@ class TestActivityFeed:
         session_item = next((i for i in data["items"] if i["gym_name"] == "Location Test Gym"), None)
         assert session_item is not None
         assert session_item["gym_location"] == "Calle Test 123"
+
+    def test_feed_includes_profile_picture(self, client: TestClient, auth_headers, create_gym, test_user, db):
+        """Test that feed items include profile_picture field."""
+        # Set profile picture for test user
+        test_user.profile_picture = "/data/uploads/profiles/test.png"
+        db.commit()
+        
+        gym = create_gym(name="Profile Pic Gym", location="Test")
+        
+        client.post(
+            "/api/sessions",
+            headers=auth_headers,
+            json={"gym_id": gym.id}
+        )
+        
+        response = client.get("/api/social/feed", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        
+        session_item = next((i for i in data["items"] if i["gym_name"] == "Profile Pic Gym"), None)
+        assert session_item is not None
+        assert session_item["profile_picture"] == "/data/uploads/profiles/test.png"
+
+    def test_feed_profile_picture_null_when_not_set(self, client: TestClient, auth_headers, create_gym):
+        """Test that profile_picture is null when user has no picture."""
+        gym = create_gym(name="No Pic Gym", location="Test")
+        
+        client.post(
+            "/api/sessions",
+            headers=auth_headers,
+            json={"gym_id": gym.id}
+        )
+        
+        response = client.get("/api/social/feed", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        
+        session_item = next((i for i in data["items"] if i["gym_name"] == "No Pic Gym"), None)
+        assert session_item is not None
+        assert session_item["profile_picture"] is None

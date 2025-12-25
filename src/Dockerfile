@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create data directory for persistent storage (mounted as volume)
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data/uploads/profiles
 
 # Expose port
 EXPOSE 8001

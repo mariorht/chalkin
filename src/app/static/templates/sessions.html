@@ -37,6 +37,9 @@
             
             const user = AppShell.user || {};
             const initial = (user.username || 'U').charAt(0).toUpperCase();
+            const avatarContent = user.profile_picture 
+                ? `<img src="${user.profile_picture}" alt="${user.username}">` 
+                : initial;
             
             const sessionTitle = session.title || `📍 ${session.gym_name || 'Sesión'}`;
             const sessionSubtitle = session.subtitle ? `<span class="session-subtitle">${session.subtitle}</span>` : '';
@@ -46,7 +49,7 @@
                 <a href="/sessions/${session.id}" class="session-card">
                     <div class="session-header">
                         <div class="session-info">
-                            <div class="avatar own">${initial}</div>
+                            <div class="avatar own">${avatarContent}</div>
                             <div class="session-details">
                                 <span class="gym-name">${session.title ? sessionTitle : `📍 ${session.gym_name || 'Sesión'}`}</span>
                                 ${sessionSubtitle}

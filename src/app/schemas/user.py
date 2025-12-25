@@ -23,6 +23,7 @@ class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     home_gym_id: Optional[int] = None
+    profile_picture: Optional[str] = None
     password: Optional[str] = Field(None, min_length=6, max_length=100)
 
 
@@ -30,6 +31,7 @@ class UserResponse(UserBase):
     """Schema for user responses (no password)."""
     id: int
     home_gym_id: Optional[int] = None
+    profile_picture: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -47,6 +49,7 @@ class TokenUser(BaseModel):
     id: int
     username: str
     email: str
+    profile_picture: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

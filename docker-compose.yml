@@ -9,6 +9,8 @@ services:
       - DEBUG=${DEBUG:-true}
       # Database
       - DATABASE_URL=${DATABASE_URL:-sqlite:///./chalkin.db}
+      # Data directory
+      - DATA_DIR=/app/data
       # JWT Auth
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - ALGORITHM=${ALGORITHM:-HS256}
