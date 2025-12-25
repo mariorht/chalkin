@@ -62,6 +62,73 @@
             gap: 0.5rem;
         }
 
+        .title-edit-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            padding: 0.25rem;
+        }
+
+        .title-edit-btn:hover {
+            opacity: 1;
+        }
+
+        .title-editor {
+            display: none;
+            margin-bottom: 1rem;
+        }
+
+        .title-editor.active {
+            display: block;
+        }
+
+        .title-editor input {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-family: inherit;
+        }
+
+        .title-editor input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .title-editor input::placeholder {
+            color: #999;
+        }
+
+        .title-editor-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .title-editor-buttons button {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-save-title {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-cancel-title {
+            background: #E5E7EB;
+            color: var(--gray);
+        }
+
         .session-meta {
             color: var(--gray);
             font-size: 0.9rem;
@@ -500,9 +567,22 @@
 
     <main class="main-container" style="padding-top: 40px;">
         <section class="session-info" id="sessionInfo">
-            <h1>
+            <h1 id="sessionTitle">
                 <span id="gymName">Cargando...</span>
+                <button class="title-edit-btn" id="editTitleBtn" title="Editar título">✏️</button>
             </h1>
+            
+            <!-- Editor de título (oculto por defecto) -->
+            <div class="title-editor" id="titleEditor">
+                <input type="text" id="editTitleInput" placeholder="Título de la sesión" maxlength="100">
+                <input type="text" id="editSubtitleInput" placeholder="Subtítulo (opcional)" maxlength="200">
+                <div class="title-editor-buttons">
+                    <button class="btn-cancel-title" id="cancelTitleBtn">Cancelar</button>
+                    <button class="btn-save-title" id="saveTitleBtn">Guardar</button>
+                </div>
+            </div>
+            
+            <p class="session-subtitle hidden" id="sessionSubtitle" style="color: var(--gray); font-size: 0.95rem; margin-bottom: 0.5rem;"></p>
             <p class="session-meta" id="sessionMeta"></p>
             <p class="session-duration hidden" id="sessionDuration"></p>
             
@@ -673,7 +753,20 @@
                 if (!isOwnSession && session.owner_username) {
                     gymTitle = `${session.owner_username} en ${gymTitle}`;
                 }
-                document.getElementById('gymName').textContent = gymTitle;
+                
+                // Use session title if available
+                if (session.title) {
+                    document.getElementById('gymName').textContent = session.title;
+                } else {
+                    document.getElementById('gymName').textContent = gymTitle;
+                }
+                
+                // Show subtitle if available
+                if (session.subtitle) {
+                    const subtitleEl = document.getElementById('sessionSubtitle');
+                    subtitleEl.textContent = session.subtitle;
+                    subtitleEl.classList.remove('hidden');
+                }
                 
                 const dateStr = new Date(session.date).toLocaleDateString('es', { 
                     weekday: 'long', 
@@ -710,6 +803,9 @@
         function showFriendSessionView() {
             // View-only mode for friend's sessions
             document.body.classList.remove('active-session');
+            
+            // Hide edit button for friend's sessions
+            document.getElementById('editTitleBtn').style.display = 'none';
             
             const isActive = !session.ended_at;
             if (isActive) {
@@ -1063,6 +1159,84 @@
                 alert('Error al eliminar la sesión');
             }
         }
+
+        // Title editing functionality
+        document.getElementById('editTitleBtn').addEventListener('click', () => {
+            const editor = document.getElementById('titleEditor');
+            const titleEl = document.getElementById('sessionTitle');
+            const subtitleEl = document.getElementById('sessionSubtitle');
+            
+            // Populate inputs with current values
+            document.getElementById('editTitleInput').value = session.title || '';
+            document.getElementById('editSubtitleInput').value = session.subtitle || '';
+            
+            // Show editor, hide title
+            editor.classList.add('active');
+            titleEl.style.display = 'none';
+            subtitleEl.style.display = 'none';
+            
+            document.getElementById('editTitleInput').focus();
+        });
+
+        document.getElementById('cancelTitleBtn').addEventListener('click', () => {
+            document.getElementById('titleEditor').classList.remove('active');
+            document.getElementById('sessionTitle').style.display = 'flex';
+            const subtitleEl = document.getElementById('sessionSubtitle');
+            if (session.subtitle) {
+                subtitleEl.style.display = 'block';
+            }
+        });
+
+        document.getElementById('saveTitleBtn').addEventListener('click', async () => {
+            const newTitle = document.getElementById('editTitleInput').value.trim() || null;
+            const newSubtitle = document.getElementById('editSubtitleInput').value.trim() || null;
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        title: newTitle,
+                        subtitle: newSubtitle
+                    })
+                });
+                
+                if (response.ok) {
+                    // Update local session data
+                    session.title = newTitle;
+                    session.subtitle = newSubtitle;
+                    
+                    // Update UI
+                    const titleEl = document.getElementById('sessionTitle');
+                    const gymNameEl = document.getElementById('gymName');
+                    const subtitleEl = document.getElementById('sessionSubtitle');
+                    
+                    if (newTitle) {
+                        gymNameEl.textContent = newTitle;
+                    } else {
+                        gymNameEl.textContent = session.gym_name || 'Sesión de escalada';
+                    }
+                    
+                    if (newSubtitle) {
+                        subtitleEl.textContent = newSubtitle;
+                        subtitleEl.classList.remove('hidden');
+                        subtitleEl.style.display = 'block';
+                    } else {
+                        subtitleEl.textContent = '';
+                        subtitleEl.classList.add('hidden');
+                        subtitleEl.style.display = 'none';
+                    }
+                    
+                    // Hide editor, show title
+                    document.getElementById('titleEditor').classList.remove('active');
+                    titleEl.style.display = 'flex';
+                } else {
+                    alert('Error al guardar');
+                }
+            } catch (error) {
+                console.error('Error saving title:', error);
+                alert('Error al guardar');
+            }
+        });
 
         loadSession();
     </script>

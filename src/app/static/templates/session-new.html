@@ -274,8 +274,18 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="title">Título (opcional)</label>
+                    <input type="text" id="title" name="title" maxlength="100" placeholder="Ej: Sesión de fuerza, Día de volumen...">
+                </div>
+
+                <div class="form-group">
+                    <label for="subtitle">Subtítulo (opcional)</label>
+                    <input type="text" id="subtitle" name="subtitle" maxlength="200" placeholder="Ej: Trabajando laterales, Probando la zona nueva...">
+                </div>
+
+                <div class="form-group">
                     <label for="notes">Notas (opcional)</label>
-                    <textarea id="notes" name="notes" rows="2" placeholder="Ej: Día de técnica, probar bloques nuevos..."></textarea>
+                    <textarea id="notes" name="notes" rows="2" placeholder="Notas adicionales..."></textarea>
                 </div>
 
                 <button type="submit" class="btn btn-primary" id="submitBtn">
@@ -398,6 +408,8 @@
                     },
                     body: JSON.stringify({
                         gym_id: selectedGymId,
+                        title: document.getElementById('title').value || null,
+                        subtitle: document.getElementById('subtitle').value || null,
                         notes: document.getElementById('notes').value || null
                     })
                 });

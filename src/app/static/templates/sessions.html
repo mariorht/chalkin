@@ -38,13 +38,20 @@
             const user = AppShell.user || {};
             const initial = (user.username || 'U').charAt(0).toUpperCase();
             
+            const sessionTitle = session.title || `📍 ${session.gym_name || 'Sesión'}`;
+            const sessionSubtitle = session.subtitle ? `<span class="session-subtitle">${session.subtitle}</span>` : '';
+            const locationText = session.gym_location ? `<span class="session-location">📍 ${session.gym_location}</span>` : '';
+            
             return `
                 <a href="/sessions/${session.id}" class="session-card">
                     <div class="session-header">
                         <div class="session-info">
                             <div class="avatar own">${initial}</div>
                             <div class="session-details">
-                                <span class="gym-name">📍 ${session.gym_name || 'Sesión'}</span>
+                                <span class="gym-name">${session.title ? sessionTitle : `📍 ${session.gym_name || 'Sesión'}`}</span>
+                                ${sessionSubtitle}
+                                ${!session.title && session.gym_location ? `<span class="session-location">${session.gym_location}</span>` : ''}
+                                ${session.title ? `<span class="session-location">📍 ${session.gym_name}${session.gym_location ? ' • ' + session.gym_location : ''}</span>` : ''}
                                 ${isActive ? 
                                     '<span class="session-status status-active"><span class="pulse"></span> En curso</span>' :
                                     (duration ? `<span class="duration">⏱️ ${duration}</span>` : '')

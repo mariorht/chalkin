@@ -52,6 +52,9 @@ class FeedItem(BaseModel):
     username: str
     gym_id: int
     gym_name: str
+    gym_location: Optional[str] = None
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
     date: date
     started_at: datetime
     ended_at: Optional[datetime] = None
