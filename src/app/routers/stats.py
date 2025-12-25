@@ -430,6 +430,7 @@ def get_friends_comparison(
 
 @router.get("/friends-leaderboard")
 def get_friends_leaderboard(
+    period: str = Query("total", description="Period filter: 'total' or 'year'"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -456,6 +457,11 @@ def get_friends_leaderboard(
     
     # Include current user
     all_user_ids = [current_user.id] + friend_ids
+    
+    # Calculate date filter for period
+    date_filter = None
+    if period == "year":
+        date_filter = date.today() - timedelta(days=365)
     
     # Get users info
     users_info = {}
@@ -500,10 +506,13 @@ def get_friends_leaderboard(
                     continue
                 
                 # Get sessions for this user at this gym
-                sessions = db.query(ClimbingSession).filter(
+                session_query = db.query(ClimbingSession).filter(
                     ClimbingSession.user_id == user_id,
                     ClimbingSession.gym_id == gym_id
-                ).all()
+                )
+                if date_filter:
+                    session_query = session_query.filter(ClimbingSession.date >= date_filter)
+                sessions = session_query.all()
                 
                 session_ids = [s.id for s in sessions]
                 
