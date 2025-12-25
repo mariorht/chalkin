@@ -427,3 +427,169 @@ def get_friends_comparison(
         "comparison": comparison
     }
 
+
+@router.get("/friends-leaderboard")
+def get_friends_leaderboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get leaderboard with friends by gym with grade distribution.
+    """
+    from app.models.friendship import Friendship, FriendshipStatus
+    from sqlalchemy import or_, and_
+    
+    # Get friends
+    friendships = db.query(Friendship).filter(
+        or_(
+            and_(Friendship.user_id == current_user.id, Friendship.status == FriendshipStatus.ACCEPTED),
+            and_(Friendship.friend_id == current_user.id, Friendship.status == FriendshipStatus.ACCEPTED)
+        )
+    ).all()
+    
+    friend_ids = []
+    for f in friendships:
+        if f.user_id == current_user.id:
+            friend_ids.append(f.friend_id)
+        else:
+            friend_ids.append(f.user_id)
+    
+    # Include current user
+    all_user_ids = [current_user.id] + friend_ids
+    
+    # Get users info
+    users_info = {}
+    for user_id in all_user_ids:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            users_info[user_id] = {
+                "username": user.username,
+                "is_current_user": user_id == current_user.id
+            }
+    
+    # Get all gyms visited by users
+    gym_ids = db.query(ClimbingSession.gym_id).filter(
+        ClimbingSession.user_id.in_(all_user_ids)
+    ).distinct().all()
+    
+    result = []
+    
+    for (gym_id,) in gym_ids:
+        gym = db.query(Gym).filter(Gym.id == gym_id).first()
+        if not gym:
+            continue
+        
+        # Get grades for this gym, sorted by difficulty
+        grades = db.query(Grade).filter(Grade.gym_id == gym_id).order_by(Grade.relative_difficulty).all()
+        if not grades:
+            continue
+        
+        # Build grade distribution per user
+        grade_data = []
+        for grade in grades:
+            grade_entry = {
+                "grade_id": grade.id,
+                "label": grade.label,
+                "color": grade.color_hex or "#666",
+                "difficulty": grade.relative_difficulty,
+                "users": []
+            }
+            
+            for user_id in all_user_ids:
+                if user_id not in users_info:
+                    continue
+                
+                # Get sessions for this user at this gym
+                sessions = db.query(ClimbingSession).filter(
+                    ClimbingSession.user_id == user_id,
+                    ClimbingSession.gym_id == gym_id
+                ).all()
+                
+                session_ids = [s.id for s in sessions]
+                
+                # Count sends for this grade
+                sends_count = 0
+                if session_ids:
+                    sends_count = db.query(Ascent).filter(
+                        Ascent.session_id.in_(session_ids),
+                        Ascent.grade_id == grade.id,
+                        Ascent.status.in_([AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH])
+                    ).count()
+                
+                grade_entry["users"].append({
+                    "user_id": user_id,
+                    "username": users_info[user_id]["username"],
+                    "is_current_user": users_info[user_id]["is_current_user"],
+                    "sends": sends_count
+                })
+            
+            grade_data.append(grade_entry)
+        
+        # Calculate totals per user for this gym
+        user_totals = []
+        for user_id in all_user_ids:
+            if user_id not in users_info:
+                continue
+            total_sends = sum(
+                next((u["sends"] for u in g["users"] if u["user_id"] == user_id), 0)
+                for g in grade_data
+            )
+            user_totals.append({
+                "user_id": user_id,
+                "username": users_info[user_id]["username"],
+                "is_current_user": users_info[user_id]["is_current_user"],
+                "total_sends": total_sends
+            })
+        
+        user_totals.sort(key=lambda x: x["total_sends"], reverse=True)
+        for i, ut in enumerate(user_totals):
+            ut["rank"] = i + 1
+        
+        result.append({
+            "gym_id": gym_id,
+            "gym_name": gym.name,
+            "grades": grade_data,
+            "user_totals": user_totals
+        })
+    
+    return {"gyms": result}
+
+
+@router.get("/available-gyms")
+def get_available_gyms_for_leaderboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get gyms that the user and friends have visited.
+    """
+    from app.models.friendship import Friendship, FriendshipStatus
+    from sqlalchemy import or_, and_
+    
+    # Get friends
+    friendships = db.query(Friendship).filter(
+        or_(
+            and_(Friendship.user_id == current_user.id, Friendship.status == FriendshipStatus.ACCEPTED),
+            and_(Friendship.friend_id == current_user.id, Friendship.status == FriendshipStatus.ACCEPTED)
+        )
+    ).all()
+    
+    friend_ids = [current_user.id]
+    for f in friendships:
+        if f.user_id == current_user.id:
+            friend_ids.append(f.friend_id)
+        else:
+            friend_ids.append(f.user_id)
+    
+    # Get unique gyms from all sessions
+    gym_ids = db.query(ClimbingSession.gym_id).filter(
+        ClimbingSession.user_id.in_(friend_ids)
+    ).distinct().all()
+    
+    gyms = []
+    for (gym_id,) in gym_ids:
+        gym = db.query(Gym).filter(Gym.id == gym_id).first()
+        if gym:
+            gyms.append({"id": gym.id, "name": gym.name})
+    
+    return gyms

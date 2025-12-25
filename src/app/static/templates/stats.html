@@ -387,8 +387,6 @@
 </head>
 <body>
     <main class="main-container">
-        <h1 class="page-title">📊 Estadísticas</h1>
-
         <div class="tabs">
             <button class="tab-btn active" data-tab="total">Total</button>
             <button class="tab-btn" data-tab="year">Último año</button>
@@ -484,13 +482,151 @@
 
         <!-- Friends Comparison Tab -->
         <div id="tab-friends" class="tab-content">
-            <section class="stats-section">
-                <h2>🏅 Ranking del mes</h2>
-                <p style="color: var(--gray); font-size: 0.85rem; margin-bottom: 1rem;">Comparación de los últimos 30 días</p>
-                <div id="friendsComparison" class="loading">Cargando...</div>
-            </section>
+            <div id="friendsContainer" class="loading">Cargando...</div>
         </div>
     </main>
+
+    <style>
+        .gym-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+        .gym-card h3 {
+            color: var(--dark);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        .legend-name {
+            color: var(--dark);
+            font-weight: 500;
+        }
+        .legend-name.is-me {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .grade-chart-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .grade-label-box {
+            min-width: 55px;
+            height: 26px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 0.7rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+        .bars-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .user-bar-row {
+            display: flex;
+            align-items: center;
+            height: 16px;
+        }
+        .user-bar {
+            height: 100%;
+            border-radius: 3px;
+            min-width: 2px;
+            transition: width 0.3s ease;
+        }
+        .user-bar-value {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-left: 4px;
+            min-width: 20px;
+        }
+        .totals-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #E5E7EB;
+        }
+        .totals-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+        .total-row {
+            display: flex;
+            align-items: center;
+            padding: 0.4rem 0;
+        }
+        .total-rank {
+            width: 24px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .total-rank.r1 { color: #F59E0B; }
+        .total-rank.r2 { color: #9CA3AF; }
+        .total-rank.r3 { color: #B45309; }
+        .total-user {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .total-avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.65rem;
+            color: white;
+        }
+        .total-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .total-name.is-me {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .total-value {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--dark);
+        }
+    </style>
 
     <script src="/static/js/app-shell.js"></script>
     <script>
@@ -632,67 +768,99 @@
 
         // Load friends comparison
         async function loadFriendsComparison() {
+            const container = document.getElementById('friendsContainer');
+            
             try {
-                const response = await fetchWithAuth(`${API_URL}/stats/friends-comparison`);
+                const response = await fetchWithAuth(`${API_URL}/stats/friends-leaderboard`);
                 const data = await response.json();
                 
-                renderFriendsComparison(data.comparison || []);
+                renderGymCharts(data.gyms || []);
             } catch (error) {
-                console.error('Error loading friends comparison:', error);
+                console.error('Error loading leaderboard:', error);
+                container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Error al cargar</p></div>';
             }
         }
 
-        function renderFriendsComparison(comparison) {
-            const container = document.getElementById('friendsComparison');
+        // Generate distinct colors for users
+        const userColors = [
+            '#FF6B35', '#2EC4B6', '#7C3AED', '#F59E0B', '#EC4899', '#10B981', '#6366F1', '#EF4444'
+        ];
+
+        function renderGymCharts(gyms) {
+            const container = document.getElementById('friendsContainer');
             
-            if (comparison.length === 0) {
+            if (gyms.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>Añade amigos para comparar</p></div>';
                 return;
             }
             
-            const getRankClass = (rank) => {
-                if (rank === 1) return 'first';
-                if (rank === 2) return 'second';
-                if (rank === 3) return 'third';
-                return '';
-            };
+            let html = '';
             
-            const getRankEmoji = (rank) => {
-                if (rank === 1) return '🥇';
-                if (rank === 2) return '🥈';
-                if (rank === 3) return '🥉';
-                return rank;
-            };
-            
-            container.innerHTML = `
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Usuario</th>
-                            <th style="text-align: center">Sends</th>
-                            <th style="text-align: center">⚡</th>
-                            <th style="text-align: center">Máx</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${comparison.map(entry => `
-                            <tr>
-                                <td class="rank ${getRankClass(entry.rank)}">${getRankEmoji(entry.rank)}</td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar">${entry.username.charAt(0).toUpperCase()}</div>
-                                        <span class="user-name ${entry.is_current_user ? 'is-me' : ''}">${entry.username}${entry.is_current_user ? ' (tú)' : ''}</span>
-                                    </div>
-                                </td>
-                                <td class="stat-value">${entry.sends}</td>
-                                <td class="stat-value">${entry.flashes}</td>
-                                <td class="stat-value"><span class="grade-badge">${entry.max_grade || '-'}</span></td>
-                            </tr>
+            gyms.forEach(gym => {
+                // Get all unique users and assign colors
+                const users = gym.user_totals || [];
+                const userColorMap = {};
+                users.forEach((u, i) => {
+                    userColorMap[u.user_id] = userColors[i % userColors.length];
+                });
+                
+                // Find max sends across all grades for scaling
+                let maxSends = 0;
+                gym.grades.forEach(grade => {
+                    grade.users.forEach(u => {
+                        if (u.sends > maxSends) maxSends = u.sends;
+                    });
+                });
+                maxSends = Math.max(maxSends, 1);
+                
+                html += `
+                    <div class="gym-card">
+                        <h3>🏠 ${gym.gym_name}</h3>
+                        
+                        <!-- Legend -->
+                        <div class="chart-legend">
+                            ${users.map(u => `
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background: ${userColorMap[u.user_id]}"></div>
+                                    <span class="legend-name ${u.is_current_user ? 'is-me' : ''}">${u.username}${u.is_current_user ? ' (tú)' : ''}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <!-- Grade bars -->
+                        ${gym.grades.map(grade => `
+                            <div class="grade-chart-row">
+                                <div class="grade-label-box" style="background: ${grade.color}">${grade.label}</div>
+                                <div class="bars-container">
+                                    ${grade.users.map(u => `
+                                        <div class="user-bar-row">
+                                            <div class="user-bar" style="background: ${userColorMap[u.user_id]}; width: ${(u.sends / maxSends) * 100}%"></div>
+                                            ${u.sends > 0 ? `<span class="user-bar-value">${u.sends}</span>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
                         `).join('')}
-                    </tbody>
-                </table>
-            `;
+                        
+                        <!-- Totals -->
+                        <div class="totals-section">
+                            <div class="totals-title">🏆 Total bloques</div>
+                            ${users.map(u => `
+                                <div class="total-row">
+                                    <div class="total-rank ${u.rank === 1 ? 'r1' : u.rank === 2 ? 'r2' : u.rank === 3 ? 'r3' : ''}">${u.rank === 1 ? '🥇' : u.rank === 2 ? '🥈' : u.rank === 3 ? '🥉' : u.rank}</div>
+                                    <div class="total-user">
+                                        <div class="total-avatar" style="background: ${userColorMap[u.user_id]}">${u.username.charAt(0).toUpperCase()}</div>
+                                        <span class="total-name ${u.is_current_user ? 'is-me' : ''}">${u.username}</span>
+                                    </div>
+                                    <div class="total-value">${u.total_sends}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
         }
 
         // Load all stats
