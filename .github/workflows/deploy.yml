@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Setup WARP for IPv6 support
         uses: fscarmen/warp-on-actions@v1.3
+        with:
+          mode: client # Usar modo cliente en lugar de wireguard para evitar problemas de dependencias
         
       - name: Setup SSH key
         run: |
