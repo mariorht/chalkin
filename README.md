@@ -377,31 +377,6 @@ docker-compose -f docker-compose.prod.yml logs -f
 
 **Acceso:** http://tu-servidor.com (puerto 80)
 
-### Paso 5: Configurar SSL (HTTPS)
-
-```bash
-# Instalar certbot
-sudo apt install certbot
-
-# Parar nginx temporalmente
-docker-compose -f docker-compose.prod.yml stop nginx
-
-# Obtener certificado (reemplaza tu-dominio.com)
-sudo certbot certonly --standalone -d tu-dominio.com
-
-# Copiar certificados al proyecto
-mkdir -p nginx/ssl
-sudo cp /etc/letsencrypt/live/tu-dominio.com/fullchain.pem nginx/ssl/
-sudo cp /etc/letsencrypt/live/tu-dominio.com/privkey.pem nginx/ssl/
-sudo chown -R $USER:$USER nginx/ssl
-```
-
-Editar `nginx/nginx.conf` para habilitar HTTPS (descomentar sección SSL) y reiniciar:
-
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
-
 ---
 
 ## 🔄 Actualizar en Producción
