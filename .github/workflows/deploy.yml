@@ -1,13 +1,18 @@
 name: Deploy to Production
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Python tests"]
+    types:
+      - completed
     branches:
       - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Solo deploy si los tests pasaron
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
