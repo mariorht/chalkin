@@ -35,6 +35,26 @@ jobs:
           # Si SERVER_HOST contiene ':', es IPv6 y necesita corchetes para SSH
           if [[ $SERVER_HOST == *":"* ]]; then
             ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
+              # Crear directorio de backups si no existe
+              mkdir -p ~/db_backup
+              
+              # Hacer backup de la base de datos con timestamp
+              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+              DB_SOURCE=$(docker volume inspect chalkin_chalkin_data -f '{{ .Mountpoint }}' 2>/dev/null || echo "~/chalkin/src/data")
+              
+              if [ -f "${DB_SOURCE}/chalkin.db" ]; then
+                cp ${DB_SOURCE}/chalkin.db ~/db_backup/chalkin_${TIMESTAMP}.db
+                echo "✅ Backup creado: chalkin_${TIMESTAMP}.db"
+              else
+                echo "⚠️  Base de datos no encontrada en ${DB_SOURCE}"
+              fi
+              
+              # Mantener solo los 30 backups más recientes
+              cd ~/db_backup
+              ls -t chalkin_*.db 2>/dev/null | tail -n +31 | xargs -r rm
+              echo "📦 Backups actuales: $(ls -1 chalkin_*.db 2>/dev/null | wc -l)"
+              
+              # Deploy
               cd ~/chalkin
               git pull origin main
               docker compose -f docker-compose.prod.yml up -d --build
@@ -43,6 +63,26 @@ jobs:
           EOF
           else
             ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
+              # Crear directorio de backups si no existe
+              mkdir -p ~/db_backup
+              
+              # Hacer backup de la base de datos con timestamp
+              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+              DB_SOURCE=$(docker volume inspect chalkin_chalkin_data -f '{{ .Mountpoint }}' 2>/dev/null || echo "~/chalkin/src/data")
+              
+              if [ -f "${DB_SOURCE}/chalkin.db" ]; then
+                cp ${DB_SOURCE}/chalkin.db ~/db_backup/chalkin_${TIMESTAMP}.db
+                echo "✅ Backup creado: chalkin_${TIMESTAMP}.db"
+              else
+                echo "⚠️  Base de datos no encontrada en ${DB_SOURCE}"
+              fi
+              
+              # Mantener solo los 30 backups más recientes
+              cd ~/db_backup
+              ls -t chalkin_*.db 2>/dev/null | tail -n +31 | xargs -r rm
+              echo "📦 Backups actuales: $(ls -1 chalkin_*.db 2>/dev/null | wc -l)"
+              
+              # Deploy
               cd ~/chalkin
               git pull origin main
               docker compose -f docker-compose.prod.yml up -d --build
