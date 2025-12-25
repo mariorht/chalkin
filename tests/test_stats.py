@@ -66,3 +66,38 @@ class TestStats:
         response = client.get("/api/stats/me")
         
         assert response.status_code == 401
+    
+    def test_friends_leaderboard(self, client, auth_headers):
+        """Test friends leaderboard endpoint."""
+        response = client.get("/api/stats/friends-leaderboard", headers=auth_headers)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "gyms" in data
+        assert isinstance(data["gyms"], list)
+    
+    def test_friends_leaderboard_period_total(self, client, auth_headers):
+        """Test friends leaderboard with total period."""
+        response = client.get("/api/stats/friends-leaderboard?period=total", headers=auth_headers)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "gyms" in data
+    
+    def test_friends_leaderboard_period_year(self, client, auth_headers):
+        """Test friends leaderboard with year period filter."""
+        response = client.get("/api/stats/friends-leaderboard?period=year", headers=auth_headers)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "gyms" in data
+    
+    def test_yearly_stats(self, client, auth_headers):
+        """Test yearly stats endpoint."""
+        response = client.get("/api/stats/yearly", headers=auth_headers)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "total_sessions" in data
+        assert "total_ascents" in data
+        assert "monthly_stats" in data

@@ -86,6 +86,48 @@ class TestSessions:
         
         assert response.status_code == 404
     
+    def test_create_session_with_title(self, client, auth_headers, test_gym):
+        """Test creating a session with title and subtitle."""
+        response = client.post("/api/sessions",
+            headers=auth_headers,
+            json={
+                "gym_id": test_gym.id,
+                "title": "Sesión de fuerza",
+                "subtitle": "Trabajando laterales",
+                "notes": "Buen día"
+            }
+        )
+        
+        assert response.status_code == 201
+        data = response.json()
+        assert data["title"] == "Sesión de fuerza"
+        assert data["subtitle"] == "Trabajando laterales"
+    
+    def test_update_session_title(self, client, auth_headers, test_session):
+        """Test updating session title and subtitle."""
+        response = client.patch(f"/api/sessions/{test_session.id}",
+            headers=auth_headers,
+            json={
+                "title": "Nuevo título",
+                "subtitle": "Nuevo subtítulo"
+            }
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["title"] == "Nuevo título"
+        assert data["subtitle"] == "Nuevo subtítulo"
+    
+    def test_session_includes_gym_location(self, client, auth_headers, test_session):
+        """Test that session response includes gym_location."""
+        response = client.get("/api/sessions", headers=auth_headers)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        # gym_location should be present (may be None if gym has no location)
+        assert "gym_location" in data[0]
+    
     def test_update_session(self, client, auth_headers, test_session):
         """Test updating a session."""
         response = client.patch(f"/api/sessions/{test_session.id}",
