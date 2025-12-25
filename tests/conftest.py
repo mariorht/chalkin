@@ -16,6 +16,7 @@ from app.models.gym import Gym, GradingSystemType
 from app.models.grade import Grade
 from app.models.session import Session
 from app.models.ascent import Ascent, AscentStatus
+from app.models.push_subscription import PushSubscription
 
 
 # Test database - in-memory SQLite
