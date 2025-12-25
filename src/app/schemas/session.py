@@ -10,6 +10,8 @@ class SessionBase(BaseModel):
     """Base session schema with common fields."""
     gym_id: int
     date: date_type = Field(default_factory=date_type.today)
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -22,6 +24,8 @@ class SessionUpdate(BaseModel):
     """Schema for updating session info."""
     gym_id: Optional[int] = None
     date: Optional[date_type] = None
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
     notes: Optional[str] = None
     ended_at: Optional[datetime] = None
 
@@ -30,6 +34,8 @@ class SessionResponse(SessionBase):
     """Schema for session responses."""
     id: int
     user_id: int
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
     started_at: datetime
     ended_at: Optional[datetime] = None
     created_at: datetime

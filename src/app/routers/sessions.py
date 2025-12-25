@@ -37,9 +37,10 @@ def is_friend(db: Session, user_id: int, other_user_id: int) -> bool:
 
 def enrich_session(session: ClimbingSession, db: Session) -> dict:
     """Add computed fields to a session."""
-    # Get gym name
+    # Get gym name and location
     gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
     gym_name = gym.name if gym else "Gimnasio"
+    gym_location = gym.location if gym else None
     
     # Count ascents by status
     ascents = db.query(Ascent).filter(Ascent.session_id == session.id).all()
@@ -63,12 +64,15 @@ def enrich_session(session: ClimbingSession, db: Session) -> dict:
         "user_id": session.user_id,
         "gym_id": session.gym_id,
         "date": session.date,
+        "title": session.title,
+        "subtitle": session.subtitle,
         "notes": session.notes,
         "started_at": session.started_at,
         "ended_at": session.ended_at,
         "created_at": session.created_at,
         "updated_at": session.updated_at,
         "gym_name": gym_name,
+        "gym_location": gym_location,
         "total_ascents": total_ascents,
         "flashes": flashes,
         "sends": sends,
@@ -181,6 +185,8 @@ def get_session(
         "user_id": session.user_id,
         "gym_id": session.gym_id,
         "date": session.date,
+        "title": session.title,
+        "subtitle": session.subtitle,
         "notes": session.notes,
         "started_at": session.started_at,
         "ended_at": session.ended_at,

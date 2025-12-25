@@ -40,6 +40,12 @@
             
             const initial = item.username.charAt(0).toUpperCase();
             
+            // Title logic: use custom title or default to gym name
+            const displayTitle = item.title || `📍 ${item.gym_name}`;
+            const subtitleHtml = item.subtitle ? `<span class="session-subtitle">${item.subtitle}</span>` : '';
+            // If custom title, show gym name
+            const locationHtml = item.title ? `<span class="session-location">📍 ${item.gym_name}</span>` : '';
+            
             return `
                 <div class="feed-card" onclick="window.location.href='/sessions/${item.session_id}'">
                     <div class="feed-header">
@@ -47,7 +53,9 @@
                             <div class="avatar ${item.is_own ? 'own' : ''}">${initial}</div>
                             <div class="user-details">
                                 <span class="username ${item.is_own ? 'own' : ''}">${item.username}</span>
-                                <span class="gym-name">📍 ${item.gym_name}</span>
+                                <span class="gym-name">${displayTitle}</span>
+                                ${subtitleHtml}
+                                ${locationHtml}
                                 ${isActive ? 
                                     '<span class="session-status status-active"><span class="pulse"></span> En curso</span>' :
                                     (duration ? `<span class="duration">⏱️ ${duration}</span>` : '')

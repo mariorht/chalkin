@@ -26,6 +26,10 @@ class Session(Base):
     started_at = Column(DateTime, default=datetime.utcnow)
     ended_at = Column(DateTime, nullable=True)
     
+    # Session info
+    title = Column(String(100), nullable=True)
+    subtitle = Column(String(200), nullable=True)
+    
     # Notes about the session
     notes = Column(Text, nullable=True)
     
