@@ -28,7 +28,8 @@ const AppShell = {
         // Cargar notificaciones de amigos
         if (this.token) {
             this.loadFriendRequestsCount();
-            this.setupPush();
+            // TODO: Push notifications desactivadas temporalmente (requiere HTTPS)
+            // this.setupPush();
         }
         
         // Añadir clase al body
