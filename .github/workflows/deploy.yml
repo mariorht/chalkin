@@ -14,26 +14,22 @@ jobs:
     # Solo deploy si los tests pasaron
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Deploy to server
-        env:
-          SSH_HOST: ${{ secrets.SERVER_HOST }}
-          SSH_USER: ${{ secrets.SERVER_USER }}
-          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      - name: Setup WARP for IPv6 support
+        uses: fscarmen/warp-on-actions@v1.3
+        
+      - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          
-          # Crear config SSH para evitar problemas con IPv6
-          cat > ~/.ssh/config << SSHCONFIG
-          Host deploy-target
-            HostName ${SSH_HOST}
-            User ${SSH_USER}
-            IdentityFile ~/.ssh/deploy_key
-            StrictHostKeyChecking no
-            UserKnownHostsFile /dev/null
-          SSHCONFIG
-          chmod 600 ~/.ssh/config
-          
-          # Ejecutar deploy
-          ssh deploy-target 'cd ~/chalkin && git pull origin main && docker compose -f docker-compose.prod.yml up -d --build && docker compose -f docker-compose.prod.yml exec -T api alembic upgrade head && echo "✅ Deployed at $(date)"'
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+      
+      - name: Deploy to server
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            cd ~/chalkin
+            git pull origin main
+            docker compose -f docker-compose.prod.yml up -d --build
+            docker compose -f docker-compose.prod.yml exec -T api alembic upgrade head
+            echo "✅ Deployed at $(date)"
+          EOF
