@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas - Chalkin</title>
+    <link rel="stylesheet" href="/static/css/app-shell.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+            --error: #EF4444;
+            --success: #22C55E;
+            --flash: #F59E0B;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            padding-bottom: 100px;
+        }
+
+        .main-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .page-title {
+            color: var(--dark);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Tab navigation */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #F3F4F6;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Stats cards */
+        .stats-section {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-section h2 {
+            color: var(--dark);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 0.25rem;
+        }
+
+        .stat-card.highlight {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        }
+
+        .stat-card.highlight .value,
+        .stat-card.highlight .label {
+            color: white;
+        }
+
+        /* Chart container */
+        .chart-container {
+            margin-top: 1rem;
+            padding: 1rem 0;
+        }
+
+        .chart-svg {
+            width: 100%;
+            height: 200px;
+        }
+
+        .chart-bar {
+            fill: var(--primary);
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .chart-bar:hover {
+            opacity: 1;
+        }
+
+        .chart-label {
+            fill: var(--gray);
+            font-size: 10px;
+            text-anchor: middle;
+        }
+
+        .chart-value {
+            fill: var(--dark);
+            font-size: 10px;
+            text-anchor: middle;
+            font-weight: 600;
+        }
+
+        /* Comparison table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 0.75rem 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .comparison-table th {
+            font-size: 0.75rem;
+            color: var(--gray);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .comparison-table td {
+            font-size: 0.9rem;
+        }
+
+        .comparison-table .rank {
+            font-weight: 700;
+            color: var(--primary);
+            width: 30px;
+        }
+
+        .comparison-table .rank.first {
+            color: #F59E0B;
+        }
+
+        .comparison-table .rank.second {
+            color: #9CA3AF;
+        }
+
+        .comparison-table .rank.third {
+            color: #B45309;
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--secondary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .user-name.is-me {
+            color: var(--primary);
+        }
+
+        .stat-value {
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .grade-badge {
+            background: var(--light);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--gray);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--gray);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Grade distribution */
+        .grade-row {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .grade-row:last-child {
+            border-bottom: none;
+        }
+
+        .grade-color {
+            min-width: 50px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 0.75rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            margin-right: 1rem;
+        }
+
+        .grade-bar-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .grade-bar {
+            flex: 1;
+            height: 24px;
+            background: #E5E7EB;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .grade-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        .grade-count {
+            min-width: 40px;
+            text-align: right;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        /* Monthly chart */
+        .monthly-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 150px;
+            padding: 1rem 0;
+            gap: 4px;
+        }
+
+        .month-bar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .month-bar-fill {
+            width: 100%;
+            background: var(--primary);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.3s ease;
+            min-height: 4px;
+        }
+
+        .month-label {
+            font-size: 0.7rem;
+            color: var(--gray);
+        }
+
+        .month-value {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+    </style>
+</head>
+<body>
+    <main class="main-container">
+        <h1 class="page-title">📊 Estadísticas</h1>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="total">Total</button>
+            <button class="tab-btn" data-tab="year">Último año</button>
+            <button class="tab-btn" data-tab="friends">Amigos</button>
+        </div>
+
+        <!-- Total Stats Tab -->
+        <div id="tab-total" class="tab-content active">
+            <section class="stats-section">
+                <h2>📈 Resumen general</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="value" id="totalSessions">-</div>
+                        <div class="label">Sesiones</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="totalAscents">-</div>
+                        <div class="label">Bloques</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="totalSends">-</div>
+                        <div class="label">Enviados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="totalFlashes">-</div>
+                        <div class="label">Flashes</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="stats-section">
+                <h2>🏆 Mejor grado</h2>
+                <div class="stats-grid">
+                    <div class="stat-card highlight">
+                        <div class="value" id="maxGradeEver">-</div>
+                        <div class="label">Máximo histórico</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="currentMaxGrade">-</div>
+                        <div class="label">Último mes</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="stats-section">
+                <h2>📊 Distribución por grado</h2>
+                <div id="gradeDistribution" class="loading">Cargando...</div>
+            </section>
+
+            <section class="stats-section">
+                <h2>🏠 Por gimnasio</h2>
+                <div id="gymBreakdown" class="loading">Cargando...</div>
+            </section>
+        </div>
+
+        <!-- Yearly Stats Tab -->
+        <div id="tab-year" class="tab-content">
+            <section class="stats-section">
+                <h2>📅 Último año</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="value" id="yearSessions">-</div>
+                        <div class="label">Sesiones</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="yearAscents">-</div>
+                        <div class="label">Bloques</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="yearSends">-</div>
+                        <div class="label">Enviados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="yearFlashes">-</div>
+                        <div class="label">Flashes</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="stats-section">
+                <h2>🏆 Mejor grado del año</h2>
+                <div class="stat-card highlight" style="margin: 0 auto; max-width: 200px;">
+                    <div class="value" id="yearMaxGrade">-</div>
+                    <div class="label">Grado máximo</div>
+                </div>
+            </section>
+
+            <section class="stats-section">
+                <h2>📈 Evolución mensual</h2>
+                <div id="monthlyChart" class="monthly-chart loading">Cargando...</div>
+            </section>
+        </div>
+
+        <!-- Friends Comparison Tab -->
+        <div id="tab-friends" class="tab-content">
+            <section class="stats-section">
+                <h2>🏅 Ranking del mes</h2>
+                <p style="color: var(--gray); font-size: 0.85rem; margin-bottom: 1rem;">Comparación de los últimos 30 días</p>
+                <div id="friendsComparison" class="loading">Cargando...</div>
+            </section>
+        </div>
+    </main>
+
+    <script src="/static/js/app-shell.js"></script>
+    <script>
+        AppShell.init({ activePage: 'stats' });
+        
+        const API_URL = '/api';
+        const token = AppShell.token;
+
+        // Tab navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        async function fetchWithAuth(url) {
+            return fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
+
+        // Load total stats
+        async function loadTotalStats() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/stats/me`);
+                const stats = await response.json();
+                
+                document.getElementById('totalSessions').textContent = stats.total_sessions || 0;
+                document.getElementById('totalAscents').textContent = stats.total_ascents || 0;
+                document.getElementById('totalSends').textContent = stats.total_sends || 0;
+                document.getElementById('totalFlashes').textContent = stats.total_flashes || 0;
+                document.getElementById('maxGradeEver').textContent = stats.max_grade_ever || '-';
+                document.getElementById('currentMaxGrade').textContent = stats.current_max_grade || '-';
+                
+                renderGradeDistribution(stats.grade_distribution || []);
+                renderGymBreakdown(stats.gym_breakdown || []);
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function renderGradeDistribution(grades) {
+            const container = document.getElementById('gradeDistribution');
+            
+            if (grades.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>No hay datos de grados</p></div>';
+                return;
+            }
+            
+            const maxCount = Math.max(...grades.map(g => g.count));
+            
+            container.innerHTML = grades.map(grade => `
+                <div class="grade-row">
+                    <div class="grade-color" style="background: ${grade.color_hex || '#666'}">${grade.grade_label}</div>
+                    <div class="grade-bar-container">
+                        <div class="grade-bar">
+                            <div class="grade-bar-fill" style="width: ${(grade.count / maxCount) * 100}%"></div>
+                        </div>
+                        <div class="grade-count">${grade.count}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderGymBreakdown(gyms) {
+            const container = document.getElementById('gymBreakdown');
+            
+            if (gyms.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">🏠</div><p>No hay datos de gimnasios</p></div>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Gimnasio</th>
+                            <th style="text-align: center">Sesiones</th>
+                            <th style="text-align: center">Bloques</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${gyms.map(gym => `
+                            <tr>
+                                <td><strong>${gym.gym_name}</strong></td>
+                                <td class="stat-value">${gym.total_sessions}</td>
+                                <td class="stat-value">${gym.total_ascents}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Load yearly stats
+        async function loadYearlyStats() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/stats/yearly`);
+                const stats = await response.json();
+                
+                document.getElementById('yearSessions').textContent = stats.total_sessions || 0;
+                document.getElementById('yearAscents').textContent = stats.total_ascents || 0;
+                document.getElementById('yearSends').textContent = stats.total_sends || 0;
+                document.getElementById('yearFlashes').textContent = stats.total_flashes || 0;
+                document.getElementById('yearMaxGrade').textContent = stats.max_grade || '-';
+                
+                renderMonthlyChart(stats.monthly_stats || []);
+            } catch (error) {
+                console.error('Error loading yearly stats:', error);
+            }
+        }
+
+        function renderMonthlyChart(monthlyStats) {
+            const container = document.getElementById('monthlyChart');
+            container.classList.remove('loading');
+            
+            if (monthlyStats.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📈</div><p>No hay datos</p></div>';
+                return;
+            }
+            
+            const maxSends = Math.max(...monthlyStats.map(m => m.sends), 1);
+            
+            container.innerHTML = monthlyStats.map(month => `
+                <div class="month-bar">
+                    <div class="month-value">${month.sends}</div>
+                    <div class="month-bar-fill" style="height: ${(month.sends / maxSends) * 100}px"></div>
+                    <div class="month-label">${month.month}</div>
+                </div>
+            `).join('');
+        }
+
+        // Load friends comparison
+        async function loadFriendsComparison() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/stats/friends-comparison`);
+                const data = await response.json();
+                
+                renderFriendsComparison(data.comparison || []);
+            } catch (error) {
+                console.error('Error loading friends comparison:', error);
+            }
+        }
+
+        function renderFriendsComparison(comparison) {
+            const container = document.getElementById('friendsComparison');
+            
+            if (comparison.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>Añade amigos para comparar</p></div>';
+                return;
+            }
+            
+            const getRankClass = (rank) => {
+                if (rank === 1) return 'first';
+                if (rank === 2) return 'second';
+                if (rank === 3) return 'third';
+                return '';
+            };
+            
+            const getRankEmoji = (rank) => {
+                if (rank === 1) return '🥇';
+                if (rank === 2) return '🥈';
+                if (rank === 3) return '🥉';
+                return rank;
+            };
+            
+            container.innerHTML = `
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Usuario</th>
+                            <th style="text-align: center">Sends</th>
+                            <th style="text-align: center">⚡</th>
+                            <th style="text-align: center">Máx</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${comparison.map(entry => `
+                            <tr>
+                                <td class="rank ${getRankClass(entry.rank)}">${getRankEmoji(entry.rank)}</td>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar">${entry.username.charAt(0).toUpperCase()}</div>
+                                        <span class="user-name ${entry.is_current_user ? 'is-me' : ''}">${entry.username}${entry.is_current_user ? ' (tú)' : ''}</span>
+                                    </div>
+                                </td>
+                                <td class="stat-value">${entry.sends}</td>
+                                <td class="stat-value">${entry.flashes}</td>
+                                <td class="stat-value"><span class="grade-badge">${entry.max_grade || '-'}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Load all stats
+        loadTotalStats();
+        loadYearlyStats();
+        loadFriendsComparison();
+    </script>
+</body>
+</html>

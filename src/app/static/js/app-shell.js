@@ -101,7 +101,7 @@ const AppShell = {
             { id: 'dashboard', href: '/dashboard', icon: '🏠', label: 'Inicio' },
             { id: 'sessions', href: '/sessions', icon: '📅', label: 'Sesiones' },
             { id: 'feed', href: '/feed', icon: '📰', label: 'Feed' },
-            { id: 'friends', href: '/friends', icon: '👥', label: 'Amigos', hasBadge: true },
+            { id: 'stats', href: '/stats', icon: '📊', label: 'Stats' },
             { id: 'gyms', href: '/gyms', icon: '🏢', label: 'Gyms' }
         ];
         

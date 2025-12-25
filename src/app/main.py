@@ -127,6 +127,12 @@ def serve_feed():
     return os.path.join(template_dir, "feed.html")
 
 
+@app.get("/stats", response_class=FileResponse)
+def serve_stats():
+    """Serve the statistics page."""
+    return os.path.join(template_dir, "stats.html")
+
+
 @app.get("/health")
 def health_check():
     """Health check endpoint."""

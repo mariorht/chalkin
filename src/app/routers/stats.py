@@ -267,3 +267,163 @@ def _generate_motivational_message(sessions: int, sends: int, flashes: int) -> s
         return "🎯 ¡Gran consistencia! El volumen es la clave."
     else:
         return f"👍 ¡Buen trabajo! {sends} bloque{'s' if sends != 1 else ''} encadenado{'s' if sends != 1 else ''} esta semana."
+
+
+@router.get("/yearly")
+def get_yearly_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get statistics for the last year.
+    """
+    today = date.today()
+    year_ago = today - timedelta(days=365)
+    
+    # Get sessions from last year
+    sessions = db.query(ClimbingSession).filter(
+        ClimbingSession.user_id == current_user.id,
+        ClimbingSession.date >= year_ago
+    ).all()
+    
+    session_ids = [s.id for s in sessions]
+    
+    # Get all ascents from those sessions
+    ascents = db.query(Ascent).filter(
+        Ascent.session_id.in_(session_ids)
+    ).all() if session_ids else []
+    
+    sends = [a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH]]
+    flashes = [a for a in ascents if a.status == AscentStatus.FLASH]
+    
+    # Max grade this year
+    max_grade = None
+    max_difficulty = None
+    if sends:
+        grade_ids = [a.grade_id for a in sends]
+        max_g = db.query(Grade).filter(Grade.id.in_(grade_ids)).order_by(desc(Grade.relative_difficulty)).first()
+        if max_g:
+            max_grade = max_g.label
+            max_difficulty = max_g.relative_difficulty
+    
+    # Monthly breakdown
+    monthly_stats = []
+    for i in range(12):
+        month_end = today - timedelta(days=i * 30)
+        month_start = month_end - timedelta(days=29)
+        
+        month_sessions = [s for s in sessions if month_start <= s.date <= month_end]
+        month_session_ids = [s.id for s in month_sessions]
+        month_ascents = [a for a in ascents if a.session_id in month_session_ids]
+        month_sends = [a for a in month_ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH]]
+        month_flashes = [a for a in month_ascents if a.status == AscentStatus.FLASH]
+        
+        monthly_stats.append({
+            "month": month_start.strftime("%b"),
+            "sessions": len(month_sessions),
+            "ascents": len(month_ascents),
+            "sends": len(month_sends),
+            "flashes": len(month_flashes)
+        })
+    
+    monthly_stats.reverse()
+    
+    return {
+        "total_sessions": len(sessions),
+        "total_ascents": len(ascents),
+        "total_sends": len(sends),
+        "total_flashes": len(flashes),
+        "max_grade": max_grade,
+        "max_difficulty": max_difficulty,
+        "monthly_stats": monthly_stats
+    }
+
+
+@router.get("/friends-comparison")
+def get_friends_comparison(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Compare stats with friends.
+    """
+    from app.models.friendship import Friendship, FriendshipStatus
+    from sqlalchemy import or_, and_
+    
+    today = date.today()
+    month_ago = today - timedelta(days=30)
+    
+    # Get friends
+    friendships = db.query(Friendship).filter(
+        or_(
+            and_(Friendship.user_id == current_user.id, Friendship.status == FriendshipStatus.ACCEPTED),
+            and_(Friendship.friend_id == current_user.id, Friendship.status == FriendshipStatus.ACCEPTED)
+        )
+    ).all()
+    
+    friend_ids = []
+    for f in friendships:
+        if f.user_id == current_user.id:
+            friend_ids.append(f.friend_id)
+        else:
+            friend_ids.append(f.user_id)
+    
+    # Include current user
+    all_user_ids = [current_user.id] + friend_ids
+    
+    # Get stats for all users
+    comparison = []
+    for user_id in all_user_ids:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            continue
+        
+        # Get sessions this month
+        sessions = db.query(ClimbingSession).filter(
+            ClimbingSession.user_id == user_id,
+            ClimbingSession.date >= month_ago
+        ).all()
+        
+        session_ids = [s.id for s in sessions]
+        
+        ascents = db.query(Ascent).filter(
+            Ascent.session_id.in_(session_ids)
+        ).all() if session_ids else []
+        
+        sends = [a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH]]
+        flashes = [a for a in ascents if a.status == AscentStatus.FLASH]
+        
+        # Max grade
+        max_grade = None
+        max_difficulty = 0
+        if sends:
+            grade_ids = [a.grade_id for a in sends]
+            max_g = db.query(Grade).filter(Grade.id.in_(grade_ids)).order_by(desc(Grade.relative_difficulty)).first()
+            if max_g:
+                max_grade = max_g.label
+                max_difficulty = max_g.relative_difficulty
+        
+        comparison.append({
+            "user_id": user_id,
+            "username": user.username,
+            "is_current_user": user_id == current_user.id,
+            "sessions": len(sessions),
+            "ascents": len(ascents),
+            "sends": len(sends),
+            "flashes": len(flashes),
+            "max_grade": max_grade,
+            "max_difficulty": max_difficulty
+        })
+    
+    # Sort by sends (descending)
+    comparison.sort(key=lambda x: (x["sends"], x["flashes"]), reverse=True)
+    
+    # Add rank
+    for i, entry in enumerate(comparison):
+        entry["rank"] = i + 1
+    
+    return {
+        "period": "Último mes",
+        "comparison": comparison
+    }
+
