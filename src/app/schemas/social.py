@@ -10,6 +10,7 @@ class UserSearchResult(BaseModel):
     """User info for search results."""
     id: int
     username: str
+    profile_picture: Optional[str] = None
     friendship_status: Optional[str] = None  # None, pending, accepted, pending_received
 
     model_config = ConfigDict(from_attributes=True)

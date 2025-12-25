@@ -75,6 +75,21 @@
             flex-direction: column;
             gap: 10px;
         }
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .search-wrapper {
+            position: relative;
+        }
         .user-item, .friend-item, .request-item {
             display: flex;
             justify-content: space-between;
@@ -98,6 +113,13 @@
             justify-content: center;
             color: white;
             font-weight: bold;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .username {
             font-weight: 600;
@@ -209,12 +231,12 @@
     <div class="container">
         <div class="card">
             <!-- Search -->
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Buscar usuarios...">
-                <button onclick="searchUsers()">🔍 Buscar</button>
+            <div class="search-wrapper">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Buscar usuarios..." autocomplete="off">
+                </div>
+                <div id="searchResults" class="search-results" style="display:none;"></div>
             </div>
-            
-            <div id="searchResults" class="search-results" style="display:none;"></div>
         </div>
 
         <div class="card">
@@ -248,6 +270,7 @@
         
         const API_URL = '/api';
         let token = AppShell.token;
+        let searchTimeout = null;
 
         function getHeaders() {
             return {
@@ -255,6 +278,32 @@
                 'Authorization': `Bearer ${token}`
             };
         }
+
+        // Búsqueda en tiempo real
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+            
+            // Clear previous timeout
+            if (searchTimeout) clearTimeout(searchTimeout);
+            
+            // Hide if less than 2 chars
+            if (query.length < 2) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            // Debounce: wait 300ms after typing stops
+            searchTimeout = setTimeout(() => searchUsers(query), 300);
+        });
+
+        // Hide results when clicking outside
+        document.addEventListener('click', function(e) {
+            const searchWrapper = document.querySelector('.search-wrapper');
+            if (!searchWrapper.contains(e.target)) {
+                document.getElementById('searchResults').style.display = 'none';
+            }
+        });
 
         function showTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -269,13 +318,14 @@
             }
         }
 
-        async function searchUsers() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (query.length < 2) {
-                alert('Escribe al menos 2 caracteres para buscar');
-                return;
+        function renderAvatar(user) {
+            if (user.profile_picture) {
+                return `<img src="${user.profile_picture}" alt="${user.username}">`;
             }
+            return user.username.charAt(0).toUpperCase();
+        }
 
+        async function searchUsers(query) {
             const resultsDiv = document.getElementById('searchResults');
             resultsDiv.style.display = 'block';
             resultsDiv.innerHTML = '<div class="loading">Buscando...</div>';
@@ -300,7 +350,7 @@
                 resultsDiv.innerHTML = users.map(user => `
                     <div class="user-item">
                         <div class="user-info">
-                            <div class="avatar">${user.username.charAt(0).toUpperCase()}</div>
+                            <div class="avatar">${renderAvatar(user)}</div>
                             <span class="username">${user.username}</span>
                             ${user.friendship_status ? `
                                 <span class="status-badge ${user.friendship_status === 'accepted' ? 'badge-friends' : 'badge-pending'}">
@@ -344,7 +394,8 @@
                 });
 
                 if (res.ok) {
-                    searchUsers(); // Refresh search results
+                    const query = document.getElementById('searchInput').value.trim();
+                    if (query.length >= 2) searchUsers(query);
                     loadFriends();
                 } else {
                     const data = await res.json();
@@ -364,7 +415,8 @@
             const request = requests.find(r => r.user_id === userId);
             if (request) {
                 await acceptRequest(request.id);
-                searchUsers();
+                const query = document.getElementById('searchInput').value.trim();
+                if (query.length >= 2) searchUsers(query);
             }
         }
 
@@ -509,11 +561,6 @@
                 alert('Error de conexión');
             }
         }
-
-        // Search on Enter key
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') searchUsers();
-        });
 
         // Initial load
         loadFriends();
