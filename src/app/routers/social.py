@@ -10,6 +10,7 @@ from app.db.base import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.friendship import Friendship, FriendshipStatus
+from app.services.push import send_push_notification
 from app.models.session import Session as ClimbingSession
 from app.models.ascent import Ascent, AscentStatus
 from app.models.grade import Grade
@@ -116,6 +117,16 @@ def send_friend_request(
                 existing.status = FriendshipStatus.ACCEPTED
                 db.commit()
                 db.refresh(existing)
+
+                # Notify sender that request was accepted
+                send_push_notification(
+                    db=db,
+                    user_id=existing.user_id,
+                    title="Solicitud aceptada",
+                    body=f"{current_user.username} aceptó tu solicitud",
+                    url="/friends"
+                )
+
                 return FriendshipResponse(
                     id=existing.id,
                     user_id=existing.user_id,
@@ -139,6 +150,15 @@ def send_friend_request(
     db.add(friendship)
     db.commit()
     db.refresh(friendship)
+
+    # Notify the recipient about the new request
+    send_push_notification(
+        db=db,
+        user_id=friend.id,
+        title="Nueva solicitud de amistad",
+        body=f"{current_user.username} quiere ser tu amigo",
+        url="/friends"
+    )
     
     return FriendshipResponse(
         id=friendship.id,
@@ -240,6 +260,16 @@ def accept_friend_request(
     db.refresh(friendship)
     
     sender = db.query(User).filter(User.id == friendship.user_id).first()
+
+    # Notify sender that request was accepted
+    if sender:
+        send_push_notification(
+            db=db,
+            user_id=sender.id,
+            title="Solicitud aceptada",
+            body=f"{current_user.username} aceptó tu solicitud",
+            url="/friends"
+        )
     
     return FriendshipResponse(
         id=friendship.id,

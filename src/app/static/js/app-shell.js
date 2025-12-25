@@ -28,12 +28,76 @@ const AppShell = {
         // Cargar notificaciones de amigos
         if (this.token) {
             this.loadFriendRequestsCount();
+            this.setupPush();
         }
         
         // Añadir clase al body
         document.body.classList.add('has-app-shell');
         
         return true;
+    },
+
+    // Registrar service worker y suscribir push
+    setupPush: async function() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (Notification.permission === 'denied') return;
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            await navigator.serviceWorker.ready;
+
+            // Obtener public key
+            const keyRes = await fetch(`${this.API_URL}/notifications/public-key`);
+            if (!keyRes.ok) return;
+            const { public_key } = await keyRes.json();
+            if (!public_key) return;
+
+            // Revisar suscripción existente
+            let subscription = await registration.pushManager.getSubscription();
+            if (!subscription) {
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: this.urlBase64ToUint8Array(public_key)
+                });
+            }
+
+            // Enviar suscripción al backend
+            const payload = {
+                endpoint: subscription.endpoint,
+                p256dh: this.arrayBufferToBase64(subscription.getKey('p256dh')),
+                auth: this.arrayBufferToBase64(subscription.getKey('auth'))
+            };
+
+            await fetch(`${this.API_URL}/notifications/subscribe`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify(payload)
+            });
+        } catch (e) {
+            console.warn('Push setup failed', e);
+        }
+    },
+
+    urlBase64ToUint8Array: function(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    },
+
+    arrayBufferToBase64: function(buffer) {
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
     },
     
     // Cargar datos del usuario desde localStorage

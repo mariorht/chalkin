@@ -4,6 +4,7 @@ Loads from environment variables or .env file.
 """
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -29,6 +30,11 @@ class Settings(BaseSettings):
     # File uploads
     upload_dir: str = "uploads"
     max_file_size: int = 5 * 1024 * 1024  # 5MB
+
+    # Web Push (VAPID)
+    vapid_public_key: Optional[str] = None
+    vapid_private_key: Optional[str] = None
+    vapid_subject: Optional[str] = "mailto:support@example.com"
     
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

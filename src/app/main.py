@@ -18,6 +18,7 @@ from app.routers.sessions import router as sessions_router
 from app.routers.ascents import router as ascents_router
 from app.routers.stats import router as stats_router
 from app.routers.social import router as social_router
+from app.routers.notifications import router as notifications_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -45,6 +46,7 @@ app.include_router(sessions_router, prefix="/api")
 app.include_router(ascents_router, prefix="/api")
 app.include_router(stats_router, prefix="/api")
 app.include_router(social_router, prefix="/api")
+app.include_router(notifications_router, prefix="/api")
 
 # Set the correct paths for static files and templates
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -65,6 +67,11 @@ except PermissionError:
 
 # Serve static files
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# Serve service worker at root scope
+@app.get("/sw.js", response_class=FileResponse)
+def serve_sw():
+    return os.path.join(static_dir, "sw.js")
 
 # Serve uploaded files from uploads directory
 try:
