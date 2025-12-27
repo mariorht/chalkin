@@ -32,6 +32,8 @@ services:
     # No exponemos puertos directamente, nginx hace de proxy
     expose:
       - "8001"
+    networks:
+      - chalkin_network
 
   nginx:
     image: nginx:alpine
@@ -45,6 +47,18 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+    networks:
+      - chalkin_network
+
+networks:
+  chalkin_network:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+        - subnet: "fd00::/64"
 
 volumes:
   chalkin_data:
