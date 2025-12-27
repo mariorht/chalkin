@@ -272,6 +272,14 @@
         let token = AppShell.token;
         let searchTimeout = null;
 
+        function parseUTCDate(dateStr) {
+            if (!dateStr) return null;
+            if (dateStr.endsWith('Z') || dateStr.includes('+')) {
+                return new Date(dateStr);
+            }
+            return new Date(dateStr + 'Z');
+        }
+
         function getHeaders() {
             return {
                 'Content-Type': 'application/json',
@@ -447,7 +455,7 @@
                             <div>
                                 <span class="username">${friend.username}</span>
                                 <div style="font-size: 0.8rem; color: #666;">
-                                    Amigos desde ${new Date(friend.since).toLocaleDateString('es-ES')}
+                                    Amigos desde ${parseUTCDate(friend.since).toLocaleDateString('es-ES')}
                                 </div>
                             </div>
                         </div>
@@ -491,7 +499,7 @@
                             <div>
                                 <span class="username">${req.user_username}</span>
                                 <div style="font-size: 0.8rem; color: #666;">
-                                    ${new Date(req.created_at).toLocaleDateString('es-ES')}
+                                    ${parseUTCDate(req.created_at).toLocaleDateString('es-ES')}
                                 </div>
                             </div>
                         </div>
