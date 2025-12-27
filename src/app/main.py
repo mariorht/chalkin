@@ -3,8 +3,8 @@ Chalkin - Boulder Climbing Tracker API
 Track your climbing sessions, log ascents, and monitor progress.
 """
 import os
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -65,8 +65,27 @@ except PermissionError:
     profiles_dir = os.path.join(uploads_dir, "profiles")
     os.makedirs(profiles_dir, exist_ok=True)
 
-# Serve static files
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+# Custom StaticFiles with cache headers
+class CachedStaticFiles(StaticFiles):
+    def __init__(self, *args, **kwargs):
+        self.cache_max_age = kwargs.pop("cache_max_age", 3600)
+        super().__init__(*args, **kwargs)
+
+    async def get_response(self, path: str, scope) -> Response:
+        response = await super().get_response(path, scope)
+        # Add cache headers for icons and other static assets
+        if path.startswith("icons/") or path.endswith((".png", ".jpg", ".svg", ".ico")):
+            response.headers["Cache-Control"] = f"public, max-age={self.cache_max_age}"
+        return response
+
+# Serve static files with cache headers
+app.mount("/static", CachedStaticFiles(directory=static_dir, cache_max_age=86400), name="static")
+
+# Serve manifest.json at root
+@app.get("/manifest.json")
+async def serve_manifest():
+    manifest_path = os.path.join(static_dir, "manifest.json")
+    return FileResponse(manifest_path, media_type="application/manifest+json")
 
 # Serve service worker at root scope
 # DESACTIVADO TEMPORALMENTE - Descomentar cuando se quiera usar

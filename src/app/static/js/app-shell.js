@@ -153,7 +153,7 @@ const AppShell = {
         
         header.innerHTML = `
             <a href="/dashboard" class="logo">
-                <span class="logo-icon">🧗</span>
+                <span class="logo-icon"><img src="/static/icons/logoChalkin_v2_48.png" alt="Chalkin"></span>
                 <span>Chalkin</span>
             </a>
             <div class="user-section">
