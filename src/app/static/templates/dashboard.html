@@ -741,6 +741,19 @@
                 
                 const sessions = await response.json();
                 
+                // Parse UTC dates
+                const parseUTCDate = (dateStr) => {
+                    if (!dateStr) return null;
+                    if (dateStr.includes('T')) {
+                        if (dateStr.endsWith('Z') || dateStr.includes('+')) {
+                            return new Date(dateStr);
+                        }
+                        return new Date(dateStr + 'Z');
+                    }
+                    // Date-only string (YYYY-MM-DD)
+                    return new Date(dateStr + 'T00:00:00');
+                };
+                
                 // Get last 8 weeks
                 const weeks = [];
                 const now = new Date();
@@ -764,7 +777,7 @@
                 
                 // Aggregate data by week
                 sessions.forEach(session => {
-                    const sessionDate = new Date(session.date);
+                    const sessionDate = parseUTCDate(session.date);
                     weeks.forEach(week => {
                         if (sessionDate >= week.start && sessionDate <= week.end) {
                             week.sends += session.total_ascents || 0;

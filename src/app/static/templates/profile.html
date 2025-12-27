@@ -419,7 +419,14 @@
                 updateProfilePicture();
                 
                 // Member since
-                const memberDate = new Date(currentUser.created_at);
+                const parseUTCDate = (dateStr) => {
+                    if (!dateStr) return null;
+                    if (dateStr.endsWith('Z') || dateStr.includes('+')) {
+                        return new Date(dateStr);
+                    }
+                    return new Date(dateStr + 'Z');
+                };
+                const memberDate = parseUTCDate(currentUser.created_at);
                 document.getElementById('memberSince').textContent = 
                     `Miembro desde ${memberDate.toLocaleDateString('es', { month: 'long', year: 'numeric' })}`;
                 

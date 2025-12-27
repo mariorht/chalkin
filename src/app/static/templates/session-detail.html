@@ -708,9 +708,17 @@
             });
         }
 
+        function parseUTCDate(dateStr) {
+            if (!dateStr) return null;
+            if (dateStr.endsWith('Z') || dateStr.includes('+')) {
+                return new Date(dateStr);
+            }
+            return new Date(dateStr + 'Z');
+        }
+
         function formatDuration(startedAt, endedAt) {
-            const start = new Date(startedAt);
-            const end = new Date(endedAt);
+            const start = parseUTCDate(startedAt);
+            const end = parseUTCDate(endedAt);
             const diff = Math.floor((end - start) / 60000); // minutes
             const hours = Math.floor(diff / 60);
             const minutes = diff % 60;
@@ -733,7 +741,7 @@
                 }
                 
                 session = await response.json();
-                startTime = new Date(session.started_at);
+                startTime = parseUTCDate(session.started_at);
                 isSessionEnded = session.ended_at !== null;
                 
                 // Check if this is someone else's session
@@ -768,7 +776,8 @@
                     subtitleEl.classList.remove('hidden');
                 }
                 
-                const dateStr = new Date(session.date).toLocaleDateString('es', { 
+                const sessionDate = session.date.includes('T') ? parseUTCDate(session.date) : new Date(session.date + 'T00:00:00');
+                const dateStr = sessionDate.toLocaleDateString('es', { 
                     weekday: 'long', 
                     year: 'numeric', 
                     month: 'long', 
@@ -984,7 +993,7 @@
                     'project': '🔄'
                 }[ascent.status] || '✅';
                 
-                const time = new Date(ascent.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+                const time = parseUTCDate(ascent.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
                 
                 // Only show delete button for active sessions
                 // Show delete button if session is active OR in edit mode
