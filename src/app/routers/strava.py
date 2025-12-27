@@ -2,16 +2,19 @@
 Strava OAuth router - Handle authorization and token exchange.
 """
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 import httpx
 
 from app.core.config import settings
 from app.core.deps import get_db, get_current_user
 from app.models.user import User
 from app.models.strava_connection import StravaConnection
+from app.models.session import Session as ClimbingSession
+from app.models.ascent import Ascent
+from app.models.grade import Grade
 
 
 router = APIRouter(prefix="/strava", tags=["strava"])
@@ -227,3 +230,277 @@ async def refresh_access_token(
         "message": "Token refreshed successfully",
         "expires_at": connection.expires_at
     }
+
+
+async def get_valid_token(user_id: int, db: Session) -> str:
+    """
+    Get a valid access token for the user, refreshing if necessary.
+    """
+    connection = db.query(StravaConnection).filter(
+        StravaConnection.user_id == user_id
+    ).first()
+    
+    if not connection:
+        raise HTTPException(status_code=404, detail="Strava not connected")
+    
+    # Check if token is expired (with 5 min buffer)
+    now_timestamp = int(datetime.utcnow().timestamp())
+    if connection.expires_at < (now_timestamp + 300):  # Refresh 5 min before expiry
+        # Refresh token
+        if not settings.strava_client_id or not settings.strava_client_secret:
+            raise HTTPException(status_code=500, detail="Strava not configured")
+        
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(
+                    "https://www.strava.com/api/v3/oauth/token",
+                    data={
+                        "client_id": settings.strava_client_id,
+                        "client_secret": settings.strava_client_secret,
+                        "refresh_token": connection.refresh_token,
+                        "grant_type": "refresh_token"
+                    }
+                )
+                response.raise_for_status()
+                token_data = response.json()
+                
+                # Update connection
+                connection.access_token = token_data.get("access_token")
+                connection.refresh_token = token_data.get("refresh_token")
+                connection.expires_at = token_data.get("expires_at")
+                connection.updated_at = datetime.utcnow()
+                db.commit()
+            except httpx.HTTPError as e:
+                raise HTTPException(status_code=400, detail=f"Failed to refresh token: {str(e)}")
+    
+    return connection.access_token
+
+
+@router.post("/upload-session/{session_id}")
+async def upload_session_to_strava(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload a climbing session to Strava as a Rock Climbing activity.
+    """
+    try:
+        # Get the session with gym relationship loaded
+        session = db.query(ClimbingSession).options(joinedload(ClimbingSession.gym)).filter(
+            ClimbingSession.id == session_id,
+            ClimbingSession.user_id == current_user.id
+        ).first()
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # Check if already uploaded
+        if session.strava_activity_id:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Session already uploaded to Strava (Activity ID: {session.strava_activity_id})"
+            )
+        
+        # Get valid access token
+        access_token = await get_valid_token(current_user.id, db)
+        
+        # Get ascents for this session with grade relationship loaded
+        ascents = db.query(Ascent).options(joinedload(Ascent.grade)).filter(
+            Ascent.session_id == session_id
+        ).all()
+        
+        # Build activity description with ascent summary
+        try:
+            ascent_summary = build_ascent_summary(ascents)
+        except Exception as e:
+            # If summary fails, continue without it
+            ascent_summary = f"Total bloques: {len(ascents)}"
+        
+        # Calculate duration
+        if session.started_at and session.ended_at:
+            duration = int((session.ended_at - session.started_at).total_seconds())
+        elif session.ended_at:
+            # Use 1 hour if only end time exists
+            duration = 3600
+        else:
+            duration = 3600  # Default 1 hour if no end time
+        
+        # Prepare activity data
+        activity_name = session.title or "Sesión de escalada en boulder"
+        activity_description = session.subtitle or ""
+        if ascent_summary:
+            activity_description += f"\n\n{ascent_summary}"
+        
+        # Format start date - use started_at or created_at as fallback
+        start_datetime = session.started_at or session.created_at
+        if not start_datetime:
+            raise HTTPException(status_code=400, detail="Session has no valid date")
+        
+        # Format as ISO 8601 (Strava expects this format)
+        start_date_local = start_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+        
+        activity_data = {
+            "name": activity_name,
+            "sport_type": "RockClimbing",  # Rock Climbing type
+            "start_date_local": start_date_local,
+            "elapsed_time": duration,
+            "description": activity_description.strip(),
+            "trainer": False,  # Not indoor trainer
+            "commute": False,
+            "hide_from_home": True  # Private activity
+        }
+        
+        # Add location if gym has coordinates
+        if session.gym and session.gym.latitude and session.gym.longitude:
+            activity_data["start_latlng"] = [session.gym.latitude, session.gym.longitude]
+            activity_data["end_latlng"] = [session.gym.latitude, session.gym.longitude]
+        
+        # Upload to Strava
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(
+                    "https://www.strava.com/api/v3/activities",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Content-Type": "application/json"
+                    },
+                    json=activity_data,
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                activity = response.json()
+            except httpx.HTTPError as e:
+                error_detail = str(e)
+                if hasattr(e, 'response') and e.response is not None:
+                    try:
+                        error_detail = e.response.json()
+                    except:
+                        error_detail = e.response.text
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Failed to upload to Strava: {error_detail}"
+                )
+        
+        # Save Strava activity ID
+        session.strava_activity_id = activity.get("id")
+        db.commit()
+        
+        return {
+            "message": "Activity uploaded to Strava successfully",
+            "strava_activity_id": activity.get("id"),
+            "strava_url": f"https://www.strava.com/activities/{activity.get('id')}"
+        }
+    
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Log and return any unexpected errors
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error uploading to Strava: {error_trace}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Internal error while uploading to Strava: {str(e)}"
+        )
+
+
+def build_ascent_summary(ascents) -> str:
+    """
+    Build a formatted summary of ascents with emojis.
+    """
+    if not ascents:
+        return ""
+    
+    # Group by status (handle both string and enum values)
+    flash_count = 0
+    send_count = 0
+    repeat_count = 0
+    project_count = 0
+    
+    for a in ascents:
+        # Get status value - handle both enum and string
+        status_value = a.status.value if hasattr(a.status, 'value') else str(a.status)
+        status_lower = status_value.lower()
+        
+        if status_lower == "flash":
+            flash_count += 1
+        elif status_lower == "send":
+            send_count += 1
+        elif status_lower == "repeat":
+            repeat_count += 1
+        elif status_lower == "project":
+            project_count += 1
+    
+    # Group by grade
+    grade_counts = {}
+    for ascent in ascents:
+        try:
+            if hasattr(ascent, 'grade') and ascent.grade is not None:
+                # Get the label (not name) from grade
+                grade_name = None
+                
+                if hasattr(ascent.grade, 'label'):
+                    grade_name = ascent.grade.label
+                elif hasattr(ascent.grade, '__dict__') and 'label' in ascent.grade.__dict__:
+                    grade_name = ascent.grade.__dict__['label']
+                
+                if grade_name:
+                    # Clean the grade name
+                    grade_name = str(grade_name).strip()
+                    if grade_name and not grade_name.startswith('<') and grade_name != 'None':
+                        grade_counts[grade_name] = grade_counts.get(grade_name, 0) + 1
+        except Exception as e:
+            print(f"Error processing grade for ascent: {e}")
+            continue
+    
+    # Color emoji mapping
+    color_emojis = {
+        'blanco': '⚪',
+        'amarillo': '🟡',
+        'naranja': '🟠',
+        'verde': '🟢',
+        'azul': '🔵',
+        'rojo': '🔴',
+        'negro': '⚫',
+        'morado': '🟣',
+        'violeta': '🟣',
+        'rosa': '🩷',
+        'marron': '🟤',
+        'marrón': '🟤',
+        'gris': '⚪',
+    }
+    
+    summary_parts = []
+    
+    # Status summary
+    status_parts = []
+    if flash_count > 0:
+        status_parts.append(f"⚡ {flash_count} flash")
+    if send_count > 0:
+        status_parts.append(f"✅ {send_count} encadenado{'s' if send_count > 1 else ''}")
+    if repeat_count > 0:
+        status_parts.append(f"🔄 {repeat_count} repetido{'s' if repeat_count > 1 else ''}")
+    if project_count > 0:
+        status_parts.append(f"🎯 {project_count} proyecto{'s' if project_count > 1 else ''}")
+    
+    if status_parts:
+        summary_parts.append("📊 " + " | ".join(status_parts))
+    
+    # Grade summary (top 5 most common)
+    if grade_counts:
+        sorted_grades = sorted(grade_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        grade_parts = []
+        for grade, count in sorted_grades:
+            # Get emoji based on color name
+            emoji = color_emojis.get(grade.lower(), '🔘')
+            grade_parts.append(f"  {emoji} {grade}: {count}")
+        grade_summary = "\n".join(grade_parts)
+        summary_parts.append(f"\n🧗 Bloques:\n{grade_summary}")
+    
+    # Total count
+    total = len(ascents)
+    summary_parts.append(f"\n📈 Total: {total} bloque{'s' if total > 1 else ''}")
+    
+    return "\n".join(summary_parts)

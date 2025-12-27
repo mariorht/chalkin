@@ -33,6 +33,9 @@ class Session(Base):
     # Notes about the session
     notes = Column(Text, nullable=True)
     
+    # Strava integration
+    strava_activity_id = Column(Integer, nullable=True)  # Strava activity ID if uploaded
+    
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
