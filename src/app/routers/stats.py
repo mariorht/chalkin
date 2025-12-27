@@ -640,3 +640,66 @@ def get_available_gyms_for_leaderboard(
             gyms.append({"id": gym.id, "name": gym.name})
     
     return gyms
+
+
+@router.get("/activity-calendar")
+def get_activity_calendar(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get activity calendar data (similar to GitHub/Strava contribution graph).
+    Returns:
+    - activity_days: dict with date as key and session count as value (last 60 days for display)
+    - consecutive_weeks: number of consecutive weeks with at least one session (unlimited)
+    """
+    today = date.today()
+    
+    # Get ALL sessions (no date limit) for calculating consecutive weeks
+    all_sessions = db.query(ClimbingSession).filter(
+        ClimbingSession.user_id == current_user.id
+    ).order_by(ClimbingSession.date).all()
+    
+    # Build activity map with ALL sessions for consecutive weeks calculation
+    all_activity_days = {}
+    for session in all_sessions:
+        date_str = session.date.isoformat()
+        all_activity_days[date_str] = all_activity_days.get(date_str, 0) + 1
+    
+    # Calculate consecutive weeks (unlimited time range)
+    consecutive_weeks = 0
+    current_week_start = today - timedelta(days=today.weekday())  # Start of current week (Monday)
+    
+    while True:
+        week_end = current_week_start + timedelta(days=6)
+        week_has_activity = False
+        
+        # Check if this week has any activity
+        for i in range(7):
+            check_date = current_week_start + timedelta(days=i)
+            if check_date > today:
+                break
+            date_str = check_date.isoformat()
+            if date_str in all_activity_days:
+                week_has_activity = True
+                break
+        
+        if week_has_activity:
+            consecutive_weeks += 1
+            current_week_start -= timedelta(days=7)  # Go to previous week
+        else:
+            break  # Streak broken
+    
+    # Build activity map for display (current month only)
+    # Get first day of current month
+    first_day_of_month = today.replace(day=1)
+    activity_days = {}
+    for session in all_sessions:
+        if session.date >= first_day_of_month:
+            date_str = session.date.isoformat()
+            activity_days[date_str] = activity_days.get(date_str, 0) + 1
+    
+    return {
+        "activity_days": activity_days,
+        "consecutive_weeks": consecutive_weeks
+    }
