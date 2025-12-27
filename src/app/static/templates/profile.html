@@ -302,6 +302,83 @@
             font-size: 0.9rem;
             margin-top: 1rem;
         }
+
+        /* Strava Connection */
+        .strava-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        .strava-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .strava-logo {
+            font-size: 1.5rem;
+        }
+
+        .strava-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .strava-text .title {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .strava-text .status {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .strava-text .status.connected {
+            color: var(--success);
+        }
+
+        .btn-strava-connect {
+            background: #FC4C02;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-strava-connect:hover {
+            background: #E04402;
+            transform: translateY(-2px);
+        }
+
+        .btn-strava-disconnect {
+            background: var(--gray-light);
+            color: var(--gray);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-strava-disconnect:hover {
+            background: var(--error);
+            color: white;
+        }
     </style>
 </head>
 <body class="has-app-shell">
@@ -389,6 +466,25 @@
             </div>
             <p class="member-since" id="memberSince"></p>
         </div>
+
+        <!-- Strava Connection Card -->
+        <div class="card">
+            <h2>🏃 Conexión con Strava</h2>
+            <div class="strava-section">
+                <div class="strava-info">
+                    <div class="strava-logo">🔗</div>
+                    <div class="strava-text">
+                        <span class="title">Strava</span>
+                        <span class="status" id="stravaStatus">No conectado</span>
+                    </div>
+                </div>
+                <div id="stravaActions">
+                    <button class="btn-strava-connect" onclick="connectStrava()" id="btnStravaConnect">
+                        Conectar
+                    </button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script src="/static/js/app-shell.js"></script>
@@ -445,6 +541,9 @@
                 
                 // Load stats
                 await loadStats();
+                
+                // Load Strava status
+                await loadStravaStatus();
             } catch (error) {
                 console.error('Error loading profile:', error);
             }
@@ -514,6 +613,78 @@
                 document.getElementById('maxGrade').textContent = stats.max_grade_ever || '-';
             } catch (error) {
                 console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadStravaStatus() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/strava/status`);
+                const status = await response.json();
+                
+                const statusEl = document.getElementById('stravaStatus');
+                const actionsEl = document.getElementById('stravaActions');
+                
+                if (status.connected) {
+                    statusEl.textContent = '✓ Conectado';
+                    statusEl.classList.add('connected');
+                    actionsEl.innerHTML = '<button class="btn-strava-disconnect" onclick="disconnectStrava()">Desconectar</button>';
+                } else {
+                    statusEl.textContent = 'No conectado';
+                    statusEl.classList.remove('connected');
+                    actionsEl.innerHTML = '<button class="btn-strava-connect" onclick="connectStrava()">Conectar</button>';
+                }
+            } catch (error) {
+                console.error('Error loading Strava status:', error);
+            }
+        }
+
+        async function connectStrava() {
+            try {
+                // Get the authorization URL from the backend
+                const response = await fetchWithAuth(`${API_URL}/strava/connect`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // Redirect to Strava OAuth page
+                    window.location.href = data.auth_url;
+                } else {
+                    showAlert('error', 'Error al iniciar conexión con Strava');
+                }
+            } catch (error) {
+                console.error('Error connecting to Strava:', error);
+                showAlert('error', 'Error al conectar con Strava');
+            }
+        }
+
+        async function disconnectStrava() {
+            if (!confirm('¿Desconectar tu cuenta de Strava?')) return;
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/strava/disconnect`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showAlert('success', 'Strava desconectado');
+                    await loadStravaStatus();
+                } else {
+                    showAlert('error', 'Error al desconectar Strava');
+                }
+            } catch (error) {
+                showAlert('error', 'Error al desconectar Strava');
+            }
+        }
+
+        // Check for Strava connection status in URL
+        function checkStravaParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('strava_connected') === 'true') {
+                showAlert('success', '¡Strava conectado exitosamente!');
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (urlParams.get('strava_error') === 'denied') {
+                showAlert('error', 'Conexión con Strava cancelada');
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
 
@@ -627,6 +798,7 @@
             }
         });
 
+        checkStravaParams();
         loadProfile();
     </script>
 </body>

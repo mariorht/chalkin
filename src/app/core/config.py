@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     vapid_private_key: Optional[str] = None
     vapid_subject: Optional[str] = "mailto:support@example.com"
     
+    # Strava OAuth
+    strava_client_id: Optional[str] = None
+    strava_client_secret: Optional[str] = None
+    strava_redirect_uri: Optional[str] = None  # e.g., https://yourdomain.com/api/strava/callback
+    
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
