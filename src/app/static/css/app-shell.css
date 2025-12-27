@@ -59,7 +59,17 @@ html {
 }
 
 .app-header .logo-icon {
-    font-size: 1.6rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-header .logo-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .app-header .user-section {
