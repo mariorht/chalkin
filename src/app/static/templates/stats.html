@@ -436,10 +436,6 @@
                         <div class="label">Bloques únicos</div>
                     </div>
                     <div class="stat-card">
-                        <div class="value" id="totalAscents">-</div>
-                        <div class="label">Volumen total</div>
-                    </div>
-                    <div class="stat-card">
                         <div class="value" id="totalSends">-</div>
                         <div class="label">Encadenados</div>
                     </div>
@@ -701,7 +697,6 @@
                 
                 document.getElementById('totalSessions').textContent = stats.total_sessions || 0;
                 document.getElementById('uniqueAscents').textContent = stats.unique_ascents || 0;
-                document.getElementById('totalAscents').textContent = stats.total_ascents || 0;
                 document.getElementById('totalSends').textContent = stats.total_sends || 0;
                 document.getElementById('totalFlashes').textContent = stats.total_flashes || 0;
                 

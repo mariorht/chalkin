@@ -46,7 +46,7 @@ def get_my_stats(
     
     # Basic counts
     total_sessions = len(sessions)
-    total_ascents = len(ascents)  # All boulders including repeats
+    total_ascents = len([a for a in ascents if a.status != AscentStatus.PROJECT])  # All boulders including repeats, but not projects
     unique_ascents = len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.FLASH]])  # Only unique completions
     total_sends = len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH]])
     total_flashes = len([a for a in ascents if a.status == AscentStatus.FLASH])
