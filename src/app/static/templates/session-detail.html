@@ -1242,7 +1242,16 @@
         async function uploadToStrava() {
             const btn = document.getElementById('stravaUploadBtn');
             
-            if (!confirm('¿Subir esta sesión a Strava como actividad privada de escalada?')) return;
+            // Check if already uploaded
+            if (session.strava_activity_id) {
+                if (!confirm('Esta sesión ya fue subida a Strava.\n¿Deseas crear una nueva actividad duplicada?')) {
+                    return;
+                }
+            } else {
+                if (!confirm('¿Subir esta sesión a Strava como actividad privada de escalada?')) {
+                    return;
+                }
+            }
             
             // Disable button and show loading
             btn.disabled = true;
@@ -1271,9 +1280,7 @@
                     btn.disabled = false;
                     btn.innerHTML = '🏃 Subir a Strava';
                     
-                    if (error.detail && error.detail.includes('already uploaded')) {
-                        alert('Esta sesión ya fue subida a Strava');
-                    } else if (error.detail && error.detail.includes('not connected')) {
+                    if (error.detail && error.detail.includes('not connected')) {
                         alert('Conecta tu cuenta de Strava en el perfil primero');
                     } else {
                         alert('Error al subir a Strava: ' + (error.detail || 'Error desconocido'));

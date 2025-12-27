@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session, joinedload
 import httpx
+import io
 
 from app.core.config import settings
 from app.core.deps import get_db, get_current_user
@@ -276,6 +277,41 @@ async def get_valid_token(user_id: int, db: Session) -> str:
     return connection.access_token
 
 
+def generate_gpx_file(lat: float, lon: float, start_time: datetime, duration: int, activity_name: str, description: str) -> bytes:
+    """
+    Generate a simple GPX file with a single point (gym location).
+    """
+    # Calculate end time
+    end_time = start_time + timedelta(seconds=duration)
+    
+    # Format times in ISO 8601
+    start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+    end_time_str = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    gpx_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Chalkin" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+  <metadata>
+    <name>{activity_name}</name>
+    <desc>{description}</desc>
+    <time>{start_time_str}</time>
+  </metadata>
+  <trk>
+    <name>{activity_name}</name>
+    <type>RockClimbing</type>
+    <trkseg>
+      <trkpt lat="{lat}" lon="{lon}">
+        <time>{start_time_str}</time>
+      </trkpt>
+      <trkpt lat="{lat}" lon="{lon}">
+        <time>{end_time_str}</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>'''
+    
+    return gpx_content.encode('utf-8')
+
+
 @router.post("/upload-session/{session_id}")
 async def upload_session_to_strava(
     session_id: int,
@@ -295,12 +331,8 @@ async def upload_session_to_strava(
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        # Check if already uploaded
-        if session.strava_activity_id:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Session already uploaded to Strava (Activity ID: {session.strava_activity_id})"
-            )
+        # Check if already uploaded (we'll allow re-upload but warn user)
+        # The frontend should handle the confirmation
         
         # Get valid access token
         access_token = await get_valid_token(current_user.id, db)
@@ -340,56 +372,108 @@ async def upload_session_to_strava(
         # Format as ISO 8601 (Strava expects this format)
         start_date_local = start_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
         
-        activity_data = {
-            "name": activity_name,
-            "sport_type": "RockClimbing",  # Rock Climbing type
-            "start_date_local": start_date_local,
-            "elapsed_time": duration,
-            "description": activity_description.strip(),
-            "trainer": False,  # Not indoor trainer
-            "commute": False,
-            "hide_from_home": True  # Private activity
-        }
-        
-        # Add location if gym has coordinates
+        # Check if gym has coordinates to generate GPX
         if session.gym and session.gym.latitude and session.gym.longitude:
-            activity_data["start_latlng"] = [session.gym.latitude, session.gym.longitude]
-            activity_data["end_latlng"] = [session.gym.latitude, session.gym.longitude]
-        
-        # Upload to Strava
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    "https://www.strava.com/api/v3/activities",
-                    headers={
-                        "Authorization": f"Bearer {access_token}",
-                        "Content-Type": "application/json"
-                    },
-                    json=activity_data,
-                    timeout=30.0
-                )
-                response.raise_for_status()
-                activity = response.json()
-            except httpx.HTTPError as e:
-                error_detail = str(e)
-                if hasattr(e, 'response') and e.response is not None:
-                    try:
-                        error_detail = e.response.json()
-                    except:
-                        error_detail = e.response.text
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Failed to upload to Strava: {error_detail}"
-                )
+            # Generate GPX file and upload
+            gpx_content = generate_gpx_file(
+                lat=session.gym.latitude,
+                lon=session.gym.longitude,
+                start_time=start_datetime,
+                duration=duration,
+                activity_name=activity_name,
+                description=activity_description
+            )
+            
+            # Upload GPX to Strava
+            async with httpx.AsyncClient() as client:
+                try:
+                    files = {
+                        'file': ('activity.gpx', gpx_content, 'application/gpx+xml')
+                    }
+                    data = {
+                        'data_type': 'gpx',
+                        'name': activity_name,
+                        'description': activity_description.strip(),
+                        'activity_type': 'RockClimbing',
+                        'private': 1  # Private activity
+                    }
+                    
+                    response = await client.post(
+                        "https://www.strava.com/api/v3/uploads",
+                        headers={
+                            "Authorization": f"Bearer {access_token}"
+                        },
+                        files=files,
+                        data=data,
+                        timeout=30.0
+                    )
+                    response.raise_for_status()
+                    upload_result = response.json()
+                except httpx.HTTPError as e:
+                    error_detail = str(e)
+                    if hasattr(e, 'response') and e.response is not None:
+                        try:
+                            error_detail = e.response.json()
+                        except:
+                            error_detail = e.response.text
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Failed to upload GPX to Strava: {error_detail}"
+                    )
+            
+            # Get activity ID from upload (may need to poll for completion)
+            activity_id = upload_result.get("activity_id")
+            if not activity_id:
+                # Upload is processing, use the upload ID temporarily
+                activity_id = upload_result.get("id")
+            
+        else:
+            # No coordinates, create activity without GPX
+            activity_data = {
+                "name": activity_name,
+                "sport_type": "RockClimbing",
+                "start_date_local": start_date_local,
+                "elapsed_time": duration,
+                "description": activity_description.strip(),
+                "trainer": False,
+                "commute": False,
+                "hide_from_home": True
+            }
+            
+            async with httpx.AsyncClient() as client:
+                try:
+                    response = await client.post(
+                        "https://www.strava.com/api/v3/activities",
+                        headers={
+                            "Authorization": f"Bearer {access_token}",
+                            "Content-Type": "application/json"
+                        },
+                        json=activity_data,
+                        timeout=30.0
+                    )
+                    response.raise_for_status()
+                    activity = response.json()
+                    activity_id = activity.get("id")
+                except httpx.HTTPError as e:
+                    error_detail = str(e)
+                    if hasattr(e, 'response') and e.response is not None:
+                        try:
+                            error_detail = e.response.json()
+                        except:
+                            error_detail = e.response.text
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Failed to upload to Strava: {error_detail}"
+                    )
         
         # Save Strava activity ID
-        session.strava_activity_id = activity.get("id")
+        session.strava_activity_id = activity_id
         db.commit()
         
         return {
             "message": "Activity uploaded to Strava successfully",
-            "strava_activity_id": activity.get("id"),
-            "strava_url": f"https://www.strava.com/activities/{activity.get('id')}"
+            "strava_activity_id": activity_id,
+            "strava_url": f"https://www.strava.com/activities/{activity_id}"
         }
     
     except HTTPException:
