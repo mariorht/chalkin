@@ -432,12 +432,16 @@
                         <div class="label">Sesiones</div>
                     </div>
                     <div class="stat-card">
+                        <div class="value" id="uniqueAscents">-</div>
+                        <div class="label">Bloques únicos</div>
+                    </div>
+                    <div class="stat-card">
                         <div class="value" id="totalAscents">-</div>
-                        <div class="label">Bloques</div>
+                        <div class="label">Volumen total</div>
                     </div>
                     <div class="stat-card">
                         <div class="value" id="totalSends">-</div>
-                        <div class="label">Enviados</div>
+                        <div class="label">Encadenados</div>
                     </div>
                     <div class="stat-card">
                         <div class="value" id="totalFlashes">-</div>
@@ -451,17 +455,18 @@
                 <div class="stats-grid">
                     <div class="stat-card highlight">
                         <div class="value" id="maxGradeEver">-</div>
-                        <div class="label">Máximo histórico</div>
+                        <div class="label" id="maxGradeEverGym">Máximo histórico</div>
                     </div>
                     <div class="stat-card">
                         <div class="value" id="currentMaxGrade">-</div>
-                        <div class="label">Último mes</div>
+                        <div class="label" id="currentMaxGradeGym">Último mes</div>
                     </div>
                 </div>
             </section>
 
             <section class="stats-section">
-                <h2>📊 Distribución por grado</h2>
+                <h2>📊 Distribución por grado.</h2>
+                <h2>Bloques únicos</h2>
                 <div id="gradeDistribution" class="loading">Cargando...</div>
             </section>
 
@@ -474,7 +479,7 @@
         <!-- Yearly Stats Tab -->
         <div id="tab-year" class="tab-content">
             <section class="stats-section">
-                <h2>📅 Último año</h2>
+                <h2>📅 Último año (bloques únicos)</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="value" id="yearSessions">-</div>
@@ -482,11 +487,11 @@
                     </div>
                     <div class="stat-card">
                         <div class="value" id="yearAscents">-</div>
-                        <div class="label">Bloques</div>
+                        <div class="label">Bloques únicos</div>
                     </div>
                     <div class="stat-card">
                         <div class="value" id="yearSends">-</div>
-                        <div class="label">Enviados</div>
+                        <div class="label">Encadenados</div>
                     </div>
                     <div class="stat-card">
                         <div class="value" id="yearFlashes">-</div>
@@ -504,7 +509,7 @@
             </section>
 
             <section class="stats-section">
-                <h2>📈 Evolución mensual</h2>
+                <h2>📈 Evolución mensual (bloques únicos)</h2>
                 <div id="monthlyChart" class="monthly-chart loading">Cargando...</div>
             </section>
         </div>
@@ -695,11 +700,23 @@
                 const stats = await response.json();
                 
                 document.getElementById('totalSessions').textContent = stats.total_sessions || 0;
+                document.getElementById('uniqueAscents').textContent = stats.unique_ascents || 0;
                 document.getElementById('totalAscents').textContent = stats.total_ascents || 0;
                 document.getElementById('totalSends').textContent = stats.total_sends || 0;
                 document.getElementById('totalFlashes').textContent = stats.total_flashes || 0;
+                
+                // Max grades with gym info
                 document.getElementById('maxGradeEver').textContent = stats.max_grade_ever || '-';
+                const maxGymLabel = stats.max_grade_ever_gym 
+                    ? `Máximo histórico (${stats.max_grade_ever_gym})` 
+                    : 'Máximo histórico';
+                document.getElementById('maxGradeEverGym').textContent = maxGymLabel;
+                
                 document.getElementById('currentMaxGrade').textContent = stats.current_max_grade || '-';
+                const currentGymLabel = stats.current_max_grade_gym 
+                    ? `Último mes (${stats.current_max_grade_gym})` 
+                    : 'Último mes';
+                document.getElementById('currentMaxGradeGym').textContent = currentGymLabel;
                 
                 renderGradeDistribution(stats.grade_distribution || []);
                 renderGymBreakdown(stats.gym_breakdown || []);
@@ -717,19 +734,42 @@
                 return;
             }
             
-            const maxCount = Math.max(...grades.map(g => g.count));
+            // Group by gym
+            const gradesByGym = {};
+            grades.forEach(grade => {
+                const gymName = grade.gym_name || 'Sin gimnasio';
+                if (!gradesByGym[gymName]) {
+                    gradesByGym[gymName] = [];
+                }
+                gradesByGym[gymName].push(grade);
+            });
             
-            container.innerHTML = grades.map(grade => `
-                <div class="grade-row">
-                    <div class="grade-color" style="background: ${grade.color_hex || '#666'}">${grade.grade_label}</div>
-                    <div class="grade-bar-container">
-                        <div class="grade-bar">
-                            <div class="grade-bar-fill" style="width: ${(grade.count / maxCount) * 100}%"></div>
+            // Render a card for each gym
+            container.innerHTML = Object.keys(gradesByGym).map(gymName => {
+                const gymGrades = gradesByGym[gymName];
+                const maxCount = Math.max(...gymGrades.map(g => g.count));
+                
+                return `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3 style="color: var(--dark); font-size: 1rem; margin-bottom: 0.75rem; padding-left: 0.5rem;">
+                            📍 ${gymName}
+                        </h3>
+                        <div style="background: #F8F9FA; border-radius: 12px; padding: 1rem;">
+                            ${gymGrades.map(grade => `
+                                <div class="grade-row">
+                                    <div class="grade-color" style="background: ${grade.color_hex || '#666'}">${grade.grade_label}</div>
+                                    <div class="grade-bar-container">
+                                        <div class="grade-bar">
+                                            <div class="grade-bar-fill" style="width: ${(grade.count / maxCount) * 100}%"></div>
+                                        </div>
+                                        <div class="grade-count">${grade.count}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
                         </div>
-                        <div class="grade-count">${grade.count}</div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function renderGymBreakdown(gyms) {
@@ -790,15 +830,19 @@
                 return;
             }
             
-            const maxSends = Math.max(...monthlyStats.map(m => m.sends), 1);
+            // Use unique_ascents if available, fallback to sends for backwards compatibility
+            const maxValue = Math.max(...monthlyStats.map(m => m.unique_ascents || m.sends), 1);
             
-            container.innerHTML = monthlyStats.map(month => `
-                <div class="month-bar">
-                    <div class="month-value">${month.sends}</div>
-                    <div class="month-bar-fill" style="height: ${(month.sends / maxSends) * 100}px"></div>
-                    <div class="month-label">${month.month}</div>
-                </div>
-            `).join('');
+            container.innerHTML = monthlyStats.map(month => {
+                const value = month.unique_ascents || month.sends;
+                return `
+                    <div class="month-bar">
+                        <div class="month-value">${value}</div>
+                        <div class="month-bar-fill" style="height: ${(value / maxValue) * 100}px"></div>
+                        <div class="month-label">${month.month}</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // Friends period state
@@ -898,7 +942,7 @@
                         
                         <!-- Totals -->
                         <div class="totals-section">
-                            <div class="totals-title">🏆 Total bloques</div>
+                            <div class="totals-title">🏆 Total bloques únicos</div>
                             ${users.map(u => `
                                 <div class="total-row">
                                     <div class="total-rank ${u.rank === 1 ? 'r1' : u.rank === 2 ? 'r2' : u.rank === 3 ? 'r3' : ''}">${u.rank === 1 ? '🥇' : u.rank === 2 ? '🥈' : u.rank === 3 ? '🥉' : u.rank}</div>

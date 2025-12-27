@@ -46,7 +46,8 @@ def get_my_stats(
     
     # Basic counts
     total_sessions = len(sessions)
-    total_ascents = len(ascents)
+    total_ascents = len(ascents)  # All boulders including repeats
+    unique_ascents = len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.FLASH]])  # Only unique completions
     total_sends = len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH]])
     total_flashes = len([a for a in ascents if a.status == AscentStatus.FLASH])
     
@@ -67,52 +68,82 @@ def get_my_stats(
     
     # Max grade calculations
     max_grade_ever = None
+    max_grade_ever_gym = None
     max_relative_difficulty = None
     current_max_grade = None
+    current_max_grade_gym = None
     
     if ascents:
         # Get max difficulty ever (only sends)
         send_ascents = [a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH]]
         if send_ascents:
-            grade_ids = [a.grade_id for a in send_ascents]
-            max_grade = db.query(Grade).filter(
-                Grade.id.in_(grade_ids)
-            ).order_by(desc(Grade.relative_difficulty)).first()
+            # Find the ascent with max grade
+            max_ascent = None
+            max_difficulty = 0
+            for ascent in send_ascents:
+                grade = db.query(Grade).filter(Grade.id == ascent.grade_id).first()
+                if grade and grade.relative_difficulty > max_difficulty:
+                    max_difficulty = grade.relative_difficulty
+                    max_ascent = ascent
+                    max_grade_ever = grade.label
+                    max_relative_difficulty = grade.relative_difficulty
             
-            if max_grade:
-                max_grade_ever = max_grade.label
-                max_relative_difficulty = max_grade.relative_difficulty
+            # Get gym name for max grade
+            if max_ascent:
+                session = db.query(ClimbingSession).filter(ClimbingSession.id == max_ascent.session_id).first()
+                if session:
+                    gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
+                    if gym:
+                        max_grade_ever_gym = gym.name
         
         # Current max (last 30 days)
         recent_send_ascents = [a for a in send_ascents if a.session_id in month_session_ids]
         if recent_send_ascents:
-            grade_ids = [a.grade_id for a in recent_send_ascents]
-            current_max = db.query(Grade).filter(
-                Grade.id.in_(grade_ids)
-            ).order_by(desc(Grade.relative_difficulty)).first()
+            # Find the ascent with max grade in last 30 days
+            current_max_ascent = None
+            current_max_difficulty = 0
+            for ascent in recent_send_ascents:
+                grade = db.query(Grade).filter(Grade.id == ascent.grade_id).first()
+                if grade and grade.relative_difficulty > current_max_difficulty:
+                    current_max_difficulty = grade.relative_difficulty
+                    current_max_ascent = ascent
+                    current_max_grade = grade.label
             
-            if current_max:
-                current_max_grade = current_max.label
+            # Get gym name for current max
+            if current_max_ascent:
+                session = db.query(ClimbingSession).filter(ClimbingSession.id == current_max_ascent.session_id).first()
+                if session:
+                    gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
+                    if gym:
+                        current_max_grade_gym = gym.name
     
-    # Grade distribution
+    # Grade distribution (grouped by gym)
     grade_distribution = []
     if ascents:
-        grade_counts = {}
+        # Group by gym_id and grade_id
+        grade_gym_counts = {}
         for ascent in ascents:
-            gid = ascent.grade_id
-            if gid not in grade_counts:
-                grade_counts[gid] = {"count": 0, "sends": 0, "flashes": 0}
-            grade_counts[gid]["count"] += 1
+            # Get session to find gym
+            session = db.query(ClimbingSession).filter(ClimbingSession.id == ascent.session_id).first()
+            if not session:
+                continue
+                
+            key = (ascent.grade_id, session.gym_id)
+            if key not in grade_gym_counts:
+                grade_gym_counts[key] = {"count": 0, "sends": 0, "flashes": 0}
+            grade_gym_counts[key]["count"] += 1
             if ascent.status in [AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH]:
-                grade_counts[gid]["sends"] += 1
+                grade_gym_counts[key]["sends"] += 1
             if ascent.status == AscentStatus.FLASH:
-                grade_counts[gid]["flashes"] += 1
+                grade_gym_counts[key]["flashes"] += 1
         
-        for grade_id, counts in grade_counts.items():
+        for (grade_id, gym_id), counts in grade_gym_counts.items():
             grade = db.query(Grade).filter(Grade.id == grade_id).first()
-            if grade:
+            gym = db.query(Gym).filter(Gym.id == gym_id).first()
+            if grade and gym:
                 grade_distribution.append(GradeDistribution(
                     grade_label=grade.label,
+                    gym_name=gym.name,
                     color_hex=grade.color_hex,
                     relative_difficulty=grade.relative_difficulty,
                     count=counts["count"],
@@ -120,8 +151,8 @@ def get_my_stats(
                     flashes=counts["flashes"]
                 ))
         
-        # Sort by difficulty
-        grade_distribution.sort(key=lambda x: x.relative_difficulty)
+        # Sort by gym name, then by difficulty
+        grade_distribution.sort(key=lambda x: (x.gym_name, x.relative_difficulty))
     
     # Gym breakdown
     gym_breakdown = []
@@ -156,6 +187,7 @@ def get_my_stats(
         week_sessions = [s for s in sessions if week_start <= s.date <= week_end]
         week_session_ids = [s.id for s in week_sessions]
         week_ascents = [a for a in ascents if a.session_id in week_session_ids]
+        week_unique_ascents = [a for a in week_ascents if a.status in [AscentStatus.SEND, AscentStatus.FLASH]]  # For graphs
         
         week_sends = [a for a in week_ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH]]
         week_flashes = [a for a in week_ascents if a.status == AscentStatus.FLASH]
@@ -174,6 +206,7 @@ def get_my_stats(
             week_end=week_end,
             total_sessions=len(week_sessions),
             total_ascents=len(week_ascents),
+            unique_ascents=len(week_unique_ascents),
             total_sends=len(week_sends),
             total_flashes=len(week_flashes),
             max_grade_sent=max_sent,
@@ -186,11 +219,14 @@ def get_my_stats(
     return UserStats(
         total_sessions=total_sessions,
         total_ascents=total_ascents,
+        unique_ascents=unique_ascents,
         total_sends=total_sends,
         total_flashes=total_flashes,
         max_grade_ever=max_grade_ever,
+        max_grade_ever_gym=max_grade_ever_gym,
         max_relative_difficulty=max_relative_difficulty,
         current_max_grade=current_max_grade,
+        current_max_grade_gym=current_max_grade_gym,
         max_grade_label=max_grade_ever,  # Alias for frontend
         message=_generate_motivational_message(sessions_this_week, sends_this_week, flashes_this_week),
         sessions_this_week=sessions_this_week,
@@ -315,6 +351,7 @@ def get_yearly_stats(
         month_sessions = [s for s in sessions if month_start <= s.date <= month_end]
         month_session_ids = [s.id for s in month_sessions]
         month_ascents = [a for a in ascents if a.session_id in month_session_ids]
+        month_unique_ascents = [a for a in month_ascents if a.status in [AscentStatus.SEND, AscentStatus.FLASH]]  # For graphs
         month_sends = [a for a in month_ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT, AscentStatus.FLASH]]
         month_flashes = [a for a in month_ascents if a.status == AscentStatus.FLASH]
         
@@ -322,6 +359,7 @@ def get_yearly_stats(
             "month": month_start.strftime("%b"),
             "sessions": len(month_sessions),
             "ascents": len(month_ascents),
+            "unique_ascents": len(month_unique_ascents),
             "sends": len(month_sends),
             "flashes": len(month_flashes)
         })
