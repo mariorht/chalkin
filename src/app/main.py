@@ -69,9 +69,10 @@ except PermissionError:
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Serve service worker at root scope
-@app.get("/sw.js", response_class=FileResponse)
-def serve_sw():
-    return os.path.join(static_dir, "sw.js")
+# DESACTIVADO TEMPORALMENTE - Descomentar cuando se quiera usar
+# @app.get("/sw.js", response_class=FileResponse)
+# def serve_sw():
+#     return os.path.join(static_dir, "sw.js")
 
 # Serve uploaded files from uploads directory
 try:

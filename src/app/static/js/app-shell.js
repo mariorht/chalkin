@@ -40,6 +40,9 @@ const AppShell = {
 
     // Registrar service worker y suscribir push
     setupPush: async function() {
+        // DESACTIVADO TEMPORALMENTE - Descomentar cuando se quiera usar
+        return;
+        /*
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
         if (Notification.permission === 'denied') return;
         try {
@@ -79,6 +82,7 @@ const AppShell = {
         } catch (e) {
             console.warn('Push setup failed', e);
         }
+        */
     },
 
     urlBase64ToUint8Array: function(base64String) {
