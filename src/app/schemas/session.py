@@ -38,6 +38,7 @@ class SessionResponse(SessionBase):
     subtitle: Optional[str] = None
     started_at: datetime
     ended_at: Optional[datetime] = None
+    strava_activity_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     

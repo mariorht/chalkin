@@ -570,6 +570,43 @@
             transform: translateY(-2px);
         }
 
+        .btn-strava {
+            display: inline-block;
+            background: #FC4C02;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+            flex: 1;
+        }
+
+        .btn-strava:hover {
+            background: #E04402;
+            transform: translateY(-2px);
+        }
+
+        .btn-strava:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-strava.uploaded {
+            background: var(--success);
+            cursor: default;
+        }
+
+        .btn-strava.uploaded:hover {
+            background: var(--success);
+            transform: none;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -895,6 +932,23 @@
                 buttonsContainer.style.marginTop = '1.5rem';
                 buttonsContainer.style.flexWrap = 'wrap';
                 
+                // Strava button (if connected and not already uploaded)
+                const stravaBtn = document.createElement('button');
+                stravaBtn.id = 'stravaUploadBtn';
+                stravaBtn.className = 'btn-strava';
+                if (session.strava_activity_id) {
+                    stravaBtn.innerHTML = '✓ Subido a Strava';
+                    stravaBtn.classList.add('uploaded');
+                    stravaBtn.onclick = () => {
+                        window.open(`https://www.strava.com/activities/${session.strava_activity_id}`, '_blank');
+                    };
+                } else {
+                    stravaBtn.innerHTML = '🏃 Subir a Strava';
+                    stravaBtn.onclick = uploadToStrava;
+                }
+                stravaBtn.style.marginTop = '0';
+                stravaBtn.style.marginLeft = '0';
+                
                 const editBtn = document.createElement('button');
                 editBtn.id = 'editModeBtn';
                 editBtn.className = 'btn-reopen';
@@ -902,6 +956,7 @@
                 editBtn.onclick = toggleEditMode;
                 editBtn.style.marginTop = '0';
                 editBtn.style.marginLeft = '0';
+                editBtn.style.flex = '1';
                 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.id = 'deleteSessionBtn';
@@ -910,7 +965,9 @@
                 deleteBtn.onclick = deleteSession;
                 deleteBtn.style.marginTop = '0';
                 deleteBtn.style.marginLeft = '0';
+                deleteBtn.style.flex = '1';
                 
+                buttonsContainer.appendChild(stravaBtn);
                 buttonsContainer.appendChild(editBtn);
                 buttonsContainer.appendChild(deleteBtn);
                 summarySection.appendChild(buttonsContainer);
@@ -1179,6 +1236,54 @@
             } catch (error) {
                 console.error('Error ending session:', error);
                 window.location.href = '/dashboard';
+            }
+        }
+
+        async function uploadToStrava() {
+            const btn = document.getElementById('stravaUploadBtn');
+            
+            if (!confirm('¿Subir esta sesión a Strava como actividad privada de escalada?')) return;
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Subiendo...';
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/strava/upload-session/${sessionId}`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    session.strava_activity_id = data.strava_activity_id;
+                    
+                    // Update button
+                    btn.innerHTML = '✓ Subido a Strava';
+                    btn.classList.add('uploaded');
+                    btn.disabled = false;
+                    btn.onclick = () => {
+                        window.open(data.strava_url, '_blank');
+                    };
+                    
+                    alert('✓ Sesión subida a Strava correctamente');
+                } else {
+                    const error = await response.json();
+                    btn.disabled = false;
+                    btn.innerHTML = '🏃 Subir a Strava';
+                    
+                    if (error.detail && error.detail.includes('already uploaded')) {
+                        alert('Esta sesión ya fue subida a Strava');
+                    } else if (error.detail && error.detail.includes('not connected')) {
+                        alert('Conecta tu cuenta de Strava en el perfil primero');
+                    } else {
+                        alert('Error al subir a Strava: ' + (error.detail || 'Error desconocido'));
+                    }
+                }
+            } catch (error) {
+                console.error('Error uploading to Strava:', error);
+                btn.disabled = false;
+                btn.innerHTML = '🏃 Subir a Strava';
+                alert('Error al subir a Strava');
             }
         }
 
