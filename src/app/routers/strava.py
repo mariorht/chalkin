@@ -80,7 +80,8 @@ async def strava_callback(
     print(f"DEBUG: Exchanging token with redirect_uri: {settings.strava_redirect_uri}")
     print(f"DEBUG: Client ID: {settings.strava_client_id}")
     
-    async with httpx.AsyncClient() as client:
+    # Increase timeout for IPv6-only servers
+    async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             response = await client.post(
                 "https://www.strava.com/api/v3/oauth/token",
@@ -227,7 +228,7 @@ async def refresh_access_token(
     if not settings.strava_client_id or not settings.strava_client_secret:
         raise HTTPException(status_code=500, detail="Strava not configured")
     
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             response = await client.post(
                 "https://www.strava.com/api/v3/oauth/token",
@@ -275,7 +276,7 @@ async def get_valid_token(user_id: int, db: Session) -> str:
         if not settings.strava_client_id or not settings.strava_client_secret:
             raise HTTPException(status_code=500, detail="Strava not configured")
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             try:
                 response = await client.post(
                     "https://www.strava.com/api/v3/oauth/token",
@@ -409,7 +410,7 @@ async def upload_session_to_strava(
             )
             
             # Upload GPX to Strava
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 try:
                     files = {
                         'file': ('activity.gpx', gpx_content, 'application/gpx+xml')
@@ -464,7 +465,7 @@ async def upload_session_to_strava(
                 "hide_from_home": True
             }
             
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 try:
                     response = await client.post(
                         "https://www.strava.com/api/v3/activities",
