@@ -77,6 +77,8 @@ async def strava_callback(
     if not settings.strava_client_id or not settings.strava_client_secret:
         raise HTTPException(status_code=500, detail="Strava not configured")
     
+    print(f"DEBUG: Exchanging token with redirect_uri: {settings.strava_redirect_uri}")
+    
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
@@ -88,10 +90,16 @@ async def strava_callback(
                     "grant_type": "authorization_code"
                 }
             )
+            print(f"DEBUG: Strava response status: {response.status_code}")
+            print(f"DEBUG: Strava response body: {response.text}")
             response.raise_for_status()
             token_data = response.json()
         except httpx.HTTPError as e:
-            raise HTTPException(status_code=400, detail=f"Failed to exchange token: {str(e)}")
+            error_msg = f"Failed to exchange token: {str(e)}"
+            if hasattr(e, 'response') and e.response is not None:
+                error_msg += f" | Response: {e.response.text}"
+            print(f"ERROR: {error_msg}")
+            raise HTTPException(status_code=400, detail=error_msg)
     
     # Extract token data
     access_token = token_data.get("access_token")
