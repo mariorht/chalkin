@@ -9,6 +9,7 @@ from pydantic import BaseModel
 class GradeDistribution(BaseModel):
     """Distribution of ascents by grade."""
     grade_label: str
+    gym_name: Optional[str] = None  # Gym where this grade exists
     color_hex: Optional[str] = None
     relative_difficulty: float
     count: int
@@ -21,7 +22,8 @@ class WeeklyStats(BaseModel):
     week_start: date
     week_end: date
     total_sessions: int
-    total_ascents: int
+    total_ascents: int  # All boulders
+    unique_ascents: int = 0  # Only flash/send for graphs
     total_sends: int
     total_flashes: int
     max_grade_sent: Optional[str] = None
@@ -41,14 +43,17 @@ class UserStats(BaseModel):
     """Complete user statistics."""
     # Overall totals
     total_sessions: int
-    total_ascents: int
+    total_ascents: int  # All boulders (including repeats)
+    unique_ascents: int = 0  # Only flash/send (no repeat/project)
     total_sends: int
     total_flashes: int
     
     # Progress indicators
     max_grade_ever: Optional[str] = None
+    max_grade_ever_gym: Optional[str] = None  # Gym where max grade was achieved
     max_relative_difficulty: Optional[float] = None
     current_max_grade: Optional[str] = None  # Last 30 days
+    current_max_grade_gym: Optional[str] = None  # Gym for current max
     
     # Recent activity
     sessions_this_week: int

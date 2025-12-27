@@ -264,9 +264,14 @@
             background: rgba(34, 197, 94, 0.1);
         }
 
-        .status-btn.project.selected {
+        .status-btn.repeat.selected {
             border-color: var(--secondary);
             background: rgba(46, 196, 182, 0.1);
+        }
+
+        .status-btn.project.selected {
+            border-color: var(--flash);
+            background: rgba(245, 158, 11, 0.1);
         }
 
         /* Add button */
@@ -629,8 +634,12 @@
                     <span class="emoji">✅</span>
                     <span class="label">Send</span>
                 </button>
-                <button type="button" class="status-btn project" data-status="project">
+                <button type="button" class="status-btn repeat" data-status="repeat">
                     <span class="emoji">🔄</span>
+                    <span class="label">Repetición</span>
+                </button>
+                <button type="button" class="status-btn project" data-status="project">
+                    <span class="emoji">🎯</span>
                     <span class="label">Proyecto</span>
                 </button>
             </div>
@@ -990,7 +999,8 @@
                 const statusEmoji = {
                     'flash': '⚡',
                     'send': '✅',
-                    'project': '🔄'
+                    'repeat': '🔄',
+                    'project': '🎯'
                 }[ascent.status] || '✅';
                 
                 const time = parseUTCDate(ascent.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
@@ -1025,7 +1035,7 @@
             let maxDifficulty = 0;
             
             ascents.forEach(ascent => {
-                if (ascent.status !== 'project') {
+                if (ascent.status !== 'repeat' && ascent.status !== 'project') {
                     const grade = grades.find(g => g.id === ascent.grade_id);
                     if (grade && grade.relative_difficulty > maxDifficulty) {
                         maxDifficulty = grade.relative_difficulty;
@@ -1048,7 +1058,7 @@
             ascents.forEach(ascent => {
                 const gradeId = ascent.grade_id;
                 if (!gradeMap.has(gradeId)) {
-                    gradeMap.set(gradeId, { flash: 0, send: 0, project: 0 });
+                    gradeMap.set(gradeId, { flash: 0, send: 0, repeat: 0, project: 0 });
                 }
                 gradeMap.get(gradeId)[ascent.status]++;
             });
@@ -1067,11 +1077,12 @@
                 .sort((a, b) => (b.grade.relative_difficulty || 0) - (a.grade.relative_difficulty || 0));
             
             container.innerHTML = sortedGrades.map(({ grade, counts }) => {
-                const total = counts.flash + counts.send + counts.project;
+                const total = counts.flash + counts.send + counts.repeat + counts.project;
                 let details = [];
                 if (counts.flash > 0) details.push(`${counts.flash} ⚡`);
                 if (counts.send > 0) details.push(`${counts.send} ✅`);
-                if (counts.project > 0) details.push(`${counts.project} 🔄`);
+                if (counts.repeat > 0) details.push(`${counts.repeat} 🔄`);
+                if (counts.project > 0) details.push(`${counts.project} 🎯`);
                 
                 return `
                     <div class="grade-row">
