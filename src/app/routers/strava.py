@@ -92,7 +92,19 @@ async def strava_callback(
             )
             print(f"DEBUG: Strava response status: {response.status_code}")
             print(f"DEBUG: Strava response body: {response.text}")
-            response.raise_for_status()
+            
+            if response.status_code != 200:
+                error_body = response.text
+                try:
+                    error_json = response.json()
+                    error_body = str(error_json)
+                except:
+                    pass
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Strava authentication failed: {error_body}"
+                )
+            
             token_data = response.json()
         except httpx.HTTPError as e:
             error_msg = f"Failed to exchange token: {str(e)}"
