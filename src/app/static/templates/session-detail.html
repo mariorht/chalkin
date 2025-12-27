@@ -793,8 +793,14 @@
                 // Load grades for this gym
                 await loadGrades(session.gym_id);
                 
-                // Load ascents
-                loadAscents();
+                // Load ascents from session data
+                ascents = session.ascents || [];
+                updateAscentsList();
+                updateStats();
+                
+                if (isSessionEnded || !isOwnSession) {
+                    updateGradeBreakdown();
+                }
             } catch (error) {
                 console.error('Error loading session:', error);
             }
@@ -945,6 +951,10 @@
         async function loadAscents() {
             try {
                 const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}/ascents`);
+                if (!response.ok) {
+                    console.error('Error loading ascents:', response.status);
+                    return;
+                }
                 ascents = await response.json();
                 
                 updateAscentsList();
