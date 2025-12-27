@@ -372,10 +372,10 @@ def list_session_ascents(
 ):
     """
     List all ascents in a session.
+    Users can view their own sessions or sessions from friends.
     """
     session = db.query(ClimbingSession).filter(
-        ClimbingSession.id == session_id,
-        ClimbingSession.user_id == current_user.id
+        ClimbingSession.id == session_id
     ).first()
     
     if not session:
@@ -383,5 +383,13 @@ def list_session_ascents(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found"
         )
+    
+    # Check if user can view this session (own session or friend's session)
+    if session.user_id != current_user.id:
+        if not is_friend(db, current_user.id, session.user_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only view your own sessions or your friends' sessions"
+            )
     
     return session.ascents
