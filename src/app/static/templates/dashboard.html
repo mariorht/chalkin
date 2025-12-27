@@ -573,10 +573,45 @@
             margin-bottom: 1rem;
         }
 
+        .calendar-month-nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .calendar-nav-btn {
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .calendar-nav-btn:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .calendar-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
         .calendar-month-year {
-            font-size: 1rem;
-            color: var(--gray);
-            font-weight: 500;
+            font-size: 1.1rem;
+            color: var(--dark);
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 0.75rem;
         }
 
         .streak-badge {
@@ -835,14 +870,12 @@
         <!-- Activity Calendar Section -->
         <section class="activity-calendar-section">
             <div class="calendar-header">
-                <div>
-                    <h2>📅 Calendario de actividad</h2>
-                    <div class="calendar-month-year" id="calendarMonthYear"></div>
-                </div>
+                <h2>📅 Calendario de actividad</h2>
                 <div class="streak-badge">
                     🔥 <span class="streak-number" id="consecutiveWeeks">0</span> semanas consecutivas
                 </div>
             </div>
+            <div class="calendar-month-year" id="calendarMonthYear"></div>
             <div class="calendar-weekdays">
                 <div class="calendar-weekday">Lun</div>
                 <div class="calendar-weekday">Mar</div>
@@ -857,24 +890,10 @@
                     <div class="spinner"></div>
                 </div>
             </div>
-            <div class="calendar-legend">
-                <span>Menos</span>
-                <div class="calendar-legend-item">
-                    <div class="calendar-legend-box" style="background: #F3F4F6;"></div>
-                </div>
-                <div class="calendar-legend-item">
-                    <div class="calendar-legend-box level-1"></div>
-                </div>
-                <div class="calendar-legend-item">
-                    <div class="calendar-legend-box level-2"></div>
-                </div>
-                <div class="calendar-legend-item">
-                    <div class="calendar-legend-box level-3"></div>
-                </div>
-                <div class="calendar-legend-item">
-                    <div class="calendar-legend-box level-4"></div>
-                </div>
-                <span>Más</span>
+
+            <div class="calendar-month-nav" style="justify-content: center; margin-top: 1rem;">
+                <button class="calendar-nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">‹</button>
+                <button class="calendar-nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">›</button>
             </div>
         </section>
 
@@ -1268,11 +1287,62 @@
             }
         }
 
+        // Calendar navigation state - Initialize BEFORE loading
+        let currentCalendarYear = new Date().getFullYear();
+        let currentCalendarMonth = new Date().getMonth() + 1; // 1-12
+
         // Load all data
         loadStats();
         loadActivityCalendar();
         loadActivityChart();
         loadFriendRequests();
+        
+        function changeMonth(delta) {
+            const today = new Date();
+            currentCalendarMonth += delta;
+            
+            if (currentCalendarMonth > 12) {
+                currentCalendarMonth = 1;
+                currentCalendarYear += 1;
+            } else if (currentCalendarMonth < 1) {
+                currentCalendarMonth = 12;
+                currentCalendarYear -= 1;
+            }
+            
+            // Don't allow future months
+            if (currentCalendarYear > today.getFullYear() || 
+                (currentCalendarYear === today.getFullYear() && currentCalendarMonth > today.getMonth() + 1)) {
+                currentCalendarYear = today.getFullYear();
+                currentCalendarMonth = today.getMonth() + 1;
+            }
+            
+            // Don't go back more than 12 months
+            const requestedDate = new Date(currentCalendarYear, currentCalendarMonth - 1, 1);
+            const oneYearAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+            if (requestedDate < oneYearAgo) {
+                currentCalendarYear = oneYearAgo.getFullYear();
+                currentCalendarMonth = oneYearAgo.getMonth() + 1;
+            }
+            
+            loadActivityCalendar();
+            updateNavigationButtons();
+        }
+        
+        function updateNavigationButtons() {
+            const today = new Date();
+            const prevBtn = document.getElementById('prevMonthBtn');
+            const nextBtn = document.getElementById('nextMonthBtn');
+            
+            // Check if at limit (12 months back)
+            const requestedDate = new Date(currentCalendarYear, currentCalendarMonth - 1, 1);
+            const oneYearAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+            prevBtn.disabled = requestedDate <= oneYearAgo;
+            
+            // Check if at current month
+            const isCurrentMonth = currentCalendarYear === today.getFullYear() && 
+                                   currentCalendarMonth === today.getMonth() + 1;
+            nextBtn.disabled = isCurrentMonth;
+        }
         
         async function loadActivityCalendar() {
             const calendarContainer = document.getElementById('activityCalendar');
@@ -1280,7 +1350,7 @@
             const monthYearElement = document.getElementById('calendarMonthYear');
             
             try {
-                const response = await fetchWithAuth(`${API_URL}/stats/activity-calendar`);
+                const response = await fetchWithAuth(`${API_URL}/stats/activity-calendar?year=${currentCalendarYear}&month=${currentCalendarMonth}`);
                 if (!response || !response.ok) {
                     calendarContainer.innerHTML = '<div class="empty-state"><p>No hay datos</p></div>';
                     return;
@@ -1289,23 +1359,24 @@
                 const data = await response.json();
                 const activityDays = data.activity_days || {};
                 const consecutiveWeeks = data.consecutive_weeks || 0;
+                const year = data.year;
+                const month = data.month;
+                
+                // Update state with returned values (in case backend adjusted them)
+                currentCalendarYear = year;
+                currentCalendarMonth = month;
                 
                 // Update streak badge
                 streakElement.textContent = consecutiveWeeks;
                 
-                // Generate calendar for current month
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = today.getMonth();
-                
                 // Set month/year display
                 const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                monthYearElement.textContent = `${monthNames[month]} ${year}`;
+                monthYearElement.textContent = `${monthNames[month - 1]} ${year}`;
                 
                 // Get first and last day of month
-                const firstDay = new Date(year, month, 1);
-                const lastDay = new Date(year, month + 1, 0);
+                const firstDay = new Date(year, month - 1, 1);
+                const lastDay = new Date(year, month, 0);
                 
                 // Get day of week for first day (0=Sunday, 1=Monday, etc.)
                 // Convert to Monday=0, Sunday=6
@@ -1325,8 +1396,9 @@
                 }
                 
                 // Add days of the month
+                const today = new Date();
                 for (let day = 1; day <= lastDay.getDate(); day++) {
-                    const currentDate = new Date(year, month, day);
+                    const currentDate = new Date(year, month - 1, day);
                     const dateStr = currentDate.toISOString().split('T')[0];
                     const count = activityDays[dateStr] || 0;
                     
@@ -1353,6 +1425,7 @@
                 }
                 
                 calendarContainer.innerHTML = html;
+                updateNavigationButtons();
                 
             } catch (error) {
                 console.error('Error loading activity calendar:', error);

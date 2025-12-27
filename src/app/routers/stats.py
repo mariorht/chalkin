@@ -644,16 +644,36 @@ def get_available_gyms_for_leaderboard(
 
 @router.get("/activity-calendar")
 def get_activity_calendar(
+    year: int = Query(None, description="Year to display (default: current year)"),
+    month: int = Query(None, description="Month to display (1-12, default: current month)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Get activity calendar data (similar to GitHub/Strava contribution graph).
     Returns:
-    - activity_days: dict with date as key and session count as value (last 60 days for display)
+    - activity_days: dict with date as key and session count as value (for specified month)
     - consecutive_weeks: number of consecutive weeks with at least one session (unlimited)
+    - year, month: the displayed month
     """
     today = date.today()
+    
+    # Default to current year/month if not specified
+    display_year = year if year else today.year
+    display_month = month if month else today.month
+    
+    # Validate that we don't go back more than 12 months
+    requested_date = date(display_year, display_month, 1)
+    one_year_ago = today.replace(day=1) - timedelta(days=365)
+    if requested_date < one_year_ago:
+        requested_date = one_year_ago
+        display_year = requested_date.year
+        display_month = requested_date.month
+    
+    # Don't allow future months
+    if requested_date > today.replace(day=1):
+        display_year = today.year
+        display_month = today.month
     
     # Get ALL sessions (no date limit) for calculating consecutive weeks
     all_sessions = db.query(ClimbingSession).filter(
@@ -690,16 +710,22 @@ def get_activity_calendar(
         else:
             break  # Streak broken
     
-    # Build activity map for display (current month only)
-    # Get first day of current month
-    first_day_of_month = today.replace(day=1)
+    # Build activity map for display (specified month only)
+    first_day_of_month = date(display_year, display_month, 1)
+    if display_month == 12:
+        last_day_of_month = date(display_year + 1, 1, 1) - timedelta(days=1)
+    else:
+        last_day_of_month = date(display_year, display_month + 1, 1) - timedelta(days=1)
+    
     activity_days = {}
     for session in all_sessions:
-        if session.date >= first_day_of_month:
+        if first_day_of_month <= session.date <= last_day_of_month:
             date_str = session.date.isoformat()
             activity_days[date_str] = activity_days.get(date_str, 0) + 1
     
     return {
         "activity_days": activity_days,
-        "consecutive_weeks": consecutive_weeks
+        "consecutive_weeks": consecutive_weeks,
+        "year": display_year,
+        "month": display_month
     }

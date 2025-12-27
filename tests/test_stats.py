@@ -25,11 +25,11 @@ class TestStats:
         data = response.json()
         
         assert data["total_sessions"] == 1
-        assert data["total_ascents"] == 4
+        assert data["total_ascents"] == 3  # Excludes PROJECT status
         assert data["total_sends"] == 3  # 1 flash + 2 sends
         assert data["total_flashes"] == 1
         assert data["sessions_this_week"] == 1
-        assert data["ascents_this_week"] == 4
+        assert data["ascents_this_week"] == 4  # Includes all ascents this week
         
         # Grade distribution
         assert len(data["grade_distribution"]) > 0
