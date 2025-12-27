@@ -548,6 +548,192 @@
             background: var(--primary);
         }
 
+        /* Activity Calendar Styles */
+        .activity-calendar-section {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+        }
+
+        .activity-calendar-section h2 {
+            color: var(--dark);
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .calendar-month-year {
+            font-size: 1rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .streak-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .streak-number {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(45px, 60px));
+            gap: 4px;
+            margin-bottom: 4px;
+            margin-left: auto;
+            margin-right: auto;
+            justify-content: center;
+        }
+
+        .calendar-weekday {
+            text-align: center;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--gray);
+            padding: 0.25rem 0;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(45px, 60px));
+            gap: 4px;
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            background: #F3F4F6;
+            border-radius: 6px;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--dark);
+            position: relative;
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            cursor: default;
+        }
+
+        .calendar-day:not(.empty):hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .calendar-day.today {
+            border: 2px solid var(--primary);
+            font-weight: 700;
+        }
+
+        .calendar-day.level-1 {
+            background: #FFE4DE;
+        }
+
+        .calendar-day.level-2 {
+            background: #FFB8A8;
+        }
+
+        .calendar-day.level-3 {
+            background: #FF8B72;
+        }
+
+        .calendar-day.level-4 {
+            background: var(--primary);
+            color: white;
+        }
+
+        .calendar-day.has-activity::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        .calendar-day.level-4.has-activity::after {
+            background: white;
+        }
+
+        .calendar-legend {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+
+        .calendar-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .calendar-legend-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .calendar-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+            
+            .calendar-grid,
+            .calendar-weekdays {
+                grid-template-columns: repeat(7, minmax(35px, 1fr));
+            }
+            
+            .calendar-grid {
+                gap: 3px;
+            }
+            
+            .calendar-weekdays {
+                gap: 3px;
+            }
+            
+            .calendar-day {
+                font-size: 0.7rem;
+            }
+            
+            .calendar-weekday {
+                font-size: 0.6rem;
+            }
+        }
+
         .legend-dot.sessions {
             background: var(--secondary);
         }
@@ -644,6 +830,52 @@
             <a href="/friends" class="btn btn-secondary" style="flex: 1;">
                 <span>👥</span>
             </a>
+        </section>
+
+        <!-- Activity Calendar Section -->
+        <section class="activity-calendar-section">
+            <div class="calendar-header">
+                <div>
+                    <h2>📅 Calendario de actividad</h2>
+                    <div class="calendar-month-year" id="calendarMonthYear"></div>
+                </div>
+                <div class="streak-badge">
+                    🔥 <span class="streak-number" id="consecutiveWeeks">0</span> semanas consecutivas
+                </div>
+            </div>
+            <div class="calendar-weekdays">
+                <div class="calendar-weekday">Lun</div>
+                <div class="calendar-weekday">Mar</div>
+                <div class="calendar-weekday">Mié</div>
+                <div class="calendar-weekday">Jue</div>
+                <div class="calendar-weekday">Vie</div>
+                <div class="calendar-weekday">Sáb</div>
+                <div class="calendar-weekday">Dom</div>
+            </div>
+            <div class="calendar-grid" id="activityCalendar">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            <div class="calendar-legend">
+                <span>Menos</span>
+                <div class="calendar-legend-item">
+                    <div class="calendar-legend-box" style="background: #F3F4F6;"></div>
+                </div>
+                <div class="calendar-legend-item">
+                    <div class="calendar-legend-box level-1"></div>
+                </div>
+                <div class="calendar-legend-item">
+                    <div class="calendar-legend-box level-2"></div>
+                </div>
+                <div class="calendar-legend-item">
+                    <div class="calendar-legend-box level-3"></div>
+                </div>
+                <div class="calendar-legend-item">
+                    <div class="calendar-legend-box level-4"></div>
+                </div>
+                <span>Más</span>
+            </div>
         </section>
 
         <!-- Activity Chart Section -->
@@ -1036,6 +1268,103 @@
             }
         }
 
+        // Load all data
+        loadStats();
+        loadActivityCalendar();
+        loadActivityChart();
+        loadFriendRequests();
+        
+        async function loadActivityCalendar() {
+            const calendarContainer = document.getElementById('activityCalendar');
+            const streakElement = document.getElementById('consecutiveWeeks');
+            const monthYearElement = document.getElementById('calendarMonthYear');
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/stats/activity-calendar`);
+                if (!response || !response.ok) {
+                    calendarContainer.innerHTML = '<div class="empty-state"><p>No hay datos</p></div>';
+                    return;
+                }
+                
+                const data = await response.json();
+                const activityDays = data.activity_days || {};
+                const consecutiveWeeks = data.consecutive_weeks || 0;
+                
+                // Update streak badge
+                streakElement.textContent = consecutiveWeeks;
+                
+                // Generate calendar for current month
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = today.getMonth();
+                
+                // Set month/year display
+                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                monthYearElement.textContent = `${monthNames[month]} ${year}`;
+                
+                // Get first and last day of month
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                
+                // Get day of week for first day (0=Sunday, 1=Monday, etc.)
+                // Convert to Monday=0, Sunday=6
+                let firstDayOfWeek = firstDay.getDay() - 1;
+                if (firstDayOfWeek < 0) firstDayOfWeek = 6;
+                
+                // Calculate max sessions per day for intensity levels
+                const counts = Object.values(activityDays);
+                const maxCount = Math.max(...counts, 1);
+                
+                // Generate calendar grid
+                let html = '';
+                
+                // Add empty cells for days before month starts
+                for (let i = 0; i < firstDayOfWeek; i++) {
+                    html += '<div class="calendar-day empty"></div>';
+                }
+                
+                // Add days of the month
+                for (let day = 1; day <= lastDay.getDate(); day++) {
+                    const currentDate = new Date(year, month, day);
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    const count = activityDays[dateStr] || 0;
+                    
+                    // Determine intensity level (0-4)
+                    let level = 0;
+                    if (count > 0) {
+                        if (maxCount === 1) {
+                            level = 4;
+                        } else {
+                            const intensity = count / maxCount;
+                            if (intensity >= 0.75) level = 4;
+                            else if (intensity >= 0.5) level = 3;
+                            else if (intensity >= 0.25) level = 2;
+                            else level = 1;
+                        }
+                    }
+                    
+                    const levelClass = level > 0 ? `level-${level}` : '';
+                    const hasActivity = count > 0 ? 'has-activity' : '';
+                    const isToday = currentDate.toDateString() === today.toDateString() ? 'today' : '';
+                    const title = count > 0 ? `${count} sesión${count > 1 ? 'es' : ''}` : 'Sin actividad';
+                    
+                    html += `<div class="calendar-day ${levelClass} ${hasActivity} ${isToday}" title="${title}">${day}</div>`;
+                }
+                
+                calendarContainer.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading activity calendar:', error);
+                calendarContainer.innerHTML = '<div class="empty-state"><p>Error al cargar</p></div>';
+            }
+        }
+        
+        function formatDate(date) {
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+        }
+        
         // Load all data
         loadStats();
         loadActivityChart();
