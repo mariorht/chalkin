@@ -19,6 +19,7 @@ from app.routers.ascents import router as ascents_router
 from app.routers.stats import router as stats_router
 from app.routers.social import router as social_router
 from app.routers.notifications import router as notifications_router
+from app.routers.strava import router as strava_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -47,6 +48,7 @@ app.include_router(ascents_router, prefix="/api")
 app.include_router(stats_router, prefix="/api")
 app.include_router(social_router, prefix="/api")
 app.include_router(notifications_router, prefix="/api")
+app.include_router(strava_router, prefix="/api")
 
 # Set the correct paths for static files and templates
 base_dir = os.path.dirname(os.path.abspath(__file__))
