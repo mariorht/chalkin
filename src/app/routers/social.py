@@ -21,7 +21,8 @@ from app.schemas.social import (
     FriendshipResponse,
     FriendResponse,
     FeedItem,
-    FeedResponse
+    FeedResponse,
+    UserProfileResponse
 )
 
 router = APIRouter(prefix="/social", tags=["Social"])
@@ -422,3 +423,125 @@ def get_activity_feed(
         ))
     
     return FeedResponse(items=items, has_more=has_more)
+
+
+@router.get("/users/{user_id}", response_model=UserProfileResponse)
+def get_user_profile(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get a user's public profile with their stats and recent sessions.
+    """
+    # Get user
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Check friendship status
+    friendship = db.query(Friendship).filter(
+        or_(
+            and_(Friendship.user_id == current_user.id, Friendship.friend_id == user_id),
+            and_(Friendship.user_id == user_id, Friendship.friend_id == current_user.id)
+        )
+    ).first()
+    
+    friendship_status = None
+    if friendship:
+        if friendship.status == FriendshipStatus.ACCEPTED:
+            friendship_status = "accepted"
+        elif friendship.status == FriendshipStatus.PENDING:
+            if friendship.user_id == current_user.id:
+                friendship_status = "pending"  # I sent the request
+            else:
+                friendship_status = "pending_received"  # They sent me a request
+    
+    # Get user stats
+    sessions = db.query(ClimbingSession).filter(ClimbingSession.user_id == user_id).all()
+    total_sessions = len(sessions)
+    
+    # Count sends
+    total_sends = 0
+    max_grade_label = None
+    if sessions:
+        session_ids = [s.id for s in sessions]
+        ascents = db.query(Ascent).filter(
+            Ascent.session_id.in_(session_ids),
+            Ascent.status.in_([AscentStatus.SEND, AscentStatus.FLASH])
+        ).all()
+        
+        # Get unique sends (by grade_id)
+        unique_grades = set(a.grade_id for a in ascents)
+        total_sends = len(unique_grades)
+        
+        # Get max grade
+        if ascents:
+            grade_ids = [a.grade_id for a in ascents]
+            max_grade = db.query(Grade).filter(
+                Grade.id.in_(grade_ids)
+            ).order_by(desc(Grade.relative_difficulty)).first()
+            if max_grade:
+                max_grade_label = max_grade.label
+    
+    # Get recent sessions (last 10)
+    recent_sessions_data = db.query(ClimbingSession).filter(
+        ClimbingSession.user_id == user_id
+    ).order_by(desc(ClimbingSession.date), desc(ClimbingSession.started_at)).limit(10).all()
+    
+    # Build feed items for recent sessions
+    recent_sessions = []
+    for session in recent_sessions_data:
+        gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
+        ascents = db.query(Ascent).filter(Ascent.session_id == session.id).all()
+        total_ascents = len(ascents)
+        flashes = len([a for a in ascents if a.status == AscentStatus.FLASH])
+        sends = len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.FLASH]])
+        
+        # Get max grade for this session
+        session_max_grade_label = None
+        if ascents:
+            send_ascents = [a for a in ascents if a.status != AscentStatus.PROJECT]
+            if send_ascents:
+                grade_ids = [a.grade_id for a in send_ascents]
+                session_max_grade = db.query(Grade).filter(
+                    Grade.id.in_(grade_ids)
+                ).order_by(desc(Grade.relative_difficulty)).first()
+                if session_max_grade:
+                    session_max_grade_label = session_max_grade.label
+        
+        recent_sessions.append(FeedItem(
+            session_id=session.id,
+            user_id=session.user_id,
+            username=user.username,
+            profile_picture=user.profile_picture,
+            gym_id=session.gym_id,
+            gym_name=gym.name if gym else "Gimnasio",
+            gym_location=gym.location if gym else None,
+            title=session.title,
+            subtitle=session.subtitle,
+            date=session.date,
+            started_at=session.started_at,
+            ended_at=session.ended_at,
+            total_ascents=total_ascents,
+            flashes=flashes,
+            sends=sends,
+            max_grade_label=session_max_grade_label,
+            is_own=user_id == current_user.id
+        ))
+    
+    return UserProfileResponse(
+        id=user.id,
+        username=user.username,
+        profile_picture=user.profile_picture,
+        home_gym_id=user.home_gym_id,
+        home_gym_name=user.home_gym.name if user.home_gym else None,
+        friendship_status=friendship_status,
+        total_sessions=total_sessions,
+        total_sends=total_sends,
+        max_grade_label=max_grade_label,
+        recent_sessions=recent_sessions
+    )

@@ -51,20 +51,20 @@
                 ? `<img src="${user.profile_picture}" alt="${user.username}">` 
                 : initial;
             
-            const sessionTitle = session.title || `📍 ${session.gym_name || 'Sesión'}`;
-            const sessionSubtitle = session.subtitle ? `<span class="session-subtitle">${session.subtitle}</span>` : '';
-            const locationText = session.gym_location ? `<span class="session-location">📍 ${session.gym_location}</span>` : '';
+            const displayTitle = session.title || `📍 ${session.gym_name}`;
+            const subtitleHtml = session.subtitle ? `<span class="session-subtitle">${session.subtitle}</span>` : '';
+            const locationHtml = session.title ? `<span class="session-location">📍 ${session.gym_name}</span>` : '';
             
             return `
-                <a href="/sessions/${session.id}" class="session-card">
-                    <div class="session-header">
-                        <div class="session-info">
-                            <div class="avatar own">${avatarContent}</div>
-                            <div class="session-details">
-                                <span class="gym-name">${session.title ? sessionTitle : `📍 ${session.gym_name || 'Sesión'}`}</span>
-                                ${sessionSubtitle}
-                                ${!session.title && session.gym_location ? `<span class="session-location">${session.gym_location}</span>` : ''}
-                                ${session.title ? `<span class="session-location">📍 ${session.gym_name}${session.gym_location ? ' • ' + session.gym_location : ''}</span>` : ''}
+                <div class="feed-card" onclick="window.location.href='/sessions/${session.id}'">
+                    <div class="feed-header">
+                        <div class="user-info">
+                            <div class="avatar own" onclick="event.stopPropagation(); window.location.href='/users?id=${user.id || AppShell.user?.id}'">${avatarContent}</div>
+                            <div class="user-details">
+                                <span class="username own">${user.username || 'Tú'}</span>
+                                <span class="gym-name">${displayTitle}</span>
+                                ${subtitleHtml}
+                                ${locationHtml}
                                 ${isActive ? 
                                     '<span class="session-status status-active"><span class="pulse"></span> En curso</span>' :
                                     (duration ? `<span class="duration">⏱️ ${duration}</span>` : '')
@@ -77,7 +77,7 @@
                         </div>
                     </div>
                     
-                    <div class="session-stats">
+                    <div class="feed-stats">
                         <div class="stat">
                             <div class="stat-value">${session.total_ascents || 0}</div>
                             <div class="stat-label">Bloques</div>
@@ -87,7 +87,7 @@
                             <div class="stat-label">Flashes</div>
                         </div>
                         <div class="stat">
-                            <div class="stat-value send">✓ ${(session.total_ascents || 0) - (session.flashes || 0)}</div>
+                            <div class="stat-value send">✓ ${session.sends || 0}</div>
                             <div class="stat-label">Sends</div>
                         </div>
                         <div class="stat">
@@ -95,7 +95,7 @@
                             <div class="stat-label">Máx. grado</div>
                         </div>
                     </div>
-                </a>
+                </div>
             `;
         }
 

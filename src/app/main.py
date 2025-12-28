@@ -192,6 +192,12 @@ def serve_support():
     return os.path.join(template_dir, "support.html")
 
 
+@app.get("/users", response_class=FileResponse)
+def serve_user_profile():
+    """Serve the user profile page."""
+    return os.path.join(template_dir, "user-profile.html")
+
+
 @app.get("/health")
 def health_check():
     """Health check endpoint."""
