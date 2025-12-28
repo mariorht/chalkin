@@ -419,6 +419,14 @@
             justify-content: center;
             font-weight: bold;
             font-size: 1.1rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .friend-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .friend-request-actions {
@@ -873,6 +881,17 @@
             </div>
         </section>
 
+        <!-- Friend Requests Section -->
+        <section id="friendRequestsSection" style="display: none; margin-bottom: 1.5rem;">
+            <div class="friend-requests-card">
+                <div class="section-header">
+                    <h2>👥 Solicitudes de amistad</h2>
+                    <a href="/friends">Ver todas</a>
+                </div>
+                <div id="friendRequestsList" class="friend-requests-list"></div>
+            </div>
+        </section>
+
         <section class="quick-actions" style="display: flex; gap: 0.75rem;">
             <a href="/sessions/new" class="btn btn-primary" style="flex: 2;">
                 <span>▶️</span> Iniciar actividad
@@ -939,17 +958,6 @@
                     <div class="chart-summary-value" id="totalSessions">-</div>
                     <div class="chart-summary-label">Sesiones</div>
                 </div>
-            </div>
-        </section>
-
-        <!-- Friend Requests Section -->
-        <section id="friendRequestsSection" style="display: none; margin-bottom: 2rem;">
-            <div class="friend-requests-card">
-                <div class="section-header">
-                    <h2>👥 Solicitudes de amistad</h2>
-                    <a href="/friends">Ver todas</a>
-                </div>
-                <div id="friendRequestsList" class="friend-requests-list"></div>
             </div>
         </section>
     </main>
@@ -1228,7 +1236,12 @@
                 container.innerHTML = requests.slice(0, 3).map(req => `
                     <div class="friend-request-item" id="request-${req.id}">
                         <div class="friend-request-info">
-                            <div class="friend-avatar">${req.user_username.charAt(0).toUpperCase()}</div>
+                            <div class="friend-avatar">
+                                ${req.user_profile_picture ? 
+                                    `<img src="${req.user_profile_picture}" alt="${req.user_username}">` : 
+                                    req.user_username.charAt(0).toUpperCase()
+                                }
+                            </div>
                             <div>
                                 <strong>${req.user_username}</strong>
                                 <div style="font-size: 0.8rem; opacity: 0.8;">quiere ser tu amigo</div>
