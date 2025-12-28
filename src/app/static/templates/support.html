@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soporte - Chalkin</title>
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/logoChalkin_v2_16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/logoChalkin_v2_32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logoChalkin_v2_180.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#FF6B35">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+            --gray-light: #E5E7EB;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--dark);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .logo span {
+            font-size: 1.8rem;
+        }
+
+        main {
+            flex: 1;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .support-container {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            color: var(--dark);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .support-section {
+            margin-bottom: 2rem;
+        }
+
+        .support-section h2 {
+            color: var(--dark);
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .support-card {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .support-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .support-card h3 {
+            color: var(--dark);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .support-card p {
+            color: var(--gray);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--dark);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #2A2A4E;
+            transform: translateY(-2px);
+        }
+
+        .info-box {
+            background: #FFF4ED;
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+        }
+
+        .info-box p {
+            color: var(--dark);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        footer {
+            background: var(--dark);
+            color: var(--gray);
+            text-align: center;
+            padding: 2rem;
+            margin-top: auto;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                padding: 2rem 1rem;
+            }
+
+            .support-container {
+                padding: 2rem 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">
+            <span>🧗</span> Chalkin
+        </a>
+    </header>
+
+    <main>
+        <div class="support-container">
+            <h1>💬 Soporte</h1>
+            <p class="subtitle">¿Necesitas ayuda? Aquí tienes todas las formas de contactar con nosotros</p>
+
+            <div class="support-section">
+                <h2>📧 Contacto Directo</h2>
+                <div class="support-card">
+                    <h3>✉️ Email</h3>
+                    <p>Para reportar bugs, sugerencias de funcionalidades o cualquier consulta:</p>
+                    <a href="mailto:marioroos2502@gmail.com" class="btn btn-primary">
+                        Enviar Email
+                    </a>
+                </div>
+            </div>
+
+            <div class="support-section">
+                <h2>💻 Código Abierto</h2>
+                <div class="support-card">
+                    <h3>🐙 GitHub</h3>
+                    <p>Chalkin es open source. Puedes ver el código, reportar issues o contribuir:</p>
+                    <a href="https://github.com/mariorht/chalkin" target="_blank" class="btn btn-secondary">
+                        Ver en GitHub
+                    </a>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <p><strong>📝 Nota:</strong> Chalkin es un proyecto open source bajo licencia AGPL-3.0. Las contribuciones son bienvenidas.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Chalkin © 2025 · <a href="https://github.com/mariorht/chalkin" target="_blank">GitHub</a> · Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank">AGPL v3</a></p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem;">Made with 🧗 for climbers · <span style="color: #FC5200; font-weight: 600;">Compatible with Strava</span></p>
+    </footer>
+</body>
+</html>
