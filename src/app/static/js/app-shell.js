@@ -179,7 +179,7 @@ const AppShell = {
         
         const navItems = [
             { id: 'dashboard', href: '/dashboard', icon: '🏠', label: 'Inicio' },
-            { id: 'sessions', href: '/sessions', icon: '📅', label: 'Sesiones' },
+            { id: 'profile', href: `/users?id=${this.user?.id || ''}`, icon: '👤', label: 'Yo' },
             { id: 'feed', href: '/feed', icon: '📰', label: 'Feed' },
             { id: 'stats', href: '/stats', icon: '📊', label: 'Stats' },
             { id: 'gyms', href: '/gyms', icon: '🏢', label: 'Gyms' }
@@ -188,7 +188,6 @@ const AppShell = {
         nav.innerHTML = navItems.map(item => `
             <a href="${item.href}" class="${activePage === item.id ? 'active' : ''}" data-nav="${item.id}">
                 <span class="nav-icon">${item.icon}</span>
-                <span class="nav-label">${item.label}</span>
                 ${item.hasBadge ? '<span class="nav-badge" id="friendsBadge" style="display: none;">0</span>' : ''}
             </a>
         `).join('');

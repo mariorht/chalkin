@@ -194,14 +194,18 @@
     <script src="/static/js/app-shell.js"></script>
     <script src="/static/js/utils.js"></script>
     <script>
-        AppShell.init({ activePage: 'friends' });
-        
-        const API_URL = '/api';
-        let token = AppShell.token;
-        
         // Get user ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('id');
+        
+        // Check if viewing own profile
+        const currentUserId = AppShell.user?.id;
+        const isOwnProfile = currentUserId && parseInt(userId) === currentUserId;
+        
+        AppShell.init({ activePage: isOwnProfile ? 'profile' : 'friends' });
+        
+        const API_URL = '/api';
+        let token = AppShell.token;
         
         if (!userId) {
             document.getElementById('profileContent').innerHTML = `
