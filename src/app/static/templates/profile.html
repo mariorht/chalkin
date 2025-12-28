@@ -306,61 +306,45 @@
         /* Strava Connection */
         .strava-section {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem;
-            background: var(--light);
-            border-radius: 10px;
-            margin-top: 1rem;
-        }
-
-        .strava-info {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .strava-logo {
-            font-size: 1.5rem;
-        }
-
-        .strava-text {
-            display: flex;
             flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
         }
 
-        .strava-text .title {
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .strava-text .status {
-            font-size: 0.85rem;
+        .strava-status-text {
+            text-align: center;
+            font-size: 0.9rem;
             color: var(--gray);
         }
 
-        .strava-text .status.connected {
+        .strava-status-text span.connected {
             color: var(--success);
+            font-weight: 600;
         }
 
         .btn-strava-connect {
-            background: #FC4C02;
-            color: white;
+            background: transparent;
             border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
+            padding: 0;
             cursor: pointer;
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            display: block;
+        }
+
+        .btn-strava-connect img {
+            height: 48px;
+            width: auto;
+            display: block;
         }
 
         .btn-strava-connect:hover {
-            background: #E04402;
+            opacity: 0.8;
             transform: translateY(-2px);
+        }
+
+        .btn-strava-connect:active {
+            transform: translateY(0);
         }
 
         .btn-strava-disconnect {
@@ -469,19 +453,15 @@
 
         <!-- Strava Connection Card -->
         <div class="card">
-            <h2>🏃 Conexión con Strava</h2>
             <div class="strava-section">
-                <div class="strava-info">
-                    <div class="strava-logo">🔗</div>
-                    <div class="strava-text">
-                        <span class="title">Strava</span>
-                        <span class="status" id="stravaStatus">No conectado</span>
-                    </div>
-                </div>
                 <div id="stravaActions">
                     <button class="btn-strava-connect" onclick="connectStrava()" id="btnStravaConnect">
-                        Conectar
+                        <img src="/static/icons/Connect%20with%20Strava%20Orange/btn_strava_connect_with_orange.svg" 
+                             alt="Connect with Strava">
                     </button>
+                </div>
+                <div class="strava-status-text">
+                    <span id="stravaStatus">No conectado</span>
                 </div>
             </div>
         </div>
@@ -631,7 +611,10 @@
                 } else {
                     statusEl.textContent = 'No conectado';
                     statusEl.classList.remove('connected');
-                    actionsEl.innerHTML = '<button class="btn-strava-connect" onclick="connectStrava()">Conectar</button>';
+                    actionsEl.innerHTML = `<button class="btn-strava-connect" onclick="connectStrava()" id="btnStravaConnect">
+                        <img src="/static/icons/Connect%20with%20Strava%20Orange/btn_strava_connect_with_orange.svg" 
+                             alt="Connect with Strava">
+                    </button>`;
                 }
             } catch (error) {
                 console.error('Error loading Strava status:', error);
