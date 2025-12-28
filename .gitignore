@@ -10,5 +10,6 @@ venv/
 *.db
 data/
 uploads/
+.DS_Store
 # SSL certificates (producción)
 nginx/ssl/
