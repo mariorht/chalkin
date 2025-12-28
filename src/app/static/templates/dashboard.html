@@ -1038,12 +1038,17 @@
                     return new Date(dateStr + 'T00:00:00');
                 };
                 
-                // Get last 8 weeks
+                // Get last 8 weeks (starting from Monday)
                 const weeks = [];
                 const now = new Date();
+                // Get day of week (0=Sunday, 1=Monday, ..., 6=Saturday)
+                const dayOfWeek = now.getDay();
+                // Convert to ISO week (0=Monday, 1=Tuesday, ..., 6=Sunday)
+                const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                
                 for (let i = 7; i >= 0; i--) {
                     const weekStart = new Date(now);
-                    weekStart.setDate(now.getDate() - (i * 7) - now.getDay());
+                    weekStart.setDate(now.getDate() - (i * 7) - daysFromMonday);
                     weekStart.setHours(0, 0, 0, 0);
                     
                     const weekEnd = new Date(weekStart);
