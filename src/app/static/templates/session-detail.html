@@ -571,10 +571,13 @@
         }
 
         .btn-strava {
-            display: inline-block;
-            background: #FC4C02;
-            color: white;
-            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: white;
+            color: #FC4C02;
+            border: 2px solid #FC4C02;
             padding: 0.8rem 1.5rem;
             border-radius: 10px;
             font-size: 1rem;
@@ -586,13 +589,22 @@
             flex: 1;
         }
 
+        .btn-strava img {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+        }
+
         .btn-strava:hover {
-            background: #E04402;
+            background: #FFF4ED;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(252, 76, 2, 0.2);
         }
 
         .btn-strava:disabled {
-            background: #cccccc;
+            background: #f5f5f5;
+            color: #cccccc;
+            border-color: #cccccc;
             cursor: not-allowed;
             transform: none;
         }
@@ -937,13 +949,13 @@
                 stravaBtn.id = 'stravaUploadBtn';
                 stravaBtn.className = 'btn-strava';
                 if (session.strava_activity_id) {
-                    stravaBtn.innerHTML = '✓ Subido a Strava';
+                    stravaBtn.innerHTML = '<img src="/static/icons/strava.png" alt="Strava"> Subido a Strava';
                     stravaBtn.classList.add('uploaded');
                     stravaBtn.onclick = () => {
                         window.open(`https://www.strava.com/activities/${session.strava_activity_id}`, '_blank');
                     };
                 } else {
-                    stravaBtn.innerHTML = '🏃 Subir a Strava';
+                    stravaBtn.innerHTML = '<img src="/static/icons/strava.png" alt="Strava"> Subir a Strava';
                     stravaBtn.onclick = uploadToStrava;
                 }
                 stravaBtn.style.marginTop = '0';
