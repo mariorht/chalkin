@@ -63,7 +63,7 @@
                 <div class="feed-card" onclick="window.location.href='/sessions/${item.session_id}'">
                     <div class="feed-header">
                         <div class="user-info">
-                            <div class="avatar ${item.is_own ? 'own' : ''}">${avatarContent}</div>
+                            <div class="avatar ${item.is_own ? 'own' : ''}" onclick="event.stopPropagation(); window.location.href='/users?id=${item.user_id}'">${avatarContent}</div>
                             <div class="user-details">
                                 <span class="username ${item.is_own ? 'own' : ''}">${item.username}</span>
                                 <span class="gym-name">${displayTitle}</span>

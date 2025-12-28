@@ -75,3 +75,19 @@ class FeedResponse(BaseModel):
     """Response for the activity feed."""
     items: List[FeedItem]
     has_more: bool = False
+
+
+class UserProfileResponse(BaseModel):
+    """Schema for a user's public profile."""
+    id: int
+    username: str
+    profile_picture: Optional[str] = None
+    home_gym_id: Optional[int] = None
+    home_gym_name: Optional[str] = None
+    friendship_status: Optional[str] = None  # None, pending, accepted, pending_received
+    total_sessions: int = 0
+    total_sends: int = 0
+    max_grade_label: Optional[str] = None
+    recent_sessions: List[FeedItem] = []
+
+    model_config = ConfigDict(from_attributes=True)

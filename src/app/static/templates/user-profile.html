@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil - Chalkin</title>
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/logoChalkin_v2_16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/logoChalkin_v2_32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logoChalkin_v2_180.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#FF6B35">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Chalkin">
+    
+    <link rel="stylesheet" href="/static/css/app-shell.css">
+    <link rel="stylesheet" href="/static/css/cards.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--light);
+        }
+        .container {
+            padding: 20px !important;
+        }
+        .profile-header {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 2.5rem;
+            margin: 0 auto 16px;
+            overflow: hidden;
+        }
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-username {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .friendship-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .badge-friends {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-danger {
+            background: transparent;
+            color: #dc3545;
+            border: 2px solid #dc3545;
+        }
+        .btn-danger:hover {
+            background: #dc3545;
+            color: white;
+        }
+        .stats-section {
+            background: #F7F7F7;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 20px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .stat-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1A1A2E;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6B7280;
+            margin-top: 0.25rem;
+        }
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 16px;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .empty-state span {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+            .stat-item {
+                padding: 0.75rem 0.5rem;
+            }
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            .stat-label {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body class="has-app-shell">
+    <div class="container">
+        <div id="profileContent">
+            <div class="spinner"></div>
+            <p>Cargando perfil...</p>
+        </div>
+    </div>
+
+    <script src="/static/js/app-shell.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script>
+        AppShell.init({ activePage: 'friends' });
+        
+        const API_URL = '/api';
+        let token = AppShell.token;
+        
+        // Get user ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('id');
+        
+        if (!userId) {
+            document.getElementById('profileContent').innerHTML = `
+                <div class="empty-state">
+                    <span>❌</span>
+                    <p>Usuario no encontrado</p>
+                </div>
+            `;
+        } else {
+            loadUserProfile(userId);
+        }
+        
+        function getHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+        
+        function parseUTCDate(dateStr) {
+            if (!dateStr) return null;
+            if (dateStr.endsWith('Z') || dateStr.includes('+')) {
+                return new Date(dateStr);
+            }
+            return new Date(dateStr + 'Z');
+        }
+        
+        function renderAvatar(user) {
+            if (user.profile_picture) {
+                return `<img src="${user.profile_picture}" alt="${user.username}">`;
+            }
+            return user.username.charAt(0).toUpperCase();
+        }
+        
+        function renderFriendshipStatus(profile) {
+            // Si es el usuario actual, no mostrar botones
+            const currentUserId = AppShell.user?.id;
+            if (currentUserId && profile.id === currentUserId) {
+                return '';
+            }
+            
+            if (profile.friendship_status === 'accepted') {
+                return `
+                    <button class="btn btn-danger" onclick="removeFriend(${profile.id}, '${profile.username}')">
+                        Eliminar amigo
+                    </button>
+                `;
+            } else if (profile.friendship_status === 'pending') {
+                return `<div class="friendship-badge badge-pending">Solicitud enviada</div>`;
+            } else if (profile.friendship_status === 'pending_received') {
+                return `
+                    <div class="friendship-badge badge-pending">Te envió solicitud</div>
+                    <button class="btn btn-primary" onclick="acceptPendingRequest(${profile.id})">
+                        ✓ Aceptar solicitud
+                    </button>
+                `;
+            } else {
+                return `
+                    <button class="btn btn-primary" onclick="sendFriendRequest(${profile.id})">
+                        ➕ Añadir amigo
+                    </button>
+                `;
+            }
+        }
+        
+        async function loadUserProfile(userId) {
+            try {
+                const res = await fetch(`${API_URL}/social/users/${userId}`, {
+                    headers: getHeaders()
+                });
+                
+                if (res.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                if (!res.ok) {
+                    throw new Error('Error loading profile');
+                }
+                
+                const profile = await res.json();
+                
+                document.getElementById('profileContent').innerHTML = `
+                    <div class="profile-header">
+                        <div class="profile-avatar">${renderAvatar(profile)}</div>
+                        <div class="profile-username">${profile.username}</div>
+                        ${profile.home_gym_name ? `<div style="color: #6B7280; font-size: 0.9rem; margin-bottom: 12px;">🏋️ Gimnasio local: ${profile.home_gym_name}</div>` : ''}
+                        ${renderFriendshipStatus(profile)}
+                        
+                        <div class="stats-section">
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-value">${profile.total_sessions}</div>
+                                    <div class="stat-label">Sesiones</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${profile.total_sends}</div>
+                                    <div class="stat-label">Bloques únicos</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${profile.recent_sessions.length > 0 ? `
+                        <div class="section-title">Actividad reciente</div>
+                        <div id="sessionsList">
+                            ${profile.recent_sessions.map(session => renderSession(session)).join('')}
+                        </div>
+                    ` : `
+                        <div class="empty-state">
+                            <span>📭</span>
+                            <p>Aún no hay sesiones</p>
+                        </div>
+                    `}
+                `;
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                document.getElementById('profileContent').innerHTML = `
+                    <div class="empty-state">
+                        <span>❌</span>
+                        <p>Error al cargar el perfil</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderSession(session) {
+            const isActive = !session.ended_at;
+            const duration = Utils.formatDuration(session.started_at, session.ended_at);
+            const dateIcon = Utils.formatDateIcon(session.started_at);
+            
+            const initial = session.username.charAt(0).toUpperCase();
+            const avatarContent = session.profile_picture 
+                ? `<img src="${session.profile_picture}" alt="${session.username}">` 
+                : initial;
+            
+            const displayTitle = session.title || `📍 ${session.gym_name}`;
+            const subtitleHtml = session.subtitle ? `<span class="session-subtitle">${session.subtitle}</span>` : '';
+            const locationHtml = session.title ? `<span class="session-location">📍 ${session.gym_name}</span>` : '';
+            
+            return `
+                <div class="feed-card" onclick="window.location.href='/sessions/${session.session_id}'">
+                    <div class="feed-header">
+                        <div class="user-info">
+                            <div class="avatar ${session.is_own ? 'own' : ''}" onclick="event.stopPropagation(); window.location.href='/users?id=${session.user_id}'">${avatarContent}</div>
+                            <div class="user-details">
+                                <span class="username ${session.is_own ? 'own' : ''}">${session.username}</span>
+                                <span class="gym-name">${displayTitle}</span>
+                                ${subtitleHtml}
+                                ${locationHtml}
+                                ${isActive ? 
+                                    '<span class="session-status status-active"><span class="pulse"></span> En curso</span>' :
+                                    (duration ? `<span class="duration">⏱️ ${duration}</span>` : '')
+                                }
+                            </div>
+                        </div>
+                        <div class="date-info">
+                            <span class="date-badge">${Utils.formatDateBadge(session.started_at)}</span>
+                            <span class="date-full">${dateIcon.day} ${dateIcon.month}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="feed-stats">
+                        <div class="stat">
+                            <div class="stat-value">${session.total_ascents || 0}</div>
+                            <div class="stat-label">Bloques</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value flash">⚡ ${session.flashes || 0}</div>
+                            <div class="stat-label">Flashes</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value send">✓ ${session.sends || 0}</div>
+                            <div class="stat-label">Sends</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value grade">${session.max_grade_label || '-'}</div>
+                            <div class="stat-label">Máx. grado</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function sendFriendRequest(userId) {
+            try {
+                const res = await fetch(`${API_URL}/social/friends`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ friend_id: userId })
+                });
+                
+                if (res.ok) {
+                    loadUserProfile(userId);
+                } else {
+                    const data = await res.json();
+                    alert(data.detail || 'Error al enviar solicitud');
+                }
+            } catch (err) {
+                alert('Error de conexión');
+            }
+        }
+        
+        async function acceptPendingRequest(userId) {
+            try {
+                // First get the request ID
+                const requestsRes = await fetch(`${API_URL}/social/friends/requests`, {
+                    headers: getHeaders()
+                });
+                const requests = await requestsRes.json();
+                const request = requests.find(r => r.user_id === userId);
+                
+                if (!request) {
+                    alert('Solicitud no encontrada');
+                    return;
+                }
+                
+                const res = await fetch(`${API_URL}/social/friends/requests/${request.id}/accept`, {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+                
+                if (res.ok) {
+                    loadUserProfile(userId);
+                } else {
+                    alert('Error al aceptar solicitud');
+                }
+            } catch (err) {
+                alert('Error de conexión');
+            }
+        }
+        
+        async function removeFriend(userId, username) {
+            if (!confirm(`¿Eliminar a ${username} de tus amigos?`)) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/social/friends/${userId}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+                
+                if (res.ok) {
+                    loadUserProfile(userId);
+                } else {
+                    alert('Error al eliminar amigo');
+                }
+            } catch (err) {
+                alert('Error de conexión');
+            }
+        }
+    </script>
+</body>
+</html>

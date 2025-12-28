@@ -79,11 +79,12 @@ def create_user(db):
     """Factory fixture to create additional users."""
     created_users = []
     
-    def _create_user(username: str, email: str, password: str):
+    def _create_user(username: str, email: str, password: str, home_gym_id: int = None):
         user = User(
             username=username,
             email=email,
-            password_hash=get_password_hash(password)
+            password_hash=get_password_hash(password),
+            home_gym_id=home_gym_id
         )
         db.add(user)
         db.commit()

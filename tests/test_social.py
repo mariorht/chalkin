@@ -373,3 +373,223 @@ class TestActivityFeed:
         session_item = next((i for i in data["items"] if i["gym_name"] == "No Pic Gym"), None)
         assert session_item is not None
         assert session_item["profile_picture"] is None
+
+
+class TestUserProfile:
+    """Tests for user profile endpoint."""
+
+    def test_get_user_profile(self, client: TestClient, auth_headers, create_user):
+        """Test getting another user's profile."""
+        other_user = create_user(username="profile_user", email="profile@test.com", password="password123")
+        
+        response = client.get(
+            f"/api/social/users/{other_user.id}",
+            headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == other_user.id
+        assert data["username"] == "profile_user"
+        assert data["friendship_status"] is None
+        assert data["total_sessions"] == 0
+        assert data["total_sends"] == 0
+        assert data["recent_sessions"] == []
+
+    def test_get_user_profile_not_found(self, client: TestClient, auth_headers):
+        """Test getting profile for non-existent user."""
+        response = client.get(
+            "/api/social/users/99999",
+            headers=auth_headers
+        )
+        assert response.status_code == 404
+
+    def test_user_profile_shows_friendship_status(self, client: TestClient, auth_headers, create_user):
+        """Test that profile shows correct friendship status."""
+        friend = create_user(username="profile_friend", email="profilefriend@test.com", password="password123")
+        
+        # Send friend request
+        client.post(
+            "/api/social/friends",
+            headers=auth_headers,
+            json={"friend_id": friend.id}
+        )
+        
+        # Check profile shows pending status
+        response = client.get(
+            f"/api/social/users/{friend.id}",
+            headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["friendship_status"] == "pending"
+
+    def test_user_profile_includes_home_gym(self, client: TestClient, auth_headers, create_user, create_gym):
+        """Test that profile includes home gym information."""
+        gym = create_gym(name="Home Gym", location="Home Location")
+        user_with_gym = create_user(
+            username="gym_user", 
+            email="gymuser@test.com", 
+            password="password123",
+            home_gym_id=gym.id
+        )
+        
+        response = client.get(
+            f"/api/social/users/{user_with_gym.id}",
+            headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["home_gym_id"] == gym.id
+        assert data["home_gym_name"] == "Home Gym"
+
+    def test_user_profile_includes_profile_picture(self, client: TestClient, auth_headers, create_user, db):
+        """Test that profile includes profile picture."""
+        user = create_user(username="pic_user", email="picuser@test.com", password="password123")
+        user.profile_picture = "/data/uploads/profiles/pic.png"
+        db.commit()
+        
+        response = client.get(
+            f"/api/social/users/{user.id}",
+            headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["profile_picture"] == "/data/uploads/profiles/pic.png"
+
+    def test_user_profile_includes_stats(self, client: TestClient, auth_headers, create_user, create_gym, db):
+        """Test that profile includes user statistics."""
+        # Create user with session
+        other_user = create_user(username="stats_user", email="statsuser@test.com", password="password123")
+        login = client.post("/api/auth/login", json={"email": "statsuser@test.com", "password": "password123"})
+        other_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+        
+        gym = create_gym(name="Stats Gym", location="Stats Location")
+        
+        # Create some grades for the gym
+        grade_response = client.post(
+            "/api/grades",
+            headers=other_headers,
+            json={
+                "gym_id": gym.id,
+                "label": "Test Grade",
+                "color_hex": "#FF0000",
+                "relative_difficulty": 5,
+                "order": 1
+            }
+        )
+        grade_id = grade_response.json()["id"]
+        
+        # Create session with ascents
+        session_response = client.post(
+            "/api/sessions",
+            headers=other_headers,
+            json={"gym_id": gym.id}
+        )
+        session_id = session_response.json()["id"]
+        
+        # Add an ascent
+        ascent_response = client.post(
+            f"/api/sessions/{session_id}/ascents",
+            headers=other_headers,
+            json={"grade_id": grade_id, "status": "send"}
+        )
+        assert ascent_response.status_code == 201
+        
+        # Get profile
+        response = client.get(
+            f"/api/social/users/{other_user.id}",
+            headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_sessions"] == 1
+        assert data["total_sends"] == 1
+
+    def test_user_profile_includes_recent_sessions(self, client: TestClient, auth_headers, create_user, create_gym):
+        """Test that profile includes recent sessions."""
+        other_user = create_user(username="recent_user", email="recentuser@test.com", password="password123")
+        login = client.post("/api/auth/login", json={"email": "recentuser@test.com", "password": "password123"})
+        other_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+        
+        gym = create_gym(name="Recent Gym", location="Recent Location")
+        
+        # Create a session
+        client.post(
+            "/api/sessions",
+            headers=other_headers,
+            json={"gym_id": gym.id, "title": "Test Session"}
+        )
+        
+        # Get profile
+        response = client.get(
+            f"/api/social/users/{other_user.id}",
+            headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["recent_sessions"]) == 1
+        assert data["recent_sessions"][0]["title"] == "Test Session"
+        assert data["recent_sessions"][0]["gym_name"] == "Recent Gym"
+
+
+class TestFriendsProfilePictures:
+    """Tests for profile pictures in friends endpoints."""
+
+    def test_friends_list_includes_profile_pictures(self, client: TestClient, auth_headers, create_user, db):
+        """Test that friends list includes profile pictures."""
+        # Create friend with profile picture
+        friend = create_user(username="pic_friend", email="picfriend@test.com", password="password123")
+        friend.profile_picture = "/data/uploads/profiles/friend.png"
+        db.commit()
+        
+        # Login as friend
+        login = client.post("/api/auth/login", json={"email": "picfriend@test.com", "password": "password123"})
+        friend_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+        
+        # Get my user ID
+        me = client.get("/api/auth/me", headers=auth_headers)
+        my_id = me.json()["id"]
+        
+        # Friend sends request
+        client.post("/api/social/friends", headers=friend_headers, json={"friend_id": my_id})
+        
+        # I accept
+        requests = client.get("/api/social/friends/requests", headers=auth_headers)
+        request_id = requests.json()[0]["id"]
+        client.post(f"/api/social/friends/requests/{request_id}/accept", headers=auth_headers)
+        
+        # Check friends list
+        response = client.get("/api/social/friends", headers=auth_headers)
+        assert response.status_code == 200
+        friends = response.json()
+        friend_data = next((f for f in friends if f["username"] == "pic_friend"), None)
+        assert friend_data is not None
+        assert friend_data["profile_picture"] == "/data/uploads/profiles/friend.png"
+
+    def test_friend_requests_include_profile_pictures(self, client: TestClient, auth_headers, create_user, db):
+        """Test that friend requests include profile pictures."""
+        # Create user with profile picture
+        sender = create_user(username="request_sender", email="requestsender@test.com", password="password123")
+        sender.profile_picture = "/data/uploads/profiles/sender.png"
+        db.commit()
+        
+        # Login as sender
+        login = client.post("/api/auth/login", json={"email": "requestsender@test.com", "password": "password123"})
+        sender_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+        
+        # Get my user ID
+        me = client.get("/api/auth/me", headers=auth_headers)
+        my_id = me.json()["id"]
+        
+        # Sender sends request
+        client.post("/api/social/friends", headers=sender_headers, json={"friend_id": my_id})
+        
+        # Check requests list
+        response = client.get("/api/social/friends/requests", headers=auth_headers)
+        assert response.status_code == 200
+        requests = response.json()
+        assert len(requests) >= 1
+        request_data = next((r for r in requests if r["user_username"] == "request_sender"), None)
+        assert request_data is not None
+        assert request_data["user_profile_picture"] == "/data/uploads/profiles/sender.png"
+
