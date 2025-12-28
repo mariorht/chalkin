@@ -158,7 +158,7 @@ html {
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    color: var(--gray);
+    color: #1A1A2E;
     padding: 0.5rem 1rem;
     border-radius: 12px;
     transition: all 0.2s ease;
@@ -183,6 +183,16 @@ html {
     font-size: 1.5rem;
     margin-bottom: 0.25rem;
     transition: transform 0.2s;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bottom-nav .nav-icon svg {
+    width: 100%;
+    height: 100%;
 }
 
 .bottom-nav .nav-label {

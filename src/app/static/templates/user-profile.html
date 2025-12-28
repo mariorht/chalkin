@@ -198,25 +198,30 @@
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('id');
         
-        // Check if viewing own profile
+        if (!userId) {
+            alert('No user ID provided');
+            window.location.href = '/dashboard';
+        }
+        
+        // Initialize AppShell first to load user
+        AppShell.init({ activePage: '' });
+        
+        // Check if viewing own profile after user is loaded
         const currentUserId = AppShell.user?.id;
         const isOwnProfile = currentUserId && parseInt(userId) === currentUserId;
         
-        AppShell.init({ activePage: isOwnProfile ? 'profile' : 'friends' });
+        // Update active page if it's own profile
+        if (isOwnProfile) {
+            const profileLink = document.querySelector('.bottom-nav a[data-nav="profile"]');
+            if (profileLink) {
+                profileLink.classList.add('active');
+            }
+        }
         
         const API_URL = '/api';
         let token = AppShell.token;
         
-        if (!userId) {
-            document.getElementById('profileContent').innerHTML = `
-                <div class="empty-state">
-                    <span>❌</span>
-                    <p>Usuario no encontrado</p>
-                </div>
-            `;
-        } else {
-            loadUserProfile(userId);
-        }
+        loadUserProfile(userId);
         
         function getHeaders() {
             return {
