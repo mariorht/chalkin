@@ -543,5 +543,30 @@ alembic current
 | Feed | `/feed` | Social activity feed |
 
 ---
-¡A escalar! 🧗‍♂️
 
+## License
+
+Chalkin is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+This means you are free to:
+- ✅ Use the software for any purpose
+- ✅ Study and modify the source code
+- ✅ Distribute copies
+- ✅ Distribute modified versions
+
+**Under the following conditions:**
+- 📝 You must disclose the source code of any modifications
+- 🔗 Modified versions must also be licensed under AGPL-3.0
+- 🌐 If you run a modified version as a web service, you must make the source available to users
+
+See the [LICENSE](LICENSE) file for full details or visit https://www.gnu.org/licenses/agpl-3.0.html
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+---
+
+¡A escalar! 🧗‍♂️
