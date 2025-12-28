@@ -138,12 +138,13 @@
             color: #333;
         }
         .btn {
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 6px;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             cursor: pointer;
             border: none;
             transition: transform 0.2s;
+            white-space: nowrap;
         }
         .btn:hover {
             transform: scale(1.05);
@@ -171,7 +172,8 @@
         }
         .actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
+            flex-shrink: 0;
         }
         .empty-state {
             text-align: center;
@@ -463,7 +465,7 @@
                 container.innerHTML = friends.map(friend => `
                     <div class="friend-item">
                         <div class="user-info">
-                            <div class="avatar">${friend.username.charAt(0).toUpperCase()}</div>
+                            <div class="avatar">${renderAvatar(friend)}</div>
                             <div>
                                 <span class="username">${friend.username}</span>
                                 <div style="font-size: 0.8rem; color: #666;">
@@ -507,7 +509,7 @@
                 container.innerHTML = requests.map(req => `
                     <div class="request-item">
                         <div class="user-info">
-                            <div class="avatar">${req.user_username.charAt(0).toUpperCase()}</div>
+                            <div class="avatar">${renderAvatar({ username: req.user_username, profile_picture: req.user_profile_picture })}</div>
                             <div>
                                 <span class="username">${req.user_username}</span>
                                 <div style="font-size: 0.8rem; color: #666;">

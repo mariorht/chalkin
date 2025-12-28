@@ -31,6 +31,7 @@ class FriendshipResponse(BaseModel):
     
     # Include user info
     user_username: Optional[str] = None
+    user_profile_picture: Optional[str] = None
     friend_username: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -40,6 +41,7 @@ class FriendResponse(BaseModel):
     """Schema for a friend in the friends list."""
     id: int
     username: str
+    profile_picture: Optional[str] = None
     friendship_id: int
     since: datetime  # When friendship was accepted
 

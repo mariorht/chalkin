@@ -198,6 +198,7 @@ def list_friends(
             friends.append(FriendResponse(
                 id=friend_user.id,
                 username=friend_user.username,
+                profile_picture=friend_user.profile_picture,
                 friendship_id=f.id,
                 since=f.updated_at
             ))
@@ -228,6 +229,7 @@ def list_friend_requests(
             status=r.status.value,
             created_at=r.created_at,
             user_username=sender.username if sender else None,
+            user_profile_picture=sender.profile_picture if sender else None,
             friend_username=current_user.username
         ))
     
