@@ -906,7 +906,7 @@
             <div class="calendar-header">
                 <h2>📅 Calendario de actividad</h2>
                 <div class="streak-badge">
-                    🔥 <span class="streak-number" id="consecutiveWeeks">0</span> semanas consecutivas
+                    🔥 <span class="streak-number" id="consecutiveWeeks">0</span> <span id="weeksText">semanas consecutivas</span>
                 </div>
             </div>
             <div class="calendar-month-year" id="calendarMonthYear"></div>
@@ -1396,6 +1396,8 @@
                 
                 // Update streak badge
                 streakElement.textContent = consecutiveWeeks;
+                const weeksText = document.getElementById('weeksText');
+                weeksText.textContent = consecutiveWeeks === 1 ? 'semana consecutiva' : 'semanas consecutivas';
                 
                 // Set month/year display
                 const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
