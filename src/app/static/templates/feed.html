@@ -54,10 +54,10 @@
                 : initial;
             
             // Title logic: use custom title or default to gym name
-            const displayTitle = item.title || `📍 ${item.gym_name}`;
+            const displayTitle = item.title || `<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${item.gym_name}`;
             const subtitleHtml = item.subtitle ? `<span class="session-subtitle">${item.subtitle}</span>` : '';
             // If custom title, show gym name
-            const locationHtml = item.title ? `<span class="session-location">📍 ${item.gym_name}</span>` : '';
+            const locationHtml = item.title ? `<span class="session-location"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${item.gym_name}</span>` : '';
             
             return `
                 <div class="feed-card" onclick="window.location.href='/sessions/${item.session_id}'">
@@ -71,7 +71,7 @@
                                 ${locationHtml}
                                 ${isActive ? 
                                     '<span class="session-status status-active"><span class="pulse"></span> En curso</span>' :
-                                    (duration ? `<span class="duration">⏱️ ${duration}</span>` : '')
+                                    (duration ? `<span class="duration"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>${duration}</span>` : '')
                                 }
                             </div>
                         </div>
@@ -87,11 +87,11 @@
                             <div class="stat-label">Bloques</div>
                         </div>
                         <div class="stat">
-                            <div class="stat-value flash">⚡ ${item.flashes}</div>
+                            <div class="stat-value flash"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:2px;"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>${item.flashes}</div>
                             <div class="stat-label">Flashes</div>
                         </div>
                         <div class="stat">
-                            <div class="stat-value send">✓ ${item.sends}</div>
+                            <div class="stat-value send"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:2px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>${item.sends}</div>
                             <div class="stat-label">Sends</div>
                         </div>
                         <div class="stat">
@@ -132,13 +132,13 @@
                 if (!append && data.items.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
-                            <span>📭</span>
+                            <span><svg viewBox="0 0 24 24" fill="#6B7280" style="width:48px;height:48px;"><path d="M20 6H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V8l8 5 8-5v2z"/></svg></span>
                             <h2>Tu feed está vacío</h2>
                             <p>Empieza una sesión de escalada o añade amigos para ver su actividad.</p>
-                            <a href="/sessions/new">🧗 Empezar sesión</a>
+                            <a href="/sessions/new"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></svg>Empezar sesión</a>
                             <br><br>
                             <a href="/friends" style="background: transparent; border: 2px solid #667eea; color: #667eea;">
-                                👥 Buscar amigos
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Buscar amigos
                             </a>
                         </div>
                     `;
@@ -159,7 +159,7 @@
             } catch (err) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <span>❌</span>
+                        <span><svg viewBox="0 0 24 24" fill="#EF4444" style="width:48px;height:48px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></span>
                         <h2>Error al cargar</h2>
                         <p>No pudimos cargar el feed. Inténtalo de nuevo.</p>
                         <a href="javascript:location.reload()">Reintentar</a>

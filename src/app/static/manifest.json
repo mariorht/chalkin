@@ -9,59 +9,59 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/static/icons/logoChalkin_v2_16.png",
+      "src": "/static/icons/logoChalkin_invertido_v2_16.png",
       "sizes": "16x16",
       "type": "image/png"
     },
     {
-      "src": "/static/icons/logoChalkin_v2_32.png",
+      "src": "/static/icons/logoChalkin_invertido_v2_32.png",
       "sizes": "32x32",
       "type": "image/png"
     },
     {
-      "src": "/static/icons/logoChalkin_v2_48.png",
+      "src": "/static/icons/logoChalkin_invertido_v2_48.png",
       "sizes": "48x48",
       "type": "image/png"
     },
     {
-      "src": "/static/icons/logoChalkin_v2_180.png",
+      "src": "/static/icons/logoChalkin_invertido_v2_180.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/static/icons/logoChalkin_v2_1024.png",
+      "src": "/static/icons/logoChalkin_invertido_v2_1024.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/static/icons/logoChalkin_16.png",
+      "src": "/static/icons/logoChalkin_invertido_16.png",
       "sizes": "16x16",
       "type": "image/png"
     },
     {
-      "src": "/static/icons/logoChalkin_32.png",
+      "src": "/static/icons/logoChalkin_invertido_32.png",
       "sizes": "32x32",
       "type": "image/png"
     },
     {
-      "src": "/static/icons/logoChalkin_48.png",
+      "src": "/static/icons/logoChalkin_invertido_48.png",
       "sizes": "48x48",
       "type": "image/png"
     },
     {
-      "src": "/static/icons/logoChalkin_180.png",
+      "src": "/static/icons/logoChalkin_invertido_180.png",
       "sizes": "180x180",
       "type": "image/png"
     },
     {
-      "src": "/static/icons/logoChalkin_1024.png",
+      "src": "/static/icons/logoChalkin_invertido_1024.png",
       "sizes": "1024x1024",
       "type": "image/png"
     },
     {
-      "src": "/static/icons/logoChalkin_v2.svg",
+      "src": "/static/icons/logoChalkin_invertido_v2.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     },
