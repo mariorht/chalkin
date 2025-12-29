@@ -264,13 +264,13 @@
                 return `
                     <div class="friendship-badge badge-pending">Te envió solicitud</div>
                     <button class="btn btn-primary" onclick="acceptPendingRequest(${profile.id})">
-                        ✓ Aceptar solicitud
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Aceptar solicitud
                     </button>
                 `;
             } else {
                 return `
                     <button class="btn btn-primary" onclick="sendFriendRequest(${profile.id})">
-                        ➕ Añadir amigo
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Añadir amigo
                     </button>
                 `;
             }
@@ -297,7 +297,7 @@
                     <div class="profile-header">
                         <div class="profile-avatar">${renderAvatar(profile)}</div>
                         <div class="profile-username">${profile.username}</div>
-                        ${profile.home_gym_name ? `<div style="color: #6B7280; font-size: 0.9rem; margin-bottom: 12px;">🏋️ Gimnasio local: ${profile.home_gym_name}</div>` : ''}
+                        ${profile.home_gym_name ? `<div style="color: #6B7280; font-size: 0.9rem; margin-bottom: 12px;"><svg viewBox="0 0 24 24" fill="#6B7280" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Gimnasio local: ${profile.home_gym_name}</div>` : ''}
                         ${renderFriendshipStatus(profile)}
                         
                         <div class="stats-section">
@@ -321,7 +321,7 @@
                         </div>
                     ` : `
                         <div class="empty-state">
-                            <span>📭</span>
+                            <span><svg viewBox="0 0 24 24" fill="#6B7280" style="width:48px;height:48px;"><path d="M20 6H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V8l8 5 8-5v2z"/></svg></span>
                             <p>Aún no hay sesiones</p>
                         </div>
                     `}
@@ -330,7 +330,7 @@
                 console.error('Error loading profile:', error);
                 document.getElementById('profileContent').innerHTML = `
                     <div class="empty-state">
-                        <span>❌</span>
+                        <span><svg viewBox="0 0 24 24" fill="#EF4444" style="width:48px;height:48px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></span>
                         <p>Error al cargar el perfil</p>
                     </div>
                 `;
@@ -347,9 +347,9 @@
                 ? `<img src="${session.profile_picture}" alt="${session.username}">` 
                 : initial;
             
-            const displayTitle = session.title || `📍 ${session.gym_name}`;
+            const displayTitle = session.title || `<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${session.gym_name}`;
             const subtitleHtml = session.subtitle ? `<span class="session-subtitle">${session.subtitle}</span>` : '';
-            const locationHtml = session.title ? `<span class="session-location">📍 ${session.gym_name}</span>` : '';
+            const locationHtml = session.title ? `<span class="session-location"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${session.gym_name}</span>` : '';
             
             return `
                 <div class="feed-card" onclick="window.location.href='/sessions/${session.session_id}'">
@@ -363,7 +363,7 @@
                                 ${locationHtml}
                                 ${isActive ? 
                                     '<span class="session-status status-active"><span class="pulse"></span> En curso</span>' :
-                                    (duration ? `<span class="duration">⏱️ ${duration}</span>` : '')
+                                    (duration ? `<span class="duration"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>${duration}</span>` : '')
                                 }
                             </div>
                         </div>
@@ -379,11 +379,11 @@
                             <div class="stat-label">Bloques</div>
                         </div>
                         <div class="stat">
-                            <div class="stat-value flash">⚡ ${session.flashes || 0}</div>
+                            <div class="stat-value flash"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:2px;"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>${session.flashes || 0}</div>
                             <div class="stat-label">Flashes</div>
                         </div>
                         <div class="stat">
-                            <div class="stat-value send">✓ ${session.sends || 0}</div>
+                            <div class="stat-value send"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:2px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>${session.sends || 0}</div>
                             <div class="stat-label">Sends</div>
                         </div>
                         <div class="stat">
