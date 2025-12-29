@@ -507,7 +507,10 @@
         }
 
         .btn-reopen {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
             background: var(--secondary);
             color: white;
             border: none;
@@ -529,7 +532,10 @@
         }
 
         .btn-primary {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
             background: var(--primary);
             color: white;
             border: none;
@@ -549,7 +555,10 @@
         }
 
         .btn-delete {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
             background: var(--error);
             color: white;
             border: none;
@@ -648,6 +657,15 @@
             background: #ccc;
             cursor: not-allowed;
             transform: none;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .hidden {
@@ -979,7 +997,7 @@
                 const shareBtn = document.createElement('button');
                 shareBtn.id = 'shareActivityBtn';
                 shareBtn.className = 'btn-share';
-                shareBtn.innerHTML = '📤 Compartir actividad';
+                shareBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 5.12548 15.0077 5.24917 15.0227 5.37061L8.08259 9.19019C7.54305 8.46365 6.67916 8 5.7 8C3.89117 8 2.42624 9.46493 2.42624 11.274C2.42624 13.0831 3.89117 14.548 5.7 14.548C6.67916 14.548 7.54305 14.0844 8.08259 13.3578L15.0227 17.1774C15.0077 17.2988 15 17.4225 15 17.548C15 19.2049 16.3431 20.548 18 20.548C19.6569 20.548 21 19.2049 21 17.548C21 15.8911 19.6569 14.548 18 14.548C17.021 14.548 16.157 15.0116 15.6174 15.7382L8.67733 11.9186C8.69229 11.7972 8.7 11.6735 8.7 11.548C8.7 11.4225 8.69229 11.2988 8.67733 11.1774L15.6174 7.35777C16.157 8.08431 17.021 8.54793 18 8.54793V8Z" fill="currentColor"/></svg> Compartir actividad';
                 shareBtn.onclick = shareActivity;
                 shareBtn.style.marginTop = '0';
                 shareBtn.style.marginLeft = '0';
@@ -1005,7 +1023,7 @@
                 const editBtn = document.createElement('button');
                 editBtn.id = 'editModeBtn';
                 editBtn.className = 'btn-reopen';
-                editBtn.innerHTML = '✏️ Editar bloques';
+                editBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.50023C18.8978 2.1024 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.1024 21.5 2.50023C21.8978 2.89805 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.1024 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Editar bloques';
                 editBtn.onclick = toggleEditMode;
                 editBtn.style.marginTop = '0';
                 editBtn.style.marginLeft = '0';
@@ -1014,7 +1032,7 @@
                 const deleteBtn = document.createElement('button');
                 deleteBtn.id = 'deleteSessionBtn';
                 deleteBtn.className = 'btn-delete';
-                deleteBtn.innerHTML = '🗑️ Eliminar sesión';
+                deleteBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Eliminar sesión';
                 deleteBtn.onclick = deleteSession;
                 deleteBtn.style.marginTop = '0';
                 deleteBtn.style.marginLeft = '0';
@@ -1034,7 +1052,7 @@
             const gradeSelector = document.getElementById('gradeSelector');
             
             if (isEditMode) {
-                editBtn.innerHTML = '✓ Terminar edición';
+                editBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Terminar edición';
                 editBtn.classList.remove('btn-reopen');
                 editBtn.classList.add('btn-primary');
                 gradeSelector.classList.remove('hidden');
@@ -1043,7 +1061,7 @@
                 // Reload ascents to show delete buttons
                 updateAscentsList();
             } else {
-                editBtn.innerHTML = '✏️ Editar bloques';
+                editBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.50023C18.8978 2.1024 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.1024 21.5 2.50023C21.8978 2.89805 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.1024 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Editar bloques';
                 editBtn.classList.add('btn-reopen');
                 editBtn.classList.remove('btn-primary');
                 gradeSelector.classList.add('hidden');
@@ -1398,7 +1416,7 @@
         async function shareActivity() {
             const btn = document.getElementById('shareActivityBtn');
             btn.disabled = true;
-            btn.innerHTML = '⏳ Generando imagen...';
+            btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/></svg> Generando imagen...';
             
             try {
                 // Create canvas
@@ -1606,7 +1624,7 @@
                     const shareText = `${title} - ${total} bloques registrados\n\n🔗 Ver sesión: ${sessionUrl}`;
                     
                     btn.disabled = false;
-                    btn.innerHTML = '📤 Compartir actividad';
+                    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 5.12548 15.0077 5.24917 15.0227 5.37061L8.08259 9.19019C7.54305 8.46365 6.67916 8 5.7 8C3.89117 8 2.42624 9.46493 2.42624 11.274C2.42624 13.0831 3.89117 14.548 5.7 14.548C6.67916 14.548 7.54305 14.0844 8.08259 13.3578L15.0227 17.1774C15.0077 17.2988 15 17.4225 15 17.548C15 19.2049 16.3431 20.548 18 20.548C19.6569 20.548 21 19.2049 21 17.548C21 15.8911 19.6569 14.548 18 14.548C17.021 14.548 16.157 15.0116 15.6174 15.7382L8.67733 11.9186C8.69229 11.7972 8.7 11.6735 8.7 11.548C8.7 11.4225 8.69229 11.2988 8.67733 11.1774L15.6174 7.35777C16.157 8.08431 17.021 8.54793 18 8.54793V8Z" fill="currentColor"/></svg> Compartir actividad';
                     
                     // Try to share via Web Share API
                     if (navigator.share) {
@@ -1655,7 +1673,7 @@
             } catch (error) {
                 console.error('Error generating image:', error);
                 btn.disabled = false;
-                btn.innerHTML = '📤 Compartir actividad';
+                btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 5.12548 15.0077 5.24917 15.0227 5.37061L8.08259 9.19019C7.54305 8.46365 6.67916 8 5.7 8C3.89117 8 2.42624 9.46493 2.42624 11.274C2.42624 13.0831 3.89117 14.548 5.7 14.548C6.67916 14.548 7.54305 14.0844 8.08259 13.3578L15.0227 17.1774C15.0077 17.2988 15 17.4225 15 17.548C15 19.2049 16.3431 20.548 18 20.548C19.6569 20.548 21 19.2049 21 17.548C21 15.8911 19.6569 14.548 18 14.548C17.021 14.548 16.157 15.0116 15.6174 15.7382L8.67733 11.9186C8.69229 11.7972 8.7 11.6735 8.7 11.548C8.7 11.4225 8.69229 11.2988 8.67733 11.1774L15.6174 7.35777C16.157 8.08431 17.021 8.54793 18 8.54793V8Z" fill="currentColor"/></svg> Compartir actividad';
                 alert('Error al generar la imagen');
             }
         }
