@@ -619,6 +619,37 @@
             transform: none;
         }
 
+        .btn-share {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+            flex: 1;
+        }
+
+        .btn-share:hover {
+            background: #25A89D;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 196, 182, 0.3);
+        }
+
+        .btn-share:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -944,6 +975,16 @@
                 buttonsContainer.style.marginTop = '1.5rem';
                 buttonsContainer.style.flexWrap = 'wrap';
                 
+                // Share button
+                const shareBtn = document.createElement('button');
+                shareBtn.id = 'shareActivityBtn';
+                shareBtn.className = 'btn-share';
+                shareBtn.innerHTML = '📤 Compartir actividad';
+                shareBtn.onclick = shareActivity;
+                shareBtn.style.marginTop = '0';
+                shareBtn.style.marginLeft = '0';
+                shareBtn.style.flex = '1';
+                
                 // Strava button (if connected and not already uploaded)
                 const stravaBtn = document.createElement('button');
                 stravaBtn.id = 'stravaUploadBtn';
@@ -979,6 +1020,7 @@
                 deleteBtn.style.marginLeft = '0';
                 deleteBtn.style.flex = '1';
                 
+                buttonsContainer.appendChild(shareBtn);
                 buttonsContainer.appendChild(stravaBtn);
                 buttonsContainer.appendChild(editBtn);
                 buttonsContainer.appendChild(deleteBtn);
@@ -1352,6 +1394,271 @@
                 subtitleEl.style.display = 'block';
             }
         });
+
+        async function shareActivity() {
+            const btn = document.getElementById('shareActivityBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Generando imagen...';
+            
+            try {
+                // Create canvas
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size (Instagram-friendly 1080x1350)
+                canvas.width = 1080;
+                canvas.height = 1350;
+                
+                // Background gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#1A1A2E');
+                gradient.addColorStop(1, '#16213E');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Load and draw logo
+                const logo = new Image();
+                logo.src = '/static/icons/logoChalkin_v2_180.png';
+                await new Promise((resolve) => {
+                    logo.onload = resolve;
+                });
+                
+                const logoSize = 100;
+                ctx.drawImage(logo, 50, 50, logoSize, logoSize);
+                
+                // Add "Chalkin" text next to logo
+                ctx.fillStyle = '#FF6B35';
+                ctx.font = 'bold 60px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.fillText('Chalkin', 170, 110);
+                
+                // Session title
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                const title = session.title || session.gym_name || 'Sesión de escalada';
+                ctx.fillText(title, 50, 230);
+                
+                // Session subtitle (if available)
+                if (session.subtitle) {
+                    ctx.fillStyle = '#9CA3AF';
+                    ctx.font = '32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.fillText(session.subtitle, 50, 280);
+                }
+                
+                // Gym name
+                const yOffset = session.subtitle ? 330 : 280;
+                ctx.fillStyle = '#2EC4B6';
+                ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.fillText(`📍 ${session.gym_name || 'Gimnasio'}`, 50, yOffset);
+                
+                // Date
+                const sessionDate = session.date.includes('T') ? parseUTCDate(session.date) : new Date(session.date + 'T00:00:00');
+                const dateStr = sessionDate.toLocaleDateString('es', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                ctx.fillStyle = '#9CA3AF';
+                ctx.font = '32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.fillText(dateStr, 50, yOffset + 50);
+                
+                // Duration
+                if (session.ended_at) {
+                    const duration = formatDuration(session.started_at, session.ended_at);
+                    ctx.fillText(`⏱️ ${duration}`, 50, yOffset + 100);
+                }
+                
+                // Main stats box
+                const statsY = yOffset + 170;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.fillRect(50, statsY, canvas.width - 100, 200);
+                
+                const total = ascents.length;
+                const flashes = ascents.filter(a => a.status === 'flash').length;
+                const sends = ascents.filter(a => a.status === 'send' || a.status === 'flash').length;
+                
+                let maxGradeLabel = '-';
+                let maxDifficulty = 0;
+                ascents.forEach(ascent => {
+                    if (ascent.status !== 'repeat' && ascent.status !== 'project') {
+                        const grade = grades.find(g => g.id === ascent.grade_id);
+                        if (grade && grade.relative_difficulty > maxDifficulty) {
+                            maxDifficulty = grade.relative_difficulty;
+                            maxGradeLabel = grade.label;
+                        }
+                    }
+                });
+                
+                // Stats grid
+                const stats = [
+                    { label: 'Bloques', value: total, emoji: '🧗' },
+                    { label: 'Flashes', value: flashes, emoji: '⚡' },
+                    { label: 'Encadenados', value: sends, emoji: '✅' },
+                    { label: 'Máx grado', value: maxGradeLabel, emoji: '🔥' }
+                ];
+                
+                const statWidth = (canvas.width - 100) / 4;
+                stats.forEach((stat, i) => {
+                    const x = 50 + i * statWidth;
+                    const centerX = x + statWidth / 2;
+                    
+                    // Emoji - centered
+                    ctx.fillStyle = 'white';
+                    ctx.font = '60px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(stat.emoji, centerX, statsY + 70);
+                    
+                    // Value
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(stat.value.toString(), centerX, statsY + 135);
+                    
+                    // Label
+                    ctx.fillStyle = '#9CA3AF';
+                    ctx.font = '24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(stat.label, centerX, statsY + 170);
+                    
+                    ctx.textAlign = 'left';
+                });
+                
+                // Grade breakdown
+                const breakdownY = statsY + 250;
+                
+                // Group ascents by grade
+                const gradeMap = new Map();
+                ascents.forEach(ascent => {
+                    const gradeId = ascent.grade_id;
+                    if (!gradeMap.has(gradeId)) {
+                        gradeMap.set(gradeId, { flash: 0, send: 0, repeat: 0, project: 0 });
+                    }
+                    gradeMap.get(gradeId)[ascent.status]++;
+                });
+                
+                // Sort grades by difficulty
+                const sortedGrades = Array.from(gradeMap.entries())
+                    .map(([gradeId, counts]) => {
+                        const grade = grades.find(g => g.id == gradeId) || {};
+                        return { grade, counts };
+                    })
+                    .sort((a, b) => (b.grade.relative_difficulty || 0) - (a.grade.relative_difficulty || 0))
+                    .slice(0, 12); // Increased to 12 grades (6 per column)
+                
+                // Two column layout
+                const columnWidth = (canvas.width - 100) / 2;
+                const boxWidth = 200;
+                const boxHeight = 110;
+                const rowHeight = 130;
+                
+                sortedGrades.forEach(({ grade, counts }, index) => {
+                    const total = counts.flash + counts.send + counts.repeat + counts.project;
+                    
+                    // Calculate position (two columns)
+                    const column = index % 2;
+                    const row = Math.floor(index / 2);
+                    const xOffset = 50 + column * columnWidth;
+                    const gradeY = breakdownY + row * rowHeight;
+                    
+                    // Grade color box
+                    ctx.fillStyle = grade.color_hex || '#666';
+                    ctx.fillRect(xOffset, gradeY, boxWidth, boxHeight);
+                    
+                    // Grade label in box
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(grade.label || '?', xOffset + boxWidth / 2, gradeY + boxHeight / 2 + 14);
+                    ctx.textAlign = 'left';
+                    
+                    // Grade details
+                    const detailsX = xOffset + boxWidth + 15;
+                    const centerY = gradeY + boxHeight / 2;
+                    
+                    // Total blocks - centered vertically
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.fillText(`${total} bloque${total !== 1 ? 's' : ''}`, detailsX, centerY - 10);
+                    
+                    // Detailed breakdown with labels - centered vertically below total
+                    let details = [];
+                    if (counts.flash > 0) details.push(`${counts.flash} Flash${counts.flash !== 1 ? 'es' : ''}`);
+                    if (counts.send > 0) details.push(`${counts.send} Encadenado${counts.send !== 1 ? 's' : ''}`);
+                    if (counts.repeat > 0) details.push(`${counts.repeat} Repetición${counts.repeat !== 1 ? 'es' : ''}`);
+                    if (counts.project > 0) details.push(`${counts.project} Proyecto${counts.project !== 1 ? 's' : ''}`);
+                    
+                    ctx.fillStyle = '#9CA3AF';
+                    ctx.font = '26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.fillText(details.join(' • '), detailsX, centerY + 30);
+                });
+                
+                // Footer text
+                ctx.fillStyle = '#6B7280';
+                ctx.font = '24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Hecho con Chalkin', canvas.width / 2, canvas.height - 30);
+                ctx.textAlign = 'left';
+                
+                // Convert canvas to blob and share (not download)
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], 'chalkin-session.png', { type: 'image/png' });
+                    const sessionUrl = window.location.href;
+                    const shareText = `${title} - ${total} bloques registrados\n\n🔗 Ver sesión: ${sessionUrl}`;
+                    
+                    btn.disabled = false;
+                    btn.innerHTML = '📤 Compartir actividad';
+                    
+                    // Try to share via Web Share API
+                    if (navigator.share) {
+                        try {
+                            // Check if we can share files
+                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    files: [file],
+                                    title: 'Mi sesión de escalada en Chalkin',
+                                    text: shareText
+                                });
+                            } else {
+                                // Share only text and URL
+                                await navigator.share({
+                                    title: 'Mi sesión de escalada en Chalkin',
+                                    text: shareText
+                                });
+                            }
+                        } catch (err) {
+                            if (err.name !== 'AbortError') {
+                                console.log('Error sharing:', err);
+                                // Fallback: offer to download the image
+                                if (confirm('No se pudo compartir. ¿Deseas descargar la imagen?')) {
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `chalkin-${session.gym_name || 'sesion'}-${new Date().getTime()}.png`;
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                }
+                            }
+                        }
+                    } else {
+                        // Fallback for browsers without Web Share API
+                        if (confirm('Tu navegador no soporta compartir. ¿Deseas descargar la imagen?')) {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `chalkin-${session.gym_name || 'sesion'}-${new Date().getTime()}.png`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }
+                    }
+                }, 'image/png');
+                
+            } catch (error) {
+                console.error('Error generating image:', error);
+                btn.disabled = false;
+                btn.innerHTML = '📤 Compartir actividad';
+                alert('Error al generar la imagen');
+            }
+        }
 
         document.getElementById('saveTitleBtn').addEventListener('click', async () => {
             const newTitle = document.getElementById('editTitleInput').value.trim() || null;
