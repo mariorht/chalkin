@@ -1316,13 +1316,13 @@
             
             // Check if already uploaded
             if (session.strava_activity_id) {
-                if (!confirm('Esta sesión ya fue subida a Strava.\n¿Deseas crear una nueva actividad duplicada?')) {
-                    return;
-                }
-            } else {
-                if (!confirm('¿Subir esta sesión a Strava?')) {
-                    return;
-                }
+                // Already uploaded, just open the activity
+                window.open(`https://www.strava.com/activities/${session.strava_activity_id}`, '_blank');
+                return;
+            }
+            
+            if (!confirm('¿Subir esta sesión a Strava?')) {
+                return;
             }
             
             // Disable button and show loading
@@ -1336,17 +1336,30 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    session.strava_activity_id = data.strava_activity_id;
                     
-                    // Update button
-                    btn.innerHTML = '✓ Subido a Strava';
-                    btn.classList.add('uploaded');
-                    btn.disabled = false;
-                    btn.onclick = () => {
-                        window.open(data.strava_url, '_blank');
-                    };
-                    
-                    alert('✓ Sesión subida a Strava correctamente');
+                    // Check if it was already uploaded
+                    if (data.already_uploaded) {
+                        session.strava_activity_id = data.strava_activity_id;
+                        btn.innerHTML = '✓ Ver en Strava';
+                        btn.classList.add('uploaded');
+                        btn.disabled = false;
+                        btn.onclick = () => {
+                            window.open(data.strava_url, '_blank');
+                        };
+                        alert('Esta sesión ya estaba subida a Strava');
+                    } else {
+                        session.strava_activity_id = data.strava_activity_id;
+                        
+                        // Update button
+                        btn.innerHTML = '✓ Ver en Strava';
+                        btn.classList.add('uploaded');
+                        btn.disabled = false;
+                        btn.onclick = () => {
+                            window.open(data.strava_url, '_blank');
+                        };
+                        
+                        alert('✓ Sesión subida a Strava correctamente');
+                    }
                 } else {
                     const error = await response.json();
                     btn.disabled = false;
