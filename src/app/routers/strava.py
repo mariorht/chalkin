@@ -4,10 +4,13 @@ Strava OAuth router - Handle authorization and token exchange.
 from typing import Optional
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session, joinedload
 import httpx
 import io
+import xml.etree.ElementTree as ET
+import re
+import math
 
 from app.core.config import settings
 from app.core.deps import get_db, get_current_user
@@ -16,6 +19,13 @@ from app.models.strava_connection import StravaConnection
 from app.models.session import Session as ClimbingSession
 from app.models.ascent import Ascent
 from app.models.grade import Grade
+from app.utils.svg_parser import (
+    extract_svg_paths,
+    svg_to_points,
+    scale_and_center_points,
+    CHALKIN_LOGO_SIMPLIFIED
+)
+import os
 
 
 router = APIRouter(prefix="/strava", tags=["strava"])
@@ -399,15 +409,55 @@ async def upload_session_to_strava(
         
         # Check if gym has coordinates to generate GPX
         if session.gym and session.gym.latitude and session.gym.longitude:
-            # Generate GPX file and upload
-            gpx_content = generate_gpx_file(
-                lat=session.gym.latitude,
-                lon=session.gym.longitude,
-                start_time=start_datetime,
-                duration=duration,
-                activity_name=activity_name,
-                description=activity_description
-            )
+            # Generate GPX file with logo shape
+            try:
+                # Try to load the simplified logo SVG
+                svg_path = "src/app/static/icons/logoChalkin_invertido_simple.svg"
+                if not os.path.exists(svg_path):
+                    raise Exception(f"Logo SVG not found at {svg_path}")
+                
+                paths = extract_svg_paths(svg_path)
+                if not paths:
+                    raise Exception("No paths found in SVG")
+                
+                # Convert all paths to points
+                all_points = []
+                for path_d in paths:
+                    try:
+                        points = svg_to_points(path_d, num_points=300)
+                        if points:
+                            all_points.extend(points)
+                    except:
+                        pass
+                
+                if not all_points:
+                    raise Exception("No points generated from SVG")
+                
+                # Scale and center around gym location
+                gps_points = scale_and_center_points(
+                    all_points,
+                    session.gym.latitude,
+                    session.gym.longitude,
+                    scale_meters=50  # 50 meter logo
+                )
+                gpx_content = generate_gpx_from_points(
+                    gps_points,
+                    start_datetime,
+                    duration,
+                    activity_name,
+                    activity_description
+                ).encode('utf-8')
+            except Exception as e:
+                # If logo generation fails, use simple single point
+                print(f"Warning: Failed to generate logo GPX, using simple point: {e}")
+                gpx_content = generate_gpx_file(
+                    lat=session.gym.latitude,
+                    lon=session.gym.longitude,
+                    start_time=start_datetime,
+                    duration=duration,
+                    activity_name=activity_name,
+                    description=activity_description
+                )
             
             # Upload GPX to Strava
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -522,13 +572,20 @@ def build_ascent_summary(ascents) -> str:
     if not ascents:
         return ""
     
+    # Filter out projects - only count completed ascents
+    completed_ascents = []
+    for a in ascents:
+        status_value = a.status.value if hasattr(a.status, 'value') else str(a.status)
+        status_lower = status_value.lower()
+        if status_lower != "project":  # Exclude projects
+            completed_ascents.append(a)
+    
     # Group by status (handle both string and enum values)
     flash_count = 0
     send_count = 0
     repeat_count = 0
-    project_count = 0
     
-    for a in ascents:
+    for a in completed_ascents:
         # Get status value - handle both enum and string
         status_value = a.status.value if hasattr(a.status, 'value') else str(a.status)
         status_lower = status_value.lower()
@@ -539,12 +596,10 @@ def build_ascent_summary(ascents) -> str:
             send_count += 1
         elif status_lower == "repeat":
             repeat_count += 1
-        elif status_lower == "project":
-            project_count += 1
     
-    # Group by grade
+    # Group by grade (only completed ascents)
     grade_counts = {}
-    for ascent in ascents:
+    for ascent in completed_ascents:
         try:
             if hasattr(ascent, 'grade') and ascent.grade is not None:
                 # Get the label (not name) from grade
@@ -583,7 +638,7 @@ def build_ascent_summary(ascents) -> str:
     
     summary_parts = []
     
-    # Status summary
+    # Status summary (without projects)
     status_parts = []
     if flash_count > 0:
         status_parts.append(f"⚡ {flash_count} flash")
@@ -591,8 +646,6 @@ def build_ascent_summary(ascents) -> str:
         status_parts.append(f"✅ {send_count} encadenado{'s' if send_count > 1 else ''}")
     if repeat_count > 0:
         status_parts.append(f"🔄 {repeat_count} repetido{'s' if repeat_count > 1 else ''}")
-    if project_count > 0:
-        status_parts.append(f"🎯 {project_count} proyecto{'s' if project_count > 1 else ''}")
     
     if status_parts:
         summary_parts.append("📊 " + " | ".join(status_parts))
@@ -608,8 +661,124 @@ def build_ascent_summary(ascents) -> str:
         grade_summary = "\n".join(grade_parts)
         summary_parts.append(f"\n🧗 Bloques:\n{grade_summary}")
     
-    # Total count
-    total = len(ascents)
+    # Total count (only completed)
+    total = len(completed_ascents)
     summary_parts.append(f"\n📈 Total: {total} bloque{'s' if total > 1 else ''}")
     
     return "\n".join(summary_parts)
+
+
+def generate_gpx_from_points(points, start_time: datetime, duration: int, activity_name: str, description: str) -> str:
+    """
+    Generate GPX file from a list of (lat, lon) points.
+    
+    Args:
+        points: List of (lat, lon) tuples
+        start_time: Activity start time
+        duration: Total duration in seconds
+        activity_name: Name of the activity
+        description: Activity description
+    
+    Returns:
+        GPX XML string
+    """
+    if not points:
+        # Return single point GPX as fallback
+        return generate_gpx_file(0, 0, start_time, duration, activity_name, description)
+    
+    # Calculate time per point
+    time_per_point = duration / len(points) if len(points) > 1 else duration
+    
+    # Build GPX XML
+    gpx_header = f'''<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Chalkin" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+  <metadata>
+    <name>{activity_name}</name>
+    <desc>{description}</desc>
+    <time>{start_time.strftime("%Y-%m-%dT%H:%M:%SZ")}</time>
+  </metadata>
+  <trk>
+    <name>{activity_name}</name>
+    <type>RockClimbing</type>
+    <trkseg>
+'''
+    
+    track_points = []
+    for i, (lat, lon) in enumerate(points):
+        point_time = start_time + timedelta(seconds=i * time_per_point)
+        time_str = point_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        track_points.append(f'      <trkpt lat="{lat}" lon="{lon}">\n        <time>{time_str}</time>\n      </trkpt>')
+    
+    gpx_footer = '''
+    </trkseg>
+  </trk>
+</gpx>'''
+    
+    return gpx_header + '\n'.join(track_points) + gpx_footer
+
+
+@router.get("/svg-to-gpx")
+async def svg_to_gpx_test(
+    center_lat: float = Query(40.416775, description="Center latitude"),
+    center_lon: float = Query(-3.703790, description="Center longitude"),
+    scale_meters: float = Query(100, description="Size in meters"),
+    num_points: int = Query(200, description="Number of GPS points"),
+    use_logo: bool = Query(True, description="Use Chalkin logo or test shape")
+):
+    """
+    Test endpoint to convert the Chalkin logo SVG to GPX.
+    Returns a GPX file that can be viewed on a map.
+    
+    Example URLs:
+    - /api/strava/svg-to-gpx (uses default Madrid coordinates)
+    - /api/strava/svg-to-gpx?center_lat=40.416775&center_lon=-3.703790&scale_meters=150
+    - /api/strava/svg-to-gpx?use_logo=false (uses simple test shape)
+    """
+    try:
+        if use_logo:
+            # Use simplified Chalkin logo path
+            path_d = CHALKIN_LOGO_SIMPLIFIED
+        else:
+            # Use a simple test shape (triangle)
+            path_d = "M 50 10 L 90 90 L 10 90 Z"
+        
+        # Convert SVG path to points
+        points = svg_to_points(path_d, num_points=num_points)
+        
+        if not points:
+            raise HTTPException(status_code=400, detail="Failed to parse SVG path")
+        
+        # Convert to GPS coordinates
+        gps_points = scale_and_center_points(points, center_lat, center_lon, scale_meters)
+        
+        # Generate GPX
+        start_time = datetime.utcnow()
+        duration = 3600  # 1 hour
+        activity_name = "Chalkin Logo" if use_logo else "Test Shape"
+        description = f"GPS shape centered at ({center_lat:.6f}, {center_lon:.6f}), scale: {scale_meters}m"
+        
+        gpx_content = generate_gpx_from_points(
+            gps_points,
+            start_time,
+            duration,
+            activity_name,
+            description
+        )
+        
+        # Return as downloadable GPX file
+        return Response(
+            content=gpx_content,
+            media_type="application/gpx+xml",
+            headers={
+                "Content-Disposition": f"attachment; filename=chalkin_{'logo' if use_logo else 'test'}.gpx"
+            }
+        )
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error generating GPX: {error_trace}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating GPX: {str(e)}"
+        )
