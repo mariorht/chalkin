@@ -366,8 +366,15 @@ async def upload_session_to_strava(
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        # Check if already uploaded (we'll allow re-upload but warn user)
-        # The frontend should handle the confirmation
+        # Check if already uploaded
+        if session.strava_activity_id:
+            # Return info about existing upload instead of creating duplicate
+            return {
+                "message": "Session already uploaded to Strava",
+                "strava_activity_id": session.strava_activity_id,
+                "strava_url": f"https://www.strava.com/activities/{session.strava_activity_id}",
+                "already_uploaded": True
+            }
         
         # Get valid access token
         access_token = await get_valid_token(current_user.id, db)
