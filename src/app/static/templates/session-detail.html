@@ -243,6 +243,10 @@
             cursor: pointer;
             text-align: center;
             transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
         }
 
         .status-btn:hover {
@@ -254,10 +258,13 @@
             background: rgba(255, 107, 53, 0.05);
         }
 
-        .status-btn .emoji {
-            font-size: 1.5rem;
-            display: block;
-            margin-bottom: 0.3rem;
+        .status-btn svg {
+            color: var(--gray);
+            transition: color 0.2s;
+        }
+
+        .status-btn.selected svg {
+            color: var(--primary);
         }
 
         .status-btn .label {
@@ -271,9 +278,17 @@
             background: rgba(245, 158, 11, 0.1);
         }
 
+        .status-btn.flash.selected svg {
+            color: var(--flash);
+        }
+
         .status-btn.send.selected {
             border-color: var(--success);
             background: rgba(34, 197, 94, 0.1);
+        }
+
+        .status-btn.send.selected svg {
+            color: var(--success);
         }
 
         .status-btn.repeat.selected {
@@ -281,9 +296,17 @@
             background: rgba(46, 196, 182, 0.1);
         }
 
+        .status-btn.repeat.selected svg {
+            color: var(--secondary);
+        }
+
         .status-btn.project.selected {
             border-color: var(--flash);
             background: rgba(245, 158, 11, 0.1);
+        }
+
+        .status-btn.project.selected svg {
+            color: var(--flash);
         }
 
         /* Add button */
@@ -737,19 +760,19 @@
             
             <div class="status-selector">
                 <button type="button" class="status-btn flash" data-status="flash">
-                    <span class="emoji">⚡</span>
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
                     <span class="label">Flash</span>
                 </button>
                 <button type="button" class="status-btn send" data-status="send">
-                    <span class="emoji">✅</span>
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                     <span class="label">Send</span>
                 </button>
                 <button type="button" class="status-btn repeat" data-status="repeat">
-                    <span class="emoji">🔄</span>
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
                     <span class="label">Repetición</span>
                 </button>
                 <button type="button" class="status-btn project" data-status="project">
-                    <span class="emoji">🎯</span>
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                     <span class="label">Proyecto</span>
                 </button>
             </div>
@@ -902,16 +925,16 @@
                     month: 'long', 
                     day: 'numeric' 
                 });
-                document.getElementById('sessionMeta').textContent = `📍 ${session.gym_name || 'Gimnasio'} • ${dateStr}`;
+                document.getElementById('sessionMeta').innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#6B7280;display:inline-block;vertical-align:middle;margin-right:4px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${session.gym_name || 'Gimnasio'} • ${dateStr}`;
                 
                 if (session.notes) {
-                    document.getElementById('sessionMeta').textContent += ` • ${session.notes}`;
+                    document.getElementById('sessionMeta').innerHTML += ` • ${session.notes}`;
                 }
                 
                 if (isSessionEnded || !isOwnSession) {
                     if (session.ended_at) {
                         const duration = formatDuration(session.started_at, session.ended_at);
-                        document.getElementById('sessionDuration').textContent = `⏱️ Duración: ${duration}`;
+                        document.getElementById('sessionDuration').innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#6B7280;display:inline-block;vertical-align:middle;margin-right:4px;"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>Duración: ${duration}`;
                         document.getElementById('sessionDuration').classList.remove('hidden');
                     }
                 } else {
@@ -1137,19 +1160,19 @@
             
             container.innerHTML = ascents.map(ascent => {
                 const grade = grades.find(g => g.id === ascent.grade_id) || {};
-                const statusEmoji = {
-                    'flash': '⚡',
-                    'send': '✅',
-                    'repeat': '🔄',
-                    'project': '🎯'
-                }[ascent.status] || '✅';
+                const statusIcon = {
+                    'flash': '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;color:#F59E0B;"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>',
+                    'send': '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;color:#22C55E;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>',
+                    'repeat': '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;color:#2EC4B6;"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>',
+                    'project': '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;color:#F59E0B;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>'
+                }[ascent.status] || '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;color:#22C55E;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
                 
                 const time = parseUTCDate(ascent.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
                 
                 // Only show delete button for active sessions
                 // Show delete button if session is active OR in edit mode
                 const showDelete = !isSessionEnded || isEditMode;
-                const deleteBtn = showDelete ? `<button class="ascent-delete" onclick="deleteAscent(${ascent.id})">🗑️</button>` : '';
+                const deleteBtn = showDelete ? `<button class="ascent-delete" onclick="deleteAscent(${ascent.id})"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : '';
                 
                 return `
                     <div class="ascent-item">
@@ -1160,7 +1183,7 @@
                             <div class="grade-label">${grade.label || 'Grado'}</div>
                             <div class="time">${time}</div>
                         </div>
-                        <div class="ascent-status">${statusEmoji}</div>
+                        <div class="ascent-status">${statusIcon}</div>
                         ${deleteBtn}
                     </div>
                 `;
@@ -1220,10 +1243,10 @@
             container.innerHTML = sortedGrades.map(({ grade, counts }) => {
                 const total = counts.flash + counts.send + counts.repeat + counts.project;
                 let details = [];
-                if (counts.flash > 0) details.push(`${counts.flash} ⚡`);
-                if (counts.send > 0) details.push(`${counts.send} ✅`);
-                if (counts.repeat > 0) details.push(`${counts.repeat} 🔄`);
-                if (counts.project > 0) details.push(`${counts.project} 🎯`);
+                if (counts.flash > 0) details.push(`${counts.flash} <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#F59E0B;display:inline-block;vertical-align:middle;"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>`);
+                if (counts.send > 0) details.push(`${counts.send} <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#22C55E;display:inline-block;vertical-align:middle;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`);
+                if (counts.repeat > 0) details.push(`${counts.repeat} <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#2EC4B6;display:inline-block;vertical-align:middle;"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>`);
+                if (counts.project > 0) details.push(`${counts.project} <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#F59E0B;display:inline-block;vertical-align:middle;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`);
                 
                 return `
                     <div class="grade-row">
@@ -1304,10 +1327,11 @@
                 await fetchWithAuth(`${API_URL}/sessions/${sessionId}/end`, {
                     method: 'POST'
                 });
-                window.location.href = '/dashboard';
+                // Reload the page to show the ended session summary
+                window.location.reload();
             } catch (error) {
                 console.error('Error ending session:', error);
-                window.location.href = '/dashboard';
+                window.location.reload();
             }
         }
 
