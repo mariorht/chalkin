@@ -412,7 +412,7 @@ async def upload_session_to_strava(
             # Generate GPX file with logo shape
             try:
                 # Try to load the simplified logo SVG
-                svg_path = "src/app/static/icons/logoChalkin_invertido_simple.svg"
+                svg_path = "app/static/icons/logoChalkin_invertido_simple.svg"
                 if not os.path.exists(svg_path):
                     raise Exception(f"Logo SVG not found at {svg_path}")
                 
