@@ -7,6 +7,7 @@ from app.models.ascent import Ascent
 from app.models.friendship import Friendship
 from app.models.push_subscription import PushSubscription
 from app.models.strava_connection import StravaConnection
+from app.models.invitation import Invitation
 
 __all__ = [
 	"User",
@@ -17,4 +18,5 @@ __all__ = [
 	"Friendship",
 	"PushSubscription",
 	"StravaConnection",
+	"Invitation",
 ]

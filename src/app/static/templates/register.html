@@ -241,6 +241,37 @@
         .strength-medium { width: 66%; background: #F59E0B; }
         .strength-strong { width: 100%; background: var(--success); }
 
+        /* Invitation required message */
+        .invitation-required {
+            background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+            border: 2px solid #FB923C;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .invitation-required h3 {
+            color: #EA580C;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .invitation-required p {
+            color: #C2410C;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .form-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
         @media (max-width: 480px) {
             .auth-card {
                 padding: 2rem;
@@ -261,6 +292,18 @@
             <p class="subtitle">Únete y empieza a trackear tus sends</p>
 
             <div id="alert" class="alert"></div>
+
+            <!-- Invitation Required Message (shown when no token) -->
+            <div id="invitationRequired" class="invitation-required" style="display: none;">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:24px;height:24px;">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    Registro Restringido
+                </h3>
+                <p>El registro está actualmente restringido solo a invitaciones.<br>
+                Si un amigo te compartió un link de invitación, úsalo para poder registrarte.</p>
+            </div>
 
             <form id="registerForm">
                 <div class="form-group">
@@ -309,6 +352,11 @@
         const submitBtn = document.getElementById('submitBtn');
         const passwordInput = document.getElementById('password');
         const strengthBar = document.getElementById('strengthBar');
+        const invitationRequired = document.getElementById('invitationRequired');
+
+        // Get invitation token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const invitationToken = urlParams.get('invitation');
 
         function showAlert(message, type = 'error') {
             alert.textContent = message;
@@ -341,6 +389,38 @@
             else if (strength === 3) strengthBar.classList.add('strength-strong');
         }
 
+        // Check if invitation token is present
+        async function checkInvitation() {
+            if (!invitationToken) {
+                // No invitation token, show message and disable form
+                invitationRequired.style.display = 'block';
+                form.classList.add('form-disabled');
+                return false;
+            }
+
+            // Validate the invitation token
+            try {
+                const response = await fetch(`${API_URL}/invitations/validate/${invitationToken}`);
+                
+                if (response.ok) {
+                    // Valid invitation, hide message and enable form
+                    invitationRequired.style.display = 'none';
+                    form.classList.remove('form-disabled');
+                    return true;
+                } else {
+                    const data = await response.json();
+                    // Invalid/expired invitation
+                    showAlert(data.detail || 'Invitación inválida o expirada');
+                    form.classList.add('form-disabled');
+                    return false;
+                }
+            } catch (error) {
+                showAlert('Error al validar la invitación');
+                form.classList.add('form-disabled');
+                return false;
+            }
+        }
+
         passwordInput.addEventListener('input', (e) => {
             checkPasswordStrength(e.target.value);
         });
@@ -365,6 +445,11 @@
                 return;
             }
 
+            if (!invitationToken) {
+                showAlert('Se requiere un token de invitación para registrarse');
+                return;
+            }
+
             setLoading(true);
 
             try {
@@ -373,7 +458,12 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ username, email, password }),
+                    body: JSON.stringify({ 
+                        username, 
+                        email, 
+                        password,
+                        invitation_token: invitationToken
+                    }),
                 });
 
                 const data = await response.json();
@@ -393,6 +483,9 @@
                 setLoading(false);
             }
         });
+
+        // Check invitation on page load
+        checkInvitation();
     </script>
 </body>
 </html>
