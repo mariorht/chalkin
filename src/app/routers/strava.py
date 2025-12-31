@@ -406,6 +406,9 @@ async def upload_session_to_strava(
         if ascent_summary:
             activity_description += f"\n\n{ascent_summary}"
         
+        # Add Chalkin branding
+        activity_description += "\n\nActividad registrada con Chalkin"
+        
         # Format start date - use started_at or created_at as fallback
         start_datetime = session.started_at or session.created_at
         if not start_datetime:
