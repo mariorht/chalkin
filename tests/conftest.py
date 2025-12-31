@@ -2,7 +2,8 @@
 Test configuration and fixtures.
 """
 import pytest
-from datetime import date
+import secrets
+from datetime import date, datetime, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -17,6 +18,7 @@ from app.models.grade import Grade
 from app.models.session import Session
 from app.models.ascent import Ascent, AscentStatus
 from app.models.push_subscription import PushSubscription
+from app.models.invitation import Invitation
 
 
 # Test database - in-memory SQLite
@@ -100,6 +102,40 @@ def auth_headers(test_user):
     """Get authorization headers for test user."""
     token = create_access_token(data={"sub": str(test_user.id)})
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def test_invitation(db, test_user):
+    """Create a valid test invitation."""
+    invitation = Invitation(
+        token=secrets.token_urlsafe(32),
+        created_by_user_id=test_user.id,
+        expires_at=datetime.utcnow() + timedelta(hours=24),
+        used=False
+    )
+    db.add(invitation)
+    db.commit()
+    db.refresh(invitation)
+    return invitation
+
+
+@pytest.fixture
+def create_invitation(db):
+    """Factory fixture to create invitations."""
+    def _create_invitation(created_by_user_id: int, used: bool = False, expired: bool = False):
+        expires_at = datetime.utcnow() - timedelta(hours=1) if expired else datetime.utcnow() + timedelta(hours=24)
+        invitation = Invitation(
+            token=secrets.token_urlsafe(32),
+            created_by_user_id=created_by_user_id,
+            expires_at=expires_at,
+            used=used
+        )
+        db.add(invitation)
+        db.commit()
+        db.refresh(invitation)
+        return invitation
+    
+    return _create_invitation
 
 
 @pytest.fixture
