@@ -16,6 +16,7 @@ class UserCreate(UserBase):
     """Schema for creating a new user."""
     password: str = Field(..., min_length=6, max_length=100)
     home_gym_id: Optional[int] = None
+    invitation_token: Optional[str] = None  # Required for registration
 
 
 class UserUpdate(BaseModel):

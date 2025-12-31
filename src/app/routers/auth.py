@@ -3,7 +3,7 @@ Authentication router - register, login, profile.
 """
 import os
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 
@@ -12,6 +12,7 @@ from app.core.security import verify_password, get_password_hash, create_access_
 from app.core.deps import get_current_user
 from app.core.config import settings
 from app.models.user import User
+from app.models.invitation import Invitation
 from app.schemas.user import UserCreate, UserResponse, UserLogin, Token, UserUpdate
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -33,7 +34,39 @@ except PermissionError:
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user account.
+    Requires a valid invitation token.
     """
+    # Validate invitation token
+    if not user_data.invitation_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invitation token is required for registration"
+        )
+    
+    invitation = db.query(Invitation).filter(
+        Invitation.token == user_data.invitation_token
+    ).first()
+    
+    if not invitation:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid invitation token"
+        )
+    
+    # Check if invitation has been used
+    if invitation.used:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This invitation has already been used"
+        )
+    
+    # Check if invitation has expired
+    if datetime.utcnow() > invitation.expires_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This invitation has expired"
+        )
+    
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
@@ -61,6 +94,12 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+    
+    # Mark invitation as used
+    invitation.used = True
+    invitation.used_by_user_id = user.id
+    invitation.used_at = datetime.utcnow()
+    db.commit()
     
     return user
 

@@ -363,6 +363,96 @@
             background: var(--error);
             color: white;
         }
+
+        /* Invitation section */
+        .invitation-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--gray-light);
+        }
+
+        .invitation-section h3 {
+            color: var(--dark);
+            font-size: 1rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-generate-invitation {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .btn-generate-invitation:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-generate-invitation:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .invitation-link-container {
+            display: none;
+            background: var(--light);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .invitation-link-container.show {
+            display: block;
+        }
+
+        .invitation-link {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .invitation-link input {
+            flex: 1;
+            padding: 0.6rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            background: white;
+        }
+
+        .btn-copy-link {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-copy-link:hover {
+            background: #26A699;
+        }
+
+        .invitation-info {
+            font-size: 0.8rem;
+            color: var(--gray);
+            text-align: center;
+        }
     </style>
 </head>
 <body class="has-app-shell">
@@ -458,6 +548,28 @@
                 </div>
                 <div class="strava-status-text">
                     <span id="stravaStatus">No conectado</span>
+                </div>
+            </div>
+
+            <!-- Invitation Section -->
+            <div class="invitation-section">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;">
+                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                    </svg>
+                    Invitar Amigos
+                </h3>
+                <button class="btn-generate-invitation" onclick="generateInvitation()">
+                    Generar Link de Invitación
+                </button>
+                <div id="invitationLinkContainer" class="invitation-link-container">
+                    <div class="invitation-link">
+                        <input type="text" id="invitationLinkInput" readonly>
+                        <button class="btn-copy-link" onclick="copyInvitationLink()">Copiar</button>
+                    </div>
+                    <div class="invitation-info">
+                        Válido por 24 horas
+                    </div>
                 </div>
             </div>
         </div>
@@ -779,6 +891,62 @@
 
         checkStravaParams();
         loadProfile();
+
+        // Invitation functions
+        async function generateInvitation() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Generando...';
+
+            try {
+                const response = await fetchWithAuth(`${API_URL}/invitations/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const fullLink = `${window.location.origin}${data.link}`;
+                    
+                    document.getElementById('invitationLinkInput').value = fullLink;
+                    document.getElementById('invitationLinkContainer').classList.add('show');
+                    
+                    showAlert('success', '¡Link de invitación generado!');
+                } else {
+                    const error = await response.json();
+                    showAlert('error', error.detail || 'Error al generar invitación');
+                }
+            } catch (error) {
+                console.error('Error generating invitation:', error);
+                showAlert('error', 'Error al generar invitación');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generar Link de Invitación';
+            }
+        }
+
+        async function copyInvitationLink() {
+            const input = document.getElementById('invitationLinkInput');
+            
+            try {
+                // Try modern clipboard API first
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(input.value);
+                    showAlert('success', '¡Link copiado al portapapeles!');
+                } else {
+                    // Fallback for older browsers
+                    input.select();
+                    document.execCommand('copy');
+                    showAlert('success', '¡Link copiado al portapapeles!');
+                }
+            } catch (error) {
+                console.error('Error copying to clipboard:', error);
+                showAlert('error', 'Error al copiar el link');
+            }
+        }
     </script>
 </body>
 </html>
