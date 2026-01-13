@@ -393,37 +393,41 @@ async def upload_session_to_strava(
             ascent_summary = f"Total bloques: {len(ascents)}"
         
         # Get exercises for this session
-        exercises = db.query(SessionExercise).filter(
-            SessionExercise.session_id == session_id
-        ).all()
-        
-        # Build exercises summary
         exercises_summary = ""
-        if exercises:
-            exercise_lines = []
-            for ex in exercises:
-                type_name = {
-                    'pullups': 'Dominadas',
-                    'campus': 'Campus',
-                    'fingerboard': 'Fingerboard'
-                }.get(ex.exercise_type, ex.exercise_type.capitalize())
-                
-                details = []
-                if ex.sets:
-                    details.append(f"{ex.sets}x")
-                if ex.reps:
-                    details.append(f"{ex.reps}")
-                if ex.weight:
-                    details.append(f"{ex.weight}kg")
-                
-                line = f"• {type_name}"
-                if details:
-                    line += f": {' '.join(details)}"
-                if ex.notes:
-                    line += f" ({ex.notes})"
-                exercise_lines.append(line)
+        try:
+            exercises = db.query(SessionExercise).filter(
+                SessionExercise.session_id == session_id
+            ).all()
             
-            exercises_summary = "\n\n🏋️ Entrenamiento complementario:\n" + "\n".join(exercise_lines)
+            # Build exercises summary
+            if exercises:
+                exercise_lines = []
+                for ex in exercises:
+                    type_name = {
+                        'pullups': 'Dominadas',
+                        'campus': 'Campus',
+                        'fingerboard': 'Fingerboard'
+                    }.get(ex.exercise_type, ex.exercise_type.capitalize())
+                    
+                    details = []
+                    if ex.sets:
+                        details.append(f"{ex.sets}x")
+                    if ex.reps:
+                        details.append(f"{ex.reps}")
+                    if ex.weight:
+                        details.append(f"{ex.weight}kg")
+                    
+                    line = f"- {type_name}"
+                    if details:
+                        line += f": {' '.join(details)}"
+                    if ex.notes:
+                        line += f" ({ex.notes})"
+                    exercise_lines.append(line)
+                
+                exercises_summary = "\n\nEntrenamiento complementario:\n" + "\n".join(exercise_lines)
+        except Exception as e:
+            # Continue without exercises summary
+            pass
         
         # Calculate duration
         if session.started_at and session.ended_at:
