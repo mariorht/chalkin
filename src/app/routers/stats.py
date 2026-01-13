@@ -690,6 +690,22 @@ def get_activity_calendar(
     consecutive_weeks = 0
     current_week_start = today - timedelta(days=today.weekday())  # Start of current week (Monday)
     
+    # Check if current week has activity
+    current_week_has_activity = False
+    for i in range(7):
+        check_date = current_week_start + timedelta(days=i)
+        if check_date > today:
+            break
+        date_str = check_date.isoformat()
+        if date_str in all_activity_days:
+            current_week_has_activity = True
+            break
+    
+    # If current week has no activity, start counting from previous week
+    # This gives margin to complete activity in the current week
+    if not current_week_has_activity:
+        current_week_start -= timedelta(days=7)
+    
     while True:
         week_end = current_week_start + timedelta(days=6)
         week_has_activity = False
