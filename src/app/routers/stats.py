@@ -726,16 +726,26 @@ def get_activity_calendar(
         else:
             break  # Streak broken
     
-    # Build activity map for display (specified month only)
+    # Build activity map for display (extended to include complete weeks)
     first_day_of_month = date(display_year, display_month, 1)
     if display_month == 12:
         last_day_of_month = date(display_year + 1, 1, 1) - timedelta(days=1)
     else:
         last_day_of_month = date(display_year, display_month + 1, 1) - timedelta(days=1)
     
+    # Calculate first Monday before or on the first day of the month
+    first_day_of_week = first_day_of_month.weekday()  # 0=Monday, 6=Sunday
+    calendar_start = first_day_of_month - timedelta(days=first_day_of_week)
+    
+    # Calculate last Sunday after or on the last day of the month
+    last_day_of_week = last_day_of_month.weekday()
+    days_to_add = 6 - last_day_of_week  # Days until Sunday
+    calendar_end = last_day_of_month + timedelta(days=days_to_add)
+    
+    # Build activity map for the entire calendar display range
     activity_days = {}
     for session in all_sessions:
-        if first_day_of_month <= session.date <= last_day_of_month:
+        if calendar_start <= session.date <= calendar_end:
             date_str = session.date.isoformat()
             activity_days[date_str] = activity_days.get(date_str, 0) + 1
     

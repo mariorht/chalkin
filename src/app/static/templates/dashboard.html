@@ -710,6 +710,11 @@
             cursor: default;
         }
 
+        .calendar-day.other-month {
+            opacity: 0.4;
+            color: #9CA3AF;
+        }
+
         .calendar-day:not(.empty):hover {
             transform: scale(1.05);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -1434,14 +1439,41 @@
                 
                 // Generate calendar grid
                 let html = '';
+                const today = new Date();
                 
-                // Add empty cells for days before month starts
-                for (let i = 0; i < firstDayOfWeek; i++) {
-                    html += '<div class="calendar-day empty"></div>';
+                // Add days from previous month to complete first week
+                if (firstDayOfWeek > 0) {
+                    const prevMonth = month === 1 ? 12 : month - 1;
+                    const prevYear = month === 1 ? year - 1 : year;
+                    const lastDayPrevMonth = new Date(prevYear, prevMonth, 0).getDate();
+                    
+                    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+                        const day = lastDayPrevMonth - i;
+                        const dateStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const count = activityDays[dateStr] || 0;
+                        
+                        let level = 0;
+                        if (count > 0) {
+                            if (maxCount === 1) {
+                                level = 4;
+                            } else {
+                                const intensity = count / maxCount;
+                                if (intensity >= 0.75) level = 4;
+                                else if (intensity >= 0.5) level = 3;
+                                else if (intensity >= 0.25) level = 2;
+                                else level = 1;
+                            }
+                        }
+                        
+                        const levelClass = level > 0 ? `level-${level}` : '';
+                        const hasActivity = count > 0 ? 'has-activity' : '';
+                        const title = count > 0 ? `${count} sesión${count > 1 ? 'es' : ''}` : 'Sin actividad';
+                        
+                        html += `<div class="calendar-day other-month ${levelClass} ${hasActivity}" title="${title}">${day}</div>`;
+                    }
                 }
                 
                 // Add days of the month
-                const today = new Date();
                 for (let day = 1; day <= lastDay.getDate(); day++) {
                     const currentDate = new Date(year, month - 1, day);
                     // Build date string manually to avoid timezone issues
@@ -1468,6 +1500,38 @@
                     const title = count > 0 ? `${count} sesión${count > 1 ? 'es' : ''}` : 'Sin actividad';
                     
                     html += `<div class="calendar-day ${levelClass} ${hasActivity} ${isToday}" title="${title}">${day}</div>`;
+                }
+                
+                // Add days from next month to complete last week
+                const totalDays = firstDayOfWeek + lastDay.getDate();
+                const remainingDays = 7 - (totalDays % 7);
+                if (remainingDays < 7) {
+                    const nextMonth = month === 12 ? 1 : month + 1;
+                    const nextYear = month === 12 ? year + 1 : year;
+                    
+                    for (let day = 1; day <= remainingDays; day++) {
+                        const dateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const count = activityDays[dateStr] || 0;
+                        
+                        let level = 0;
+                        if (count > 0) {
+                            if (maxCount === 1) {
+                                level = 4;
+                            } else {
+                                const intensity = count / maxCount;
+                                if (intensity >= 0.75) level = 4;
+                                else if (intensity >= 0.5) level = 3;
+                                else if (intensity >= 0.25) level = 2;
+                                else level = 1;
+                            }
+                        }
+                        
+                        const levelClass = level > 0 ? `level-${level}` : '';
+                        const hasActivity = count > 0 ? 'has-activity' : '';
+                        const title = count > 0 ? `${count} sesión${count > 1 ? 'es' : ''}` : 'Sin actividad';
+                        
+                        html += `<div class="calendar-day other-month ${levelClass} ${hasActivity}" title="${title}">${day}</div>`;
+                    }
                 }
                 
                 calendarContainer.innerHTML = html;
