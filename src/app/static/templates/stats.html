@@ -902,18 +902,31 @@
             let html = '';
             
             gyms.forEach(gym => {
-                // Get all unique users and assign colors
-                const users = gym.user_totals || [];
+                // Get all unique users
+                const allUsers = gym.user_totals || [];
+                
+                // Find current user and top 3 friends by total sends
+                const currentUser = allUsers.find(u => u.is_current_user);
+                const friends = allUsers.filter(u => !u.is_current_user);
+                const top3Friends = friends
+                    .sort((a, b) => b.total_sends - a.total_sends)
+                    .slice(0, 3);
+                
+                // Combine current user with top 3 friends
+                const users = currentUser ? [currentUser, ...top3Friends] : top3Friends;
+                const userIds = new Set(users.map(u => u.user_id));
+                
+                // Assign colors
                 const userColorMap = {};
                 users.forEach((u, i) => {
                     userColorMap[u.user_id] = userColors[i % userColors.length];
                 });
                 
-                // Find max sends across all grades for scaling
+                // Find max sends across all grades for scaling (only for selected users)
                 let maxSends = 0;
                 gym.grades.forEach(grade => {
                     grade.users.forEach(u => {
-                        if (u.sends > maxSends) maxSends = u.sends;
+                        if (userIds.has(u.user_id) && u.sends > maxSends) maxSends = u.sends;
                     });
                 });
                 maxSends = Math.max(maxSends, 1);
@@ -937,7 +950,7 @@
                             <div class="grade-chart-row">
                                 <div class="grade-label-box" style="background: ${grade.color}">${grade.label}</div>
                                 <div class="bars-container">
-                                    ${grade.users.map(u => `
+                                    ${grade.users.filter(u => userIds.has(u.user_id)).map(u => `
                                         <div class="user-bar-row">
                                             <div class="user-bar" style="background: ${userColorMap[u.user_id]}; width: ${(u.sends / maxSends) * 100}%"></div>
                                             ${u.sends > 0 ? `<span class="user-bar-value">${u.sends}</span>` : ''}
