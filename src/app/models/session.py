@@ -44,6 +44,7 @@ class Session(Base):
     user = relationship("User", back_populates="sessions")
     gym = relationship("Gym", back_populates="sessions")
     ascents = relationship("Ascent", back_populates="session", cascade="all, delete-orphan")
+    exercises = relationship("SessionExercise", back_populates="session", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Session {self.id} - {self.date}>"

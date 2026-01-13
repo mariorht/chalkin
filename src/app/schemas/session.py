@@ -56,6 +56,7 @@ class SessionResponse(SessionBase):
 class SessionWithAscents(SessionResponse):
     """Schema for session with all ascents included."""
     ascents: List["AscentResponse"] = []
+    exercises: List["SessionExerciseResponse"] = []
     
     # Computed summary fields
     total_ascents: int = 0
@@ -81,4 +82,5 @@ class SessionSummary(BaseModel):
 
 # Forward reference resolution
 from app.schemas.ascent import AscentResponse
+from app.schemas.session_exercise import SessionExerciseResponse
 SessionWithAscents.model_rebuild()

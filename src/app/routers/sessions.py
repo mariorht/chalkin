@@ -15,8 +15,10 @@ from app.models.grade import Grade
 from app.models.session import Session as ClimbingSession
 from app.models.ascent import Ascent, AscentStatus
 from app.models.friendship import Friendship, FriendshipStatus
+from app.models.session_exercise import SessionExercise
 from app.schemas.session import SessionCreate, SessionResponse, SessionUpdate, SessionWithAscents
 from app.schemas.ascent import AscentCreate, AscentResponse
+from app.schemas.session_exercise import SessionExerciseCreate, SessionExerciseResponse, SessionExerciseUpdate
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
@@ -179,6 +181,7 @@ def get_session(
     
     # Calculate summary stats
     ascents = session.ascents
+    exercises = session.exercises
     
     return {
         "id": session.id,
@@ -194,6 +197,7 @@ def get_session(
         "updated_at": session.updated_at,
         "gym_name": gym_name,
         "ascents": ascents,
+        "exercises": exercises,
         "total_ascents": len(ascents),
         "sends": len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.REPEAT]]),
         "flashes": len([a for a in ascents if a.status == AscentStatus.FLASH]),
@@ -393,3 +397,139 @@ def list_session_ascents(
             )
     
     return session.ascents
+
+
+# ===== Session Exercises Endpoints =====
+
+@router.post("/{session_id}/exercises", response_model=SessionExerciseResponse, status_code=status.HTTP_201_CREATED)
+def add_exercise_to_session(
+    session_id: int,
+    exercise: SessionExerciseCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Add a complementary exercise (pullups, campus, etc.) to a session.
+    """
+    # Verify session exists and belongs to user
+    session = db.query(ClimbingSession).filter(ClimbingSession.id == session_id).first()
+    
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found"
+        )
+    
+    if session.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only add exercises to your own sessions"
+        )
+    
+    # Create exercise
+    db_exercise = SessionExercise(
+        session_id=session_id,
+        **exercise.model_dump()
+    )
+    
+    db.add(db_exercise)
+    db.commit()
+    db.refresh(db_exercise)
+    
+    return db_exercise
+
+
+@router.get("/{session_id}/exercises", response_model=List[SessionExerciseResponse])
+def get_session_exercises(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all exercises for a session.
+    """
+    # Verify session exists
+    session = db.query(ClimbingSession).filter(ClimbingSession.id == session_id).first()
+    
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found"
+        )
+    
+    # Check if user can view this session (own session or friend's session)
+    if session.user_id != current_user.id:
+        if not is_friend(db, current_user.id, session.user_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only view your own sessions or your friends' sessions"
+            )
+    
+    return session.exercises
+
+
+@router.put("/exercises/{exercise_id}", response_model=SessionExerciseResponse)
+def update_exercise(
+    exercise_id: int,
+    exercise_update: SessionExerciseUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update an exercise.
+    """
+    db_exercise = db.query(SessionExercise).filter(SessionExercise.id == exercise_id).first()
+    
+    if not db_exercise:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Exercise not found"
+        )
+    
+    # Verify ownership through session
+    session = db.query(ClimbingSession).filter(ClimbingSession.id == db_exercise.session_id).first()
+    if session.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own exercises"
+        )
+    
+    # Update fields
+    for field, value in exercise_update.model_dump(exclude_unset=True).items():
+        setattr(db_exercise, field, value)
+    
+    db.commit()
+    db.refresh(db_exercise)
+    
+    return db_exercise
+
+
+@router.delete("/exercises/{exercise_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_exercise(
+    exercise_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete an exercise.
+    """
+    db_exercise = db.query(SessionExercise).filter(SessionExercise.id == exercise_id).first()
+    
+    if not db_exercise:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Exercise not found"
+        )
+    
+    # Verify ownership through session
+    session = db.query(ClimbingSession).filter(ClimbingSession.id == db_exercise.session_id).first()
+    if session.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only delete your own exercises"
+        )
+    
+    db.delete(db_exercise)
+    db.commit()
+    
+    return None
