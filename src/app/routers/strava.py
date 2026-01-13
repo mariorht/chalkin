@@ -19,6 +19,7 @@ from app.models.strava_connection import StravaConnection
 from app.models.session import Session as ClimbingSession
 from app.models.ascent import Ascent
 from app.models.grade import Grade
+from app.models.session_exercise import SessionExercise
 from app.utils.svg_parser import (
     extract_svg_paths,
     svg_to_points,
@@ -391,6 +392,39 @@ async def upload_session_to_strava(
             # If summary fails, continue without it
             ascent_summary = f"Total bloques: {len(ascents)}"
         
+        # Get exercises for this session
+        exercises = db.query(SessionExercise).filter(
+            SessionExercise.session_id == session_id
+        ).all()
+        
+        # Build exercises summary
+        exercises_summary = ""
+        if exercises:
+            exercise_lines = []
+            for ex in exercises:
+                type_name = {
+                    'pullups': 'Dominadas',
+                    'campus': 'Campus',
+                    'fingerboard': 'Fingerboard'
+                }.get(ex.exercise_type, ex.exercise_type.capitalize())
+                
+                details = []
+                if ex.sets:
+                    details.append(f"{ex.sets}x")
+                if ex.reps:
+                    details.append(f"{ex.reps}")
+                if ex.weight:
+                    details.append(f"{ex.weight}kg")
+                
+                line = f"• {type_name}"
+                if details:
+                    line += f": {' '.join(details)}"
+                if ex.notes:
+                    line += f" ({ex.notes})"
+                exercise_lines.append(line)
+            
+            exercises_summary = "\n\n🏋️ Entrenamiento complementario:\n" + "\n".join(exercise_lines)
+        
         # Calculate duration
         if session.started_at and session.ended_at:
             duration = int((session.ended_at - session.started_at).total_seconds())
@@ -405,9 +439,11 @@ async def upload_session_to_strava(
         activity_description = session.subtitle or ""
         if ascent_summary:
             activity_description += f"\n\n{ascent_summary}"
+        if exercises_summary:
+            activity_description += exercises_summary
         
         # Add Chalkin branding
-        activity_description += "\n\nActividad registrada con Chalkin"
+        activity_description += "\n\nActividad registrada con chalkin.es"
         
         # Format start date - use started_at or created_at as fallback
         start_datetime = session.started_at or session.created_at
