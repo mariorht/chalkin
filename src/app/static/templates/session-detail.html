@@ -694,6 +694,220 @@
         .hidden {
             display: none !important;
         }
+
+        /* Exercises Section Styles */
+        .exercises-section {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .exercises-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .exercises-header h2 {
+            color: var(--dark);
+            font-size: 1.1rem;
+        }
+
+        .add-exercise-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-exercise-btn:hover {
+            background: #25A89D;
+        }
+
+        .exercise-form {
+            background: #F9FAFB;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .exercise-type-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .exercise-type-btn {
+            background: white;
+            border: 2px solid #E5E7EB;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .exercise-type-btn:hover {
+            border-color: var(--secondary);
+        }
+
+        .exercise-type-btn.selected {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+        .exercise-details {
+            margin-top: 1rem;
+        }
+
+        #exerciseTypeInput {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+            box-sizing: border-box;
+        }
+
+        .exercise-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .exercise-inputs input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            min-width: 0;
+        }
+
+        #exerciseNotes {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            resize: vertical;
+            margin-bottom: 0.75rem;
+            box-sizing: border-box;
+        }
+
+        .exercise-form-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .exercise-form-actions button {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary {
+            background: #E5E7EB;
+            color: var(--dark);
+        }
+
+        .btn-secondary:hover {
+            background: #D1D5DB;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .exercises-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .empty-exercises {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .exercise-item {
+            background: #F9FAFB;
+            border-radius: 10px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .exercise-info {
+            flex: 1;
+        }
+
+        .exercise-type {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .exercise-details-text {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .exercise-notes {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 0.25rem;
+            font-style: italic;
+        }
+
+        .exercise-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .exercise-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .exercise-actions button:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -790,6 +1004,58 @@
                 <div class="empty-ascents">
                     Aún no has registrado ningún bloque
                 </div>
+            </div>
+        </section>
+
+        <!-- Exercises Section -->
+        <section class="exercises-section">
+            <div class="exercises-header">
+                <h2>Entrenamiento complementario</h2>
+                <button class="add-exercise-btn" id="addExerciseBtn" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    Agregar
+                </button>
+            </div>
+            
+            <!-- Exercise form (hidden by default) -->
+            <div class="exercise-form" id="exerciseForm" style="display:none;">
+                <div class="exercise-type-selector">
+                    <button type="button" class="exercise-type-btn" data-type="pullups">
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"><path d="M4 4h16v2H4V4zm8 4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2v4h4v-4c0-1.1-.9-2-2-2z"/></svg>
+                        Dominadas
+                    </button>
+                    <button type="button" class="exercise-type-btn" data-type="campus">
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"><path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/></svg>
+                        Campus
+                    </button>
+                    <button type="button" class="exercise-type-btn" data-type="fingerboard">
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"><path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>
+                        Fingerboard
+                    </button>
+                    <button type="button" class="exercise-type-btn" data-type="other">➕ Otro</button>
+                </div>
+                
+                <div class="exercise-details" id="exerciseDetails" style="display:none;">
+                    <input type="text" id="exerciseTypeInput" placeholder="Tipo de ejercicio..." style="display:none;">
+                    
+                    <div class="exercise-inputs">
+                        <input type="number" id="exerciseSets" placeholder="Series" min="1">
+                        <input type="text" id="exerciseReps" placeholder="Reps (ej: 10, max, 5-3-2)">
+                        <input type="number" id="exerciseWeight" placeholder="Peso (kg)" step="0.5">
+                    </div>
+                    
+                    <textarea id="exerciseNotes" placeholder="Notas (opcional)..." rows="2"></textarea>
+                    
+                    <div class="exercise-form-actions">
+                        <button class="btn-secondary" onclick="cancelExerciseForm()">Cancelar</button>
+                        <button class="btn-primary" onclick="saveExercise()">Guardar</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Exercises list -->
+            <div id="exercisesList" class="exercises-list">
+                <div class="empty-exercises">No hay ejercicios registrados</div>
             </div>
         </section>
     </main>
@@ -952,6 +1218,9 @@
                 if (isSessionEnded || !isOwnSession) {
                     updateGradeBreakdown();
                 }
+                
+                // Load exercises after session is loaded
+                await loadExercises();
             } catch (error) {
                 console.error('Error loading session:', error);
             }
@@ -1046,7 +1315,7 @@
                 const editBtn = document.createElement('button');
                 editBtn.id = 'editModeBtn';
                 editBtn.className = 'btn-reopen';
-                editBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.50023C18.8978 2.1024 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.1024 21.5 2.50023C21.8978 2.89805 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.1024 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Editar bloques';
+                editBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.50023C18.8978 2.1024 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.1024 21.5 2.50023C21.8978 2.89805 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.1024 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Editar actividad';
                 editBtn.onclick = toggleEditMode;
                 editBtn.style.marginTop = '0';
                 editBtn.style.marginLeft = '0';
@@ -1083,8 +1352,12 @@
                 document.getElementById('statusBadge').style.background = 'var(--flash)';
                 // Reload ascents to show delete buttons
                 updateAscentsList();
+                // Show add exercise button
+                document.getElementById('addExerciseBtn').style.display = 'inline-flex';
+                // Reload exercises to show delete buttons
+                renderExercises();
             } else {
-                editBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.50023C18.8978 2.1024 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.1024 21.5 2.50023C21.8978 2.89805 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.1024 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Editar bloques';
+                editBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.50023C18.8978 2.1024 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.1024 21.5 2.50023C21.8978 2.89805 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.1024 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Editar actividad';
                 editBtn.classList.add('btn-reopen');
                 editBtn.classList.remove('btn-primary');
                 gradeSelector.classList.add('hidden');
@@ -1092,6 +1365,10 @@
                 document.getElementById('statusBadge').style.background = '';
                 // Reload ascents to hide delete buttons
                 updateAscentsList();
+                // Hide add exercise button
+                document.getElementById('addExerciseBtn').style.display = 'none';
+                // Reload exercises to hide delete buttons
+                renderExercises();
             }
         }
 
@@ -1765,6 +2042,184 @@
                 alert('Error al guardar');
             }
         });
+
+        // ========== EXERCISES MANAGEMENT ==========
+        let exercises = [];
+        let selectedExerciseType = null;
+
+        // Load exercises for the session
+        async function loadExercises() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}/exercises`);
+                if (!response.ok) return;
+                
+                exercises = await response.json();
+                renderExercises();
+                
+                // Show add button if session is active OR in edit mode, and is own session
+                const isOwnSession = session && (session.is_own !== false);
+                console.log('loadExercises - isSessionEnded:', isSessionEnded, 'isEditMode:', isEditMode, 'isOwnSession:', isOwnSession);
+                
+                if ((!isSessionEnded || isEditMode) && isOwnSession) {
+                    document.getElementById('addExerciseBtn').style.display = 'inline-flex';
+                }
+            } catch (error) {
+                console.error('Error loading exercises:', error);
+            }
+        }
+
+        function renderExercises() {
+            const container = document.getElementById('exercisesList');
+            
+            if (exercises.length === 0) {
+                container.innerHTML = '<div class="empty-exercises">No hay ejercicios registrados</div>';
+                return;
+            }
+            
+            const exerciseIcons = {
+                'pullups': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M4 4h16v2H4V4zm8 4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2v4h4v-4c0-1.1-.9-2-2-2z"/></svg>',
+                'campus': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/></svg>',
+                'fingerboard': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>',
+                'other': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>'
+            };
+            
+            container.innerHTML = exercises.map(ex => {
+                const icon = exerciseIcons[ex.exercise_type] || '💪';
+                const typeName = {
+                    'pullups': 'Dominadas',
+                    'campus': 'Campus',
+                    'fingerboard': 'Fingerboard'
+                }[ex.exercise_type] || ex.exercise_type;
+                
+                let details = [];
+                if (ex.sets) details.push(`${ex.sets} series`);
+                if (ex.reps) details.push(`${ex.reps} reps`);
+                if (ex.weight) details.push(`${ex.weight} kg`);
+                
+                // Show delete button if session is active OR in edit mode
+                const isOwnSession = session && (session.is_own !== false);
+                const canEdit = (!isSessionEnded || isEditMode) && isOwnSession;
+                
+                return `
+                    <div class="exercise-item">
+                        <div class="exercise-info">
+                            <div class="exercise-type">${icon}${typeName}</div>
+                            ${details.length > 0 ? `<div class="exercise-details-text">${details.join(' • ')}</div>` : ''}
+                            ${ex.notes ? `<div class="exercise-notes">"${ex.notes}"</div>` : ''}
+                        </div>
+                        ${canEdit ? `
+                            <div class="exercise-actions">
+                                <button onclick="deleteExercise(${ex.id})" title="Eliminar">
+                                    <svg viewBox="0 0 24 24" fill="#EF4444" style="width:18px;height:18px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Show exercise form
+        document.getElementById('addExerciseBtn')?.addEventListener('click', () => {
+            document.getElementById('exerciseForm').style.display = 'block';
+            document.getElementById('addExerciseBtn').style.display = 'none';
+        });
+
+        // Exercise type selection
+        document.querySelectorAll('.exercise-type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.exercise-type-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedExerciseType = btn.dataset.type;
+                
+                // Show details form
+                document.getElementById('exerciseDetails').style.display = 'block';
+                
+                // Show custom input if "other" selected
+                const customInput = document.getElementById('exerciseTypeInput');
+                if (selectedExerciseType === 'other') {
+                    customInput.style.display = 'block';
+                    customInput.focus();
+                } else {
+                    customInput.style.display = 'none';
+                }
+            });
+        });
+
+        function cancelExerciseForm() {
+            document.getElementById('exerciseForm').style.display = 'none';
+            document.getElementById('exerciseDetails').style.display = 'none';
+            document.getElementById('addExerciseBtn').style.display = 'inline-flex';
+            
+            // Reset form
+            document.querySelectorAll('.exercise-type-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById('exerciseTypeInput').value = '';
+            document.getElementById('exerciseSets').value = '';
+            document.getElementById('exerciseReps').value = '';
+            document.getElementById('exerciseWeight').value = '';
+            document.getElementById('exerciseNotes').value = '';
+            selectedExerciseType = null;
+        }
+
+        async function saveExercise() {
+            if (!selectedExerciseType) {
+                alert('Selecciona un tipo de ejercicio');
+                return;
+            }
+            
+            let exerciseType = selectedExerciseType;
+            if (selectedExerciseType === 'other') {
+                exerciseType = document.getElementById('exerciseTypeInput').value.trim();
+                if (!exerciseType) {
+                    alert('Especifica el tipo de ejercicio');
+                    return;
+                }
+            }
+            
+            const data = {
+                exercise_type: exerciseType,
+                sets: parseInt(document.getElementById('exerciseSets').value) || null,
+                reps: document.getElementById('exerciseReps').value.trim() || null,
+                weight: parseFloat(document.getElementById('exerciseWeight').value) || null,
+                notes: document.getElementById('exerciseNotes').value.trim() || null
+            };
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}/exercises`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    cancelExerciseForm();
+                    await loadExercises();
+                } else {
+                    alert('Error al guardar ejercicio');
+                }
+            } catch (error) {
+                console.error('Error saving exercise:', error);
+                alert('Error al guardar ejercicio');
+            }
+        }
+
+        async function deleteExercise(exerciseId) {
+            if (!confirm('¿Eliminar este ejercicio?')) return;
+            
+            try {
+                const response = await fetchWithAuth(`${API_URL}/sessions/exercises/${exerciseId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    await loadExercises();
+                } else {
+                    alert('Error al eliminar ejercicio');
+                }
+            } catch (error) {
+                console.error('Error deleting exercise:', error);
+                alert('Error al eliminar ejercicio');
+            }
+        }
 
         loadSession();
     </script>
