@@ -314,14 +314,24 @@
             // Clear previous timeout
             if (searchTimeout) clearTimeout(searchTimeout);
             
-            // Hide if less than 2 chars
-            if (query.length < 2) {
+            // Hide if less than 1 char
+            if (query.length < 1) {
                 resultsDiv.style.display = 'none';
                 return;
             }
             
-            // Debounce: wait 300ms after typing stops
-            searchTimeout = setTimeout(() => searchUsers(query), 300);
+            // Debounce: wait 200ms after typing stops
+            searchTimeout = setTimeout(() => searchUsers(query), 200);
+        });
+
+        // Mostrar usuarios al hacer foco si el campo está vacío
+        document.getElementById('searchInput').addEventListener('focus', function(e) {
+            const query = e.target.value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (query.length === 0) {
+                searchUsers('');
+            }
         });
 
         // Hide results when clicking outside
@@ -358,7 +368,14 @@
             resultsDiv.innerHTML = '<div class="loading">Buscando...</div>';
 
             try {
-                const res = await fetch(`${API_URL}/social/search?q=${encodeURIComponent(query)}`, {
+                let url;
+                if (query && query.length > 0) {
+                    url = `${API_URL}/social/search?q=${encodeURIComponent(query)}`;
+                } else {
+                    url = `${API_URL}/social/search/suggestions`;
+                }
+                
+                const res = await fetch(url, {
                     headers: getHeaders()
                 });
 
@@ -374,7 +391,13 @@
                     return;
                 }
 
-                resultsDiv.innerHTML = users.map(user => `
+                const label = query && query.length > 0 ? 'Resultados' : 'Sugerencias';
+                
+                resultsDiv.innerHTML = `
+                    <div style="padding: 8px 16px; font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase;">
+                        ${label}
+                    </div>
+                    ${users.map(user => `
                     <div class="user-item" onclick="goToProfile(${user.id}, event)">
                         <div class="user-info">
                             <div class="avatar">${renderAvatar(user)}</div>
@@ -387,7 +410,8 @@
                         </div>
                         ${renderSearchActions(user)}
                     </div>
-                `).join('');
+                `).join('')}
+                `;
             } catch (err) {
                 resultsDiv.innerHTML = '<div class="empty-state"><span>❌</span>Error al buscar</div>';
             }
