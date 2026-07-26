@@ -28,9 +28,52 @@ from app.schemas.social import (
 router = APIRouter(prefix="/social", tags=["Social"])
 
 
+@router.get("/search/suggestions", response_model=List[UserSearchResult])
+def search_suggestions(
+    limit: int = Query(10, ge=1, le=20),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get user suggestions (most recent users excluding self).
+    Used when the search input is focused but empty.
+    """
+    users = db.query(User).filter(
+        User.id != current_user.id
+    ).order_by(desc(User.created_at)).limit(limit).all()
+    
+    results = []
+    for user in users:
+        friendship = db.query(Friendship).filter(
+            or_(
+                and_(Friendship.user_id == current_user.id, Friendship.friend_id == user.id),
+                and_(Friendship.user_id == user.id, Friendship.friend_id == current_user.id)
+            )
+        ).first()
+        
+        friendship_status = None
+        if friendship:
+            if friendship.status == FriendshipStatus.ACCEPTED:
+                friendship_status = "accepted"
+            elif friendship.status == FriendshipStatus.PENDING:
+                if friendship.user_id == current_user.id:
+                    friendship_status = "pending"
+                else:
+                    friendship_status = "pending_received"
+        
+        results.append(UserSearchResult(
+            id=user.id,
+            username=user.username,
+            profile_picture=user.profile_picture,
+            friendship_status=friendship_status
+        ))
+    
+    return results
+
+
 @router.get("/search", response_model=List[UserSearchResult])
 def search_users(
-    q: str = Query(..., min_length=2, description="Search query"),
+    q: str = Query(..., min_length=1, description="Search query"),
     limit: int = Query(20, ge=1, le=50),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
