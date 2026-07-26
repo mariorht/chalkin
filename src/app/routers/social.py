@@ -22,14 +22,16 @@ from app.schemas.social import (
     FriendResponse,
     FeedItem,
     FeedResponse,
-    UserProfileResponse
+    UserProfileResponse,
+    SuggestionsResponse
 )
 
 router = APIRouter(prefix="/social", tags=["Social"])
 
 
-@router.get("/search/suggestions", response_model=List[UserSearchResult])
+@router.get("/search/suggestions", response_model=SuggestionsResponse)
 def search_suggestions(
+    skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=20),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -40,7 +42,10 @@ def search_suggestions(
     """
     users = db.query(User).filter(
         User.id != current_user.id
-    ).order_by(desc(User.created_at)).limit(limit).all()
+    ).order_by(desc(User.created_at)).offset(skip).limit(limit + 1).all()
+    
+    has_more = len(users) > limit
+    users = users[:limit]
     
     results = []
     for user in users:
@@ -68,7 +73,7 @@ def search_suggestions(
             friendship_status=friendship_status
         ))
     
-    return results
+    return SuggestionsResponse(users=results, has_more=has_more)
 
 
 @router.get("/search", response_model=List[UserSearchResult])
