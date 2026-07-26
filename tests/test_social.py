@@ -23,12 +23,12 @@ class TestUserSearch:
         assert any(u["username"] == "searchable_user" for u in users)
 
     def test_search_requires_min_chars(self, client: TestClient, auth_headers):
-        """Test that search requires minimum 2 characters."""
+        """Test that search requires minimum 1 character."""
         response = client.get(
             "/api/social/search?q=a",
             headers=auth_headers
         )
-        assert response.status_code == 422  # Validation error
+        assert response.status_code == 200  # 1 character is now allowed
 
     def test_search_excludes_current_user(self, client: TestClient, auth_headers):
         """Test that current user is not in search results."""
