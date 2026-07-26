@@ -244,6 +244,21 @@
             padding: 20px;
             color: #666;
         }
+        .load-more-btn {
+            width: 100%;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            border-top: 1px solid #e9ecef;
+            color: #667eea;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .load-more-btn:hover {
+            background: #f8f9fa;
+        }
     </style>
 </head>
 <body class="has-app-shell">
@@ -290,6 +305,8 @@
         const API_URL = '/api';
         let token = AppShell.token;
         let searchTimeout = null;
+        let suggestionsSkip = 0;
+        let suggestionsHasMore = false;
 
         function parseUTCDate(dateStr) {
             if (!dateStr) return null;
@@ -314,6 +331,8 @@
             // Clear previous timeout
             if (searchTimeout) clearTimeout(searchTimeout);
             
+            suggestionsSkip = 0;
+            
             // Hide if less than 1 char
             if (query.length < 1) {
                 resultsDiv.style.display = 'none';
@@ -330,6 +349,7 @@
             const resultsDiv = document.getElementById('searchResults');
             
             if (query.length === 0) {
+                suggestionsSkip = 0;
                 searchUsers('');
             }
         });
@@ -362,17 +382,21 @@
             return user.username.charAt(0).toUpperCase();
         }
 
-        async function searchUsers(query) {
+        async function searchUsers(query, loadMore = false) {
             const resultsDiv = document.getElementById('searchResults');
             resultsDiv.style.display = 'block';
-            resultsDiv.innerHTML = '<div class="loading">Buscando...</div>';
+            
+            if (!loadMore) {
+                resultsDiv.innerHTML = '<div class="loading">Buscando...</div>';
+                suggestionsSkip = 0;
+            }
 
             try {
                 let url;
                 if (query && query.length > 0) {
                     url = `${API_URL}/social/search?q=${encodeURIComponent(query)}`;
                 } else {
-                    url = `${API_URL}/social/search/suggestions`;
+                    url = `${API_URL}/social/search/suggestions?skip=${suggestionsSkip}`;
                 }
                 
                 const res = await fetch(url, {
@@ -384,20 +408,26 @@
                     return;
                 }
 
-                const users = await res.json();
+                const data = await res.json();
+                
+                let users, hasMore;
+                if (query && query.length > 0) {
+                    users = data;
+                    hasMore = false;
+                } else {
+                    users = data.users;
+                    hasMore = data.has_more;
+                    suggestionsHasMore = hasMore;
+                }
 
-                if (users.length === 0) {
+                if (users.length === 0 && !loadMore) {
                     resultsDiv.innerHTML = '<div class="empty-state"><span>🔍</span>No se encontraron usuarios</div>';
                     return;
                 }
 
                 const label = query && query.length > 0 ? 'Resultados' : 'Sugerencias';
                 
-                resultsDiv.innerHTML = `
-                    <div style="padding: 8px 16px; font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase;">
-                        ${label}
-                    </div>
-                    ${users.map(user => `
+                const usersHtml = users.map(user => `
                     <div class="user-item" onclick="goToProfile(${user.id}, event)">
                         <div class="user-info">
                             <div class="avatar">${renderAvatar(user)}</div>
@@ -410,11 +440,39 @@
                         </div>
                         ${renderSearchActions(user)}
                     </div>
-                `).join('')}
-                `;
+                `).join('');
+                
+                const loadMoreHtml = hasMore ? `
+                    <button class="load-more-btn" onclick="loadMoreSuggestions()">
+                        Ver más
+                    </button>
+                ` : '';
+                
+                if (loadMore) {
+                    const existingItems = resultsDiv.querySelectorAll('.user-item');
+                    const lastItem = existingItems[existingItems.length - 1];
+                    lastItem.insertAdjacentHTML('afterend', usersHtml + loadMoreHtml);
+                    const loadMoreBtn = resultsDiv.querySelector('.load-more-btn');
+                    if (loadMoreBtn && loadMoreBtn.previousElementSibling !== lastItem) {
+                        loadMoreBtn.remove();
+                    }
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div style="padding: 8px 16px; font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase;">
+                            ${label}
+                        </div>
+                        ${usersHtml}
+                        ${loadMoreHtml}
+                    `;
+                }
             } catch (err) {
                 resultsDiv.innerHTML = '<div class="empty-state"><span>❌</span>Error al buscar</div>';
             }
+        }
+
+        function loadMoreSuggestions() {
+            suggestionsSkip += 10;
+            searchUsers('', true);
         }
 
         function getStatusLabel(status) {

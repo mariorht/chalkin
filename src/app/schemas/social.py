@@ -16,6 +16,12 @@ class UserSearchResult(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SuggestionsResponse(BaseModel):
+    """Response for user suggestions with pagination."""
+    users: List[UserSearchResult]
+    has_more: bool
+
+
 class FriendshipCreate(BaseModel):
     """Schema for sending a friend request."""
     friend_id: int
