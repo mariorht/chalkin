@@ -65,17 +65,18 @@ verificado.
 - [x] **M3. Sin cabeceras de seguridad** — _Fix: middleware añade
   `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy` y CSP
   (`frame-ancestors 'none'; base-uri 'self'; object-src 'none'`); nginx añade
-  HSTS. **Pendiente**: `script-src` estricto (requiere quitar los `<script>`
-  inline o usar nonces; hoy el CSP no bloquea XSS inline)._
+  HSTS. **Aceptado por decisión**: no se hará `script-src` estricto (requeriría
+  refactor de los `<script>` inline)._
 - [x] **M4. Sin rate limiting** en `/api/auth/login`. _Fix: limitador en memoria
   (10 fallos / 15 min por email+IP), se resetea al acertar. Tests en
   `tests/test_auth.py`._
-- [ ] **M5. Gym/Grades sin autorización** — cualquier usuario autenticado puede
-  editar/borrar cualquier gym y sus grades (`routers/gyms.py`,
-  `routers/grades.py`). **Requiere decisión de producto** (modelo de propiedad).
-- [ ] **M6. Cambio de contraseña sin verificar la actual** — `PATCH /auth/me`
-  no pide la contraseña actual y no actualiza `password_changed_at`.
-  **Requiere decisión**: exigir la actual e invalidar sesiones se nota en la UX.
+- [x] **M5. Gym/Grades sin autorización** — **Aceptado por decisión**: se
+  mantiene el modelo comunitario (cualquier usuario autenticado puede
+  editar/borrar gyms y grades).
+- [x] **M6. Cambio de contraseña sin verificar la actual** — _Fix: `PATCH /auth/me`
+  exige `current_password` y actualiza `password_changed_at`, invalidando los
+  tokens previos (el usuario vuelve a iniciar sesión). El front pide la actual y
+  redirige a login. Tests en `tests/test_auth.py`._
 - [x] **M7. Tokens OAuth de Strava en texto plano**. _Fix: cifrados con Fernet
   (clave derivada de `SECRET_KEY`, o `TOKEN_ENCRYPTION_KEY` si se define), con
   fallback a texto plano para las conexiones existentes. Tests en
@@ -89,14 +90,18 @@ verificado.
   genéricos + `logging` server-side._
 - [x] **B3. Enumeración de usuarios por timing** en login. _Fix: verificación
   bcrypt dummy cuando el email no existe._
-- [ ] **B4. Tokens de invitación en texto plano** (`models/invitation.py`);
-  hashear como los de reset.
-- [ ] **B5. `get_user_profile`** expone sesiones de cualquier usuario a
-  cualquier autenticado (`routers/social.py`).
-- [ ] **B6. Dockerfile** corre como root y usaba `--reload` en producción.
-  _Parcial: `--reload` quitado del `Dockerfile` (sigue en `docker-compose.yml`
-  para dev). **Pendiente** ejecutar como usuario no root: requiere un `chown`
-  único del volumen `chalkin_data` existente, o la app no podrá escribir la BD._
+- [x] **B4. Tokens de invitación en texto plano** (`models/invitation.py`).
+  _Fix: solo se guarda el hash SHA-256 (migración `011` hashea los existentes);
+  el enlace se devuelve una vez al crear y `my-invitations` ya no expone el
+  token. Tests en `tests/test_auth.py`._
+- [x] **B5. `get_user_profile`** expone sesiones de cualquier usuario a
+  cualquier autenticado. **Aceptado por decisión**: los perfiles son públicos
+  para usuarios autenticados.
+- [x] **B6. Dockerfile** corre como root y usaba `--reload` en producción.
+  _Fix aplicado: `--reload` quitado del `Dockerfile` (sigue en
+  `docker-compose.yml` para dev). **Aceptado por decisión**: se mantiene el
+  contenedor como root (el cambio a no-root requeriría un `chown` del volumen
+  existente)._
 - [x] **B7. `sessions.py`** podía lanzar 500 si la sesión del ejercicio no
   existe. _Fix: comprobación de `session` nula._
 - [x] **B8. Política de contraseñas débil** (mínimo 6 caracteres). _Fix: mínimo

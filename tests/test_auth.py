@@ -13,7 +13,7 @@ class TestAuth:
             "username": "newuser",
             "email": "new@example.com",
             "password": "securepass123",
-            "invitation_token": test_invitation.token
+            "invitation_token": test_invitation.raw_token
         })
         
         assert response.status_code == 201
@@ -29,7 +29,7 @@ class TestAuth:
             "username": "different",
             "email": "test@example.com",  # Same as test_user
             "password": "securepass123",
-            "invitation_token": test_invitation.token
+            "invitation_token": test_invitation.raw_token
         })
         
         assert response.status_code == 400
@@ -41,7 +41,7 @@ class TestAuth:
             "username": "testuser",  # Same as test_user
             "email": "different@example.com",
             "password": "securepass123",
-            "invitation_token": test_invitation.token
+            "invitation_token": test_invitation.raw_token
         })
         
         assert response.status_code == 400
@@ -127,6 +127,42 @@ class TestAuth:
 
         assert response.status_code == 200
         assert response.json()["profile_picture"] is None
+
+    def test_change_password_requires_current(self, client, auth_headers):
+        """Changing the password without the current one fails."""
+        response = client.patch("/api/auth/me",
+            headers=auth_headers,
+            json={"password": "newpassword123"}
+        )
+
+        assert response.status_code == 400
+
+    def test_change_password_rejects_wrong_current(self, client, auth_headers):
+        """Changing the password with a wrong current one fails."""
+        response = client.patch("/api/auth/me",
+            headers=auth_headers,
+            json={"password": "newpassword123", "current_password": "wrongpassword"}
+        )
+
+        assert response.status_code == 400
+
+    def test_change_password_invalidates_old_tokens(self, client, auth_headers, test_user):
+        """A successful change invalidates previously issued JWTs (re-login)."""
+        response = client.patch("/api/auth/me",
+            headers=auth_headers,
+            json={"password": "newpassword123", "current_password": "testpass123"}
+        )
+        assert response.status_code == 200
+
+        # The old token must no longer work.
+        assert client.get("/api/auth/me", headers=auth_headers).status_code == 401
+
+        # The new password works.
+        login = client.post("/api/auth/login", json={
+            "email": "test@example.com",
+            "password": "newpassword123"
+        })
+        assert login.status_code == 200
 
 
 class TestProfilePicture:
@@ -269,7 +305,7 @@ class TestInvitations:
             "username": "newuser",
             "email": "new@example.com",
             "password": "securepass123",
-            "invitation_token": used_invitation.token
+            "invitation_token": used_invitation.raw_token
         })
         
         assert response.status_code == 400
@@ -283,7 +319,7 @@ class TestInvitations:
             "username": "newuser",
             "email": "new@example.com",
             "password": "securepass123",
-            "invitation_token": expired_invitation.token
+            "invitation_token": expired_invitation.raw_token
         })
         
         assert response.status_code == 400
@@ -299,10 +335,31 @@ class TestInvitations:
         assert "expires_at" in data
         assert "link" in data
         assert "/register?invitation=" in data["link"]
+
+    def test_generated_invitation_token_is_hashed(self, client, auth_headers, db):
+        """Only the hash of the invitation token is stored."""
+        from app.core.security import hash_token
+        from app.models.invitation import Invitation
+
+        response = client.post("/api/invitations/generate", headers=auth_headers, json={})
+        raw = response.json()["token"]
+
+        assert db.query(Invitation).filter(Invitation.token == hash_token(raw)).first() is not None
+        assert db.query(Invitation).filter(Invitation.token == raw).first() is None
+
+    def test_my_invitations_does_not_expose_token(self, client, auth_headers, test_user, create_invitation):
+        """The listing must not leak the (hashed) token or a usable link."""
+        create_invitation(test_user.id)
+
+        response = client.get("/api/invitations/my-invitations", headers=auth_headers)
+
+        assert response.status_code == 200
+        for item in response.json():
+            assert "token" not in item
     
     def test_validate_invitation(self, client, test_invitation):
         """Test validating a valid invitation."""
-        response = client.get(f"/api/invitations/validate/{test_invitation.token}")
+        response = client.get(f"/api/invitations/validate/{test_invitation.raw_token}")
         
         assert response.status_code == 200
         data = response.json()

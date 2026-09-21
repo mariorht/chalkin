@@ -29,6 +29,8 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     home_gym_id: Optional[int] = None
     password: Optional[str] = Field(None, min_length=8, max_length=100)
+    # Required when changing the password.
+    current_password: Optional[str] = Field(None, min_length=1, max_length=100)
 
 
 class UserResponse(UserBase):

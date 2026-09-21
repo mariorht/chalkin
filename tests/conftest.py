@@ -17,7 +17,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.main import app
 from app.db.base import Base, get_db
-from app.core.security import get_password_hash, create_access_token
+from app.core.security import get_password_hash, create_access_token, hash_token
 from app.models.user import User
 from app.models.gym import Gym, GradingSystemType
 from app.models.grade import Grade
@@ -122,9 +122,10 @@ def auth_headers(test_user):
 
 @pytest.fixture
 def test_invitation(db, test_user):
-    """Create a valid test invitation."""
+    """Create a valid test invitation. Exposes the raw token as ``raw_token``."""
+    raw_token = secrets.token_urlsafe(32)
     invitation = Invitation(
-        token=secrets.token_urlsafe(32),
+        token=hash_token(raw_token),
         created_by_user_id=test_user.id,
         expires_at=datetime.utcnow() + timedelta(hours=24),
         used=False
@@ -132,6 +133,7 @@ def test_invitation(db, test_user):
     db.add(invitation)
     db.commit()
     db.refresh(invitation)
+    invitation.raw_token = raw_token
     return invitation
 
 
@@ -139,9 +141,10 @@ def test_invitation(db, test_user):
 def create_invitation(db):
     """Factory fixture to create invitations."""
     def _create_invitation(created_by_user_id: int, used: bool = False, expired: bool = False):
+        raw_token = secrets.token_urlsafe(32)
         expires_at = datetime.utcnow() - timedelta(hours=1) if expired else datetime.utcnow() + timedelta(hours=24)
         invitation = Invitation(
-            token=secrets.token_urlsafe(32),
+            token=hash_token(raw_token),
             created_by_user_id=created_by_user_id,
             expires_at=expires_at,
             used=used
@@ -149,6 +152,7 @@ def create_invitation(db):
         db.add(invitation)
         db.commit()
         db.refresh(invitation)
+        invitation.raw_token = raw_token
         return invitation
     
     return _create_invitation
