@@ -9,6 +9,7 @@ from app.models.push_subscription import PushSubscription
 from app.models.strava_connection import StravaConnection
 from app.models.invitation import Invitation
 from app.models.session_exercise import SessionExercise
+from app.models.password_reset import PasswordResetToken
 
 __all__ = [
 	"User",
@@ -21,4 +22,5 @@ __all__ = [
 	"StravaConnection",
 	"Invitation",
 	"SessionExercise",
+	"PasswordResetToken",
 ]

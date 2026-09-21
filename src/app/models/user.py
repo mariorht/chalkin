@@ -2,7 +2,7 @@
 User model - climbers using the app.
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
@@ -23,6 +23,13 @@ class User(Base):
     
     # Profile info
     profile_picture = Column(String(255), nullable=True)  # URL or path to profile picture
+    
+    # Admin access
+    is_admin = Column(Boolean, default=False, nullable=False)
+    
+    # Set whenever the password changes; JWTs issued before this moment are rejected
+    password_changed_at = Column(DateTime, nullable=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración - Chalkin</title>
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/logoChalkin_invertido_16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/logoChalkin_invertido_32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logoChalkin_invertido_180.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#FF6B35">
+    <link rel="stylesheet" href="/static/css/app-shell.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+            --gray-light: #E5E7EB;
+            --error: #EF4444;
+            --success: #22C55E;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--light); }
+
+        .main-container { max-width: 760px; margin: 0 auto; padding: 1.5rem; }
+
+        .page-header { text-align: center; margin-bottom: 2rem; }
+        .page-header h1 { color: var(--dark); font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .page-header p { color: var(--gray); }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .search-row { display: flex; gap: 0.5rem; }
+
+        .search-row input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--gray-light);
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .search-row input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-search { background: var(--primary); color: white; padding: 0.8rem 1.4rem; font-size: 1rem; }
+        .btn-search:hover { background: var(--primary-dark); }
+
+        .user-list { margin-top: 1.25rem; }
+
+        .user-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.9rem 0;
+            border-top: 1px solid var(--gray-light);
+        }
+
+        .user-row:first-child { border-top: none; }
+
+        .user-info .name { color: var(--dark); font-weight: 600; }
+        .user-info .email { color: var(--gray); font-size: 0.85rem; }
+        .user-info .badge {
+            display: inline-block;
+            margin-left: 0.4rem;
+            padding: 0.05rem 0.45rem;
+            border-radius: 999px;
+            background: rgba(46, 196, 182, 0.15);
+            color: var(--secondary);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .btn-reset { background: var(--secondary); color: white; padding: 0.55rem 1rem; font-size: 0.9rem; white-space: nowrap; }
+        .btn-reset:hover { background: #26A699; }
+        .btn-reset:disabled { background: var(--gray); cursor: not-allowed; }
+
+        .result { display: none; margin-top: 1.25rem; border-top: 1px solid var(--gray-light); padding-top: 1.25rem; }
+        .result.show { display: block; }
+
+        .result h3 { color: var(--dark); font-size: 1rem; margin-bottom: 0.75rem; }
+
+        .field { margin-bottom: 1rem; }
+
+        .field label {
+            display: block;
+            color: var(--gray);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.35rem;
+        }
+
+        .field .row { display: flex; gap: 0.5rem; }
+
+        .field input, .field textarea {
+            width: 100%;
+            padding: 0.65rem 0.8rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            background: var(--light);
+        }
+
+        .field textarea { resize: vertical; min-height: 150px; }
+
+        .btn-copy { background: var(--dark); color: white; padding: 0.65rem 1rem; font-size: 0.85rem; white-space: nowrap; }
+        .btn-copy:hover { background: #0f0f1c; }
+
+        .btn-mail { background: var(--primary); color: white; padding: 0.75rem 1.25rem; font-size: 0.95rem; width: 100%; margin-top: 0.25rem; }
+        .btn-mail:hover { background: var(--primary-dark); }
+
+        .expiry { color: var(--gray); font-size: 0.85rem; margin-bottom: 1rem; }
+
+        .alert { padding: 1rem; border-radius: 10px; margin-bottom: 1rem; display: none; }
+        .alert.show { display: block; }
+        .alert-success { background: rgba(34, 197, 94, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .alert-error { background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error); }
+
+        .empty { color: var(--gray); text-align: center; padding: 1rem 0; }
+
+        .denied { text-align: center; padding: 2rem; }
+        .denied h2 { color: var(--dark); margin-bottom: 0.5rem; }
+        .denied p { color: var(--gray); }
+    </style>
+</head>
+<body class="has-app-shell">
+    <main class="main-container">
+        <div id="denied" class="card denied" style="display:none;">
+            <h2>No autorizado</h2>
+            <p>Esta sección es solo para administradores.</p>
+        </div>
+
+        <div id="adminContent" style="display:none;">
+            <div class="page-header">
+                <h1>Administración</h1>
+                <p>Busca un usuario y genera un enlace para que restablezca su contraseña</p>
+            </div>
+
+            <div class="card">
+                <div class="search-row">
+                    <input type="text" id="searchInput" placeholder="Buscar por email o usuario...">
+                    <button class="btn btn-search" id="searchBtn" onclick="searchUsers()">Buscar</button>
+                </div>
+                <div class="user-list" id="userList"></div>
+            </div>
+
+            <div class="card result" id="result">
+                <h3 id="resultTitle">Enlace de reseteo generado</h3>
+                <p class="expiry" id="resultExpiry"></p>
+
+                <div class="field">
+                    <label>Enlace de reseteo</label>
+                    <div class="row">
+                        <input type="text" id="resetUrl" readonly>
+                        <button class="btn btn-copy" onclick="copyValue('resetUrl', 'Enlace copiado')">Copiar</button>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Asunto</label>
+                    <div class="row">
+                        <input type="text" id="emailSubject" readonly>
+                        <button class="btn btn-copy" onclick="copyValue('emailSubject', 'Asunto copiado')">Copiar</button>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Mensaje</label>
+                    <textarea id="emailBody" readonly></textarea>
+                    <button class="btn btn-copy" style="margin-top:0.5rem;" onclick="copyValue('emailBody', 'Mensaje copiado')">Copiar mensaje</button>
+                </div>
+
+                <button class="btn btn-mail" id="mailtoBtn">Abrir cliente de correo</button>
+            </div>
+        </div>
+
+        <div id="alert" class="alert"></div>
+    </main>
+
+    <script src="/static/js/app-shell.js"></script>
+    <script>
+        AppShell.init({ activePage: 'profile' });
+
+        const API_URL = '/api';
+        const token = AppShell.token;
+        const alert = document.getElementById('alert');
+
+        function showAlert(message, type = 'error') {
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => { alert.className = 'alert'; }, 4000);
+        }
+
+        function authFetch(url, options = {}) {
+            return fetch(url, {
+                ...options,
+                headers: { 'Authorization': `Bearer ${token}`, ...(options.headers || {}) }
+            });
+        }
+
+        async function init() {
+            try {
+                const response = await authFetch(`${API_URL}/admin/me`);
+                if (response.status === 403) {
+                    document.getElementById('denied').style.display = 'block';
+                    return;
+                }
+                if (!response.ok) return;
+                document.getElementById('adminContent').style.display = 'block';
+                searchUsers();
+            } catch (e) {
+                showAlert('Error de conexión');
+            }
+        }
+
+        async function searchUsers() {
+            const q = document.getElementById('searchInput').value.trim();
+            const list = document.getElementById('userList');
+            const btn = document.getElementById('searchBtn');
+            btn.disabled = true;
+
+            try {
+                const response = await authFetch(`${API_URL}/admin/users?q=${encodeURIComponent(q)}`);
+                if (!response.ok) {
+                    showAlert('No se pudo buscar usuarios');
+                    return;
+                }
+                const users = await response.json();
+                if (!users.length) {
+                    list.innerHTML = '<p class="empty">Sin resultados</p>';
+                    return;
+                }
+                list.innerHTML = users.map(u => `
+                    <div class="user-row">
+                        <div class="user-info">
+                            <div class="name">${escapeHtml(u.username)}${u.is_admin ? '<span class="badge">admin</span>' : ''}</div>
+                            <div class="email">${escapeHtml(u.email)}</div>
+                        </div>
+                        <button class="btn btn-reset" onclick="generateReset(${u.id}, this)">Generar enlace</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                showAlert('Error de conexión');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function generateReset(userId, btn) {
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Generando...';
+
+            try {
+                const response = await authFetch(`${API_URL}/admin/users/${userId}/password-reset`, { method: 'POST' });
+                const data = await response.json();
+                if (!response.ok) {
+                    showAlert(data.detail || 'No se pudo generar el enlace');
+                    return;
+                }
+
+                const resetUrl = `${window.location.origin}${data.reset_path}`;
+                const emailBody = data.email_body.replace('{link}', resetUrl);
+
+                document.getElementById('resetUrl').value = resetUrl;
+                document.getElementById('emailSubject').value = data.email_subject;
+                document.getElementById('emailBody').value = emailBody;
+                document.getElementById('mailtoBtn').onclick = () => {
+                    const mailto = `mailto:?subject=${encodeURIComponent(data.email_subject)}&body=${encodeURIComponent(emailBody)}`;
+                    window.location.href = mailto;
+                };
+
+                const expires = new Date(data.expires_at.endsWith('Z') ? data.expires_at : data.expires_at + 'Z');
+                document.getElementById('resultExpiry').textContent =
+                    `Válido hasta ${expires.toLocaleString('es-ES')}`;
+
+                document.getElementById('result').classList.add('show');
+                showAlert('Enlace generado. Envíalo al usuario.', 'success');
+            } catch (e) {
+                showAlert('Error de conexión');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = original;
+            }
+        }
+
+        function copyValue(id, message) {
+            const el = document.getElementById(id);
+            const text = el.value;
+            const done = () => showAlert(message, 'success');
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(el, done));
+            } else {
+                fallbackCopy(el, done);
+            }
+        }
+
+        function fallbackCopy(el, done) {
+            el.select();
+            document.execCommand('copy');
+            done();
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        document.getElementById('searchInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') searchUsers();
+        });
+
+        init();
+    </script>
+</body>
+</html>

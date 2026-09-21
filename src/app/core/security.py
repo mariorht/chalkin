@@ -1,7 +1,9 @@
 """
 Security utilities for password hashing and JWT tokens.
 """
-from datetime import datetime, timedelta
+import hashlib
+import time
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from jose import JWTError, jwt
@@ -23,16 +25,24 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
+def hash_token(token: str) -> str:
+    """Hash a reset/invitation token for safe storage (SHA-256 hex digest)."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
     
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
+    now = datetime.now(timezone.utc)
     
-    to_encode.update({"exp": expire})
+    if expires_delta:
+        expire = now + expires_delta
+    else:
+        expire = now + timedelta(minutes=settings.access_token_expire_minutes)
+    
+    # iat is a float epoch so tokens issued before a password change can be revoked
+    to_encode.update({"exp": expire, "iat": time.time()})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     
     return encoded_jwt

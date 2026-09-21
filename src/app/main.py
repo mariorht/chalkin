@@ -21,6 +21,7 @@ from app.routers.social import router as social_router
 from app.routers.notifications import router as notifications_router
 from app.routers.strava import router as strava_router
 from app.routers.invitations import router as invitations_router
+from app.routers.admin import router as admin_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -51,6 +52,7 @@ app.include_router(social_router, prefix="/api")
 app.include_router(notifications_router, prefix="/api")
 app.include_router(strava_router, prefix="/api")
 app.include_router(invitations_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 # Set the correct paths for static files and templates
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -192,6 +194,18 @@ def serve_profile():
 def serve_support():
     """Serve the support page."""
     return os.path.join(template_dir, "support.html")
+
+
+@app.get("/reset-password", response_class=FileResponse)
+def serve_reset_password():
+    """Serve the password reset page."""
+    return os.path.join(template_dir, "reset-password.html")
+
+
+@app.get("/admin", response_class=FileResponse)
+def serve_admin():
+    """Serve the admin panel page (access checked by the API)."""
+    return os.path.join(template_dir, "admin.html")
 
 
 @app.get("/users", response_class=FileResponse)

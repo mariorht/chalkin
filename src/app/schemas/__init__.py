@@ -6,6 +6,12 @@ from app.schemas.session import SessionCreate, SessionResponse, SessionUpdate, S
 from app.schemas.ascent import AscentCreate, AscentResponse, AscentUpdate, AscentStatus
 from app.schemas.stats import UserStats, WeeklyStats, GradeDistribution
 from app.schemas.invitation import InvitationCreate, InvitationResponse, InvitationLink
+from app.schemas.admin import (
+    AdminUserResult,
+    PasswordResetLink,
+    PasswordResetRequest,
+    PasswordResetResponse,
+)
 
 __all__ = [
     "UserCreate", "UserResponse", "UserUpdate", "UserLogin", "Token",
@@ -15,4 +21,5 @@ __all__ = [
     "AscentCreate", "AscentResponse", "AscentUpdate", "AscentStatus",
     "UserStats", "WeeklyStats", "GradeDistribution",
     "InvitationCreate", "InvitationResponse", "InvitationLink",
+    "AdminUserResult", "PasswordResetLink", "PasswordResetRequest", "PasswordResetResponse",
 ]
