@@ -1,6 +1,12 @@
 """
 Test configuration and fixtures.
 """
+import os
+
+# Provide a valid test configuration before the app settings are loaded.
+os.environ.setdefault("DEBUG", "true")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production")
+
 import pytest
 import secrets
 from datetime import date, datetime, timedelta

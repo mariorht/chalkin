@@ -488,7 +488,7 @@ def update_exercise(
     
     # Verify ownership through session
     session = db.query(ClimbingSession).filter(ClimbingSession.id == db_exercise.session_id).first()
-    if session.user_id != current_user.id:
+    if not session or session.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only update your own exercises"
@@ -523,7 +523,7 @@ def delete_exercise(
     
     # Verify ownership through session
     session = db.query(ClimbingSession).filter(ClimbingSession.id == db_exercise.session_id).first()
-    if session.user_id != current_user.id:
+    if not session or session.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only delete your own exercises"
