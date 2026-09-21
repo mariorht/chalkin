@@ -610,9 +610,9 @@
 
             const gradeHTML = `
                 <div class="grade-item" id="grade-${gradeId}">
-                    <input type="color" class="grade-color-picker" name="grade_color_${gradeId}" value="${color}">
-                    <input type="text" name="grade_label_${gradeId}" placeholder="Nombre del grado" value="${label}" required>
-                    <input type="number" class="grade-difficulty" name="grade_difficulty_${gradeId}" min="1" max="15" value="${difficulty}" placeholder="1-15" required>
+                    <input type="color" class="grade-color-picker" name="grade_color_${gradeId}" value="${escapeHtml(color)}">
+                    <input type="text" name="grade_label_${gradeId}" placeholder="Nombre del grado" value="${escapeHtml(label)}" required>
+                    <input type="number" class="grade-difficulty" name="grade_difficulty_${gradeId}" min="1" max="15" value="${escapeHtml(difficulty)}" placeholder="1-15" required>
                     <button type="button" class="btn-remove-grade" onclick="removeGrade(${gradeId})">✕</button>
                 </div>
             `;
@@ -830,8 +830,8 @@
                 }
                 
                 resultsDiv.innerHTML = results.map(r => `
-                    <div class="search-result-item" onclick="selectSearchResult(${r.lat}, ${r.lon}, '${r.display_name.replace(/'/g, "\\'")}')">
-                        📍 ${r.display_name}
+                    <div class="search-result-item" data-name="${escapeHtml(r.display_name)}" onclick="selectSearchResult(${Number(r.lat)}, ${Number(r.lon)}, this.dataset.name)">
+                        📍 ${escapeHtml(r.display_name)}
                     </div>
                 `).join('');
                 

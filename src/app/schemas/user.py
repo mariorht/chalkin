@@ -14,18 +14,23 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """Schema for creating a new user."""
-    password: str = Field(..., min_length=6, max_length=100)
+    password: str = Field(..., min_length=8, max_length=100)
     home_gym_id: Optional[int] = None
     invitation_token: Optional[str] = None  # Required for registration
 
 
 class UserUpdate(BaseModel):
-    """Schema for updating user info."""
+    """Schema for updating user info.
+
+    ``profile_picture`` is intentionally NOT settable here: it is only updated
+    through the upload endpoint, so users cannot inject arbitrary URLs/paths.
+    """
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     home_gym_id: Optional[int] = None
-    profile_picture: Optional[str] = None
-    password: Optional[str] = Field(None, min_length=6, max_length=100)
+    password: Optional[str] = Field(None, min_length=8, max_length=100)
+    # Required when changing the password.
+    current_password: Optional[str] = Field(None, min_length=1, max_length=100)
 
 
 class UserResponse(UserBase):

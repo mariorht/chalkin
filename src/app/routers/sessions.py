@@ -73,6 +73,7 @@ def enrich_session(session: ClimbingSession, db: Session) -> dict:
         "ended_at": session.ended_at,
         "created_at": session.created_at,
         "updated_at": session.updated_at,
+        "strava_activity_id": session.strava_activity_id,
         "gym_name": gym_name,
         "gym_location": gym_location,
         "total_ascents": total_ascents,
@@ -195,6 +196,7 @@ def get_session(
         "ended_at": session.ended_at,
         "created_at": session.created_at,
         "updated_at": session.updated_at,
+        "strava_activity_id": session.strava_activity_id,
         "gym_name": gym_name,
         "ascents": ascents,
         "exercises": exercises,
@@ -488,7 +490,7 @@ def update_exercise(
     
     # Verify ownership through session
     session = db.query(ClimbingSession).filter(ClimbingSession.id == db_exercise.session_id).first()
-    if session.user_id != current_user.id:
+    if not session or session.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only update your own exercises"
@@ -523,7 +525,7 @@ def delete_exercise(
     
     # Verify ownership through session
     session = db.query(ClimbingSession).filter(ClimbingSession.id == db_exercise.session_id).first()
-    if session.user_id != current_user.id:
+    if not session or session.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only delete your own exercises"

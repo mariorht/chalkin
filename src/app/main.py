@@ -33,13 +33,29 @@ app = FastAPI(
 )
 
 # CORS middleware for frontend
+# Only the configured origins are allowed (same-origin requests need no CORS).
+allowed_origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure properly in production
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Add baseline security headers to every response."""
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "frame-ancestors 'none'; base-uri 'self'; object-src 'none'",
+    )
+    return response
 
 # Register API routers
 app.include_router(auth_router, prefix="/api")
@@ -94,14 +110,28 @@ async def serve_manifest():
     return FileResponse(manifest_path, media_type="application/manifest+json")
 
 # Serve service worker at root scope
-# DESACTIVADO TEMPORALMENTE - Descomentar cuando se quiera usar
-# @app.get("/sw.js", response_class=FileResponse)
+# DESACTIVADO: notificaciones push no se usan de momento.
+# Descomentar junto con AppShell.setupPush() en static/js/app-shell.js.
+# @app.get("/sw.js")
 # def serve_sw():
-#     return os.path.join(static_dir, "sw.js")
+#     return FileResponse(
+#         os.path.join(static_dir, "sw.js"),
+#         media_type="application/javascript",
+#         headers={"Cache-Control": "no-cache"},
+#     )
 
 # Serve uploaded files from uploads directory
+class NoSniffStaticFiles(StaticFiles):
+    """Serve static files while preventing MIME-type sniffing."""
+
+    async def get_response(self, path: str, scope) -> Response:
+        response = await super().get_response(path, scope)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
+
 try:
-    app.mount("/data/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+    app.mount("/data/uploads", NoSniffStaticFiles(directory=uploads_dir), name="uploads")
 except RuntimeError:
     pass  # Directory doesn't exist yet, will be created on first upload
 

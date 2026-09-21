@@ -24,6 +24,8 @@ services:
       - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:support@example.com}
     ports:
       - "8001:8001"
+    # Hot-reload only for local development
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
     volumes:
       - ./src:/app
       - chalkin_data:/app/data

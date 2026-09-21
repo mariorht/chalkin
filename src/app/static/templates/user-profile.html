@@ -240,9 +240,9 @@
         
         function renderAvatar(user) {
             if (user.profile_picture) {
-                return `<img src="${user.profile_picture}" alt="${user.username}">`;
+                return `<img src="${escapeHtml(user.profile_picture)}" alt="${escapeHtml(user.username)}">`;
             }
-            return user.username.charAt(0).toUpperCase();
+            return escapeHtml(user.username.charAt(0).toUpperCase());
         }
         
         function renderFriendshipStatus(profile) {
@@ -254,7 +254,7 @@
             
             if (profile.friendship_status === 'accepted') {
                 return `
-                    <button class="btn btn-danger" onclick="removeFriend(${profile.id}, '${profile.username}')">
+                    <button class="btn btn-danger" onclick="removeFriend(${profile.id})">
                         Eliminar amigo
                     </button>
                 `;
@@ -296,8 +296,8 @@
                 document.getElementById('profileContent').innerHTML = `
                     <div class="profile-header">
                         <div class="profile-avatar">${renderAvatar(profile)}</div>
-                        <div class="profile-username">${profile.username}</div>
-                        ${profile.home_gym_name ? `<div style="color: #6B7280; font-size: 0.9rem; margin-bottom: 12px;"><svg viewBox="0 0 24 24" fill="#6B7280" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Gimnasio local: ${profile.home_gym_name}</div>` : ''}
+                        <div class="profile-username">${escapeHtml(profile.username)}</div>
+                        ${profile.home_gym_name ? `<div style="color: #6B7280; font-size: 0.9rem; margin-bottom: 12px;"><svg viewBox="0 0 24 24" fill="#6B7280" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Gimnasio local: ${escapeHtml(profile.home_gym_name)}</div>` : ''}
                         ${renderFriendshipStatus(profile)}
                         
                         <div class="stats-section">
@@ -344,12 +344,12 @@
             
             const initial = session.username.charAt(0).toUpperCase();
             const avatarContent = session.profile_picture 
-                ? `<img src="${session.profile_picture}" alt="${session.username}">` 
-                : initial;
+                ? `<img src="${escapeHtml(session.profile_picture)}" alt="${escapeHtml(session.username)}">` 
+                : escapeHtml(initial);
             
-            const displayTitle = session.title || `<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${session.gym_name}`;
-            const subtitleHtml = session.subtitle ? `<span class="session-subtitle">${session.subtitle}</span>` : '';
-            const locationHtml = session.title ? `<span class="session-location"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${session.gym_name}</span>` : '';
+            const displayTitle = session.title ? escapeHtml(session.title) : `<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${escapeHtml(session.gym_name)}`;
+            const subtitleHtml = session.subtitle ? `<span class="session-subtitle">${escapeHtml(session.subtitle)}</span>` : '';
+            const locationHtml = session.title ? `<span class="session-location"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${escapeHtml(session.gym_name)}</span>` : '';
             
             return `
                 <div class="feed-card" onclick="window.location.href='/sessions/${session.session_id}'">
@@ -357,7 +357,7 @@
                         <div class="user-info">
                             <div class="avatar ${session.is_own ? 'own' : ''}" onclick="event.stopPropagation(); window.location.href='/users?id=${session.user_id}'">${avatarContent}</div>
                             <div class="user-details">
-                                <span class="username ${session.is_own ? 'own' : ''}">${session.username}</span>
+                                <span class="username ${session.is_own ? 'own' : ''}">${escapeHtml(session.username)}</span>
                                 <span class="gym-name">${displayTitle}</span>
                                 ${subtitleHtml}
                                 ${locationHtml}
@@ -443,8 +443,8 @@
             }
         }
         
-        async function removeFriend(userId, username) {
-            if (!confirm(`¿Eliminar a ${username} de tus amigos?`)) return;
+        async function removeFriend(userId) {
+            if (!confirm('¿Eliminar a este usuario de tus amigos?')) return;
             
             try {
                 const res = await fetch(`${API_URL}/social/friends/${userId}`, {

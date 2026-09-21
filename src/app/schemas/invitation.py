@@ -12,9 +12,12 @@ class InvitationCreate(BaseModel):
 
 
 class InvitationResponse(BaseModel):
-    """Schema for invitation response."""
+    """Schema for invitation response.
+
+    The raw token is intentionally not exposed: only its hash is stored, and the
+    shareable link is returned once at creation time (``InvitationLink``).
+    """
     id: int
-    token: str
     created_by_user_id: int
     created_at: datetime
     expires_at: datetime
