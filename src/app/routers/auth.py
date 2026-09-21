@@ -54,6 +54,10 @@ def detect_image_type(content: bytes) -> Optional[str]:
     return None
 
 
+# Valid bcrypt hash used to equalize login timing for unknown emails.
+_DUMMY_PASSWORD_HASH = get_password_hash("chalkin-dummy-password")
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """
@@ -135,7 +139,17 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     """
     user = db.query(User).filter(User.email == credentials.email).first()
     
-    if not user or not verify_password(credentials.password, user.password_hash):
+    if not user:
+        # Run a dummy hash verification so the response time does not reveal
+        # whether the email exists (user enumeration via timing).
+        verify_password(credentials.password, _DUMMY_PASSWORD_HASH)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not verify_password(credentials.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
