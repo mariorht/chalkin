@@ -17,7 +17,7 @@ from app.db.base import Base
 from app.core.config import settings
 
 # Import all models so they're registered with Base.metadata
-from app.models import User, Gym, Grade, Session, Ascent, Invitation
+from app.models import User, Gym, Grade, Session, Ascent, Invitation, PasswordResetToken
 
 # Alembic Config object
 config = context.config

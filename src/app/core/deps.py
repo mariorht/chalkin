@@ -1,6 +1,7 @@
 """
 Authentication dependencies.
 """
+from datetime import timezone
 from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -48,7 +49,34 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    # Reject tokens issued before the last password change.
+    # Tokens without iat (legacy) are allowed.
+    issued_at = payload.get("iat")
+    if issued_at is not None and user.password_changed_at is not None:
+        changed_at = user.password_changed_at
+        if changed_at.tzinfo is None:
+            changed_at = changed_at.replace(tzinfo=timezone.utc)
+        if float(issued_at) < changed_at.timestamp():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token invalidated by a password change",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    
     return user
+
+
+def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
+    """
+    Dependency to get the current user, requiring admin privileges.
+    Raises 403 if the user is not an admin.
+    """
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required",
+        )
+    return current_user
 
 
 def get_optional_user(
