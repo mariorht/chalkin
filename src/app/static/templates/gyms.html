@@ -227,16 +227,16 @@
                 
                 container.innerHTML = gymsWithGrades.map(gym => {
                     const gradesHtml = gym.grades.slice(0, 8).map(grade => 
-                        `<span class="grade-pill" style="background: ${grade.color_hex || '#666'}">${grade.label}</span>`
+                        `<span class="grade-pill" style="background: ${escapeHtml(grade.color_hex || '#666')}">${escapeHtml(grade.label)}</span>`
                     ).join('');
                     
                     const moreGrades = gym.grades.length > 8 ? `<span class="grade-pill" style="background: #999">+${gym.grades.length - 8}</span>` : '';
                     
                     return `
                         <div class="gym-card">
-                            <h3>${gym.name}</h3>
+                            <h3>${escapeHtml(gym.name)}</h3>
                             <div class="gym-location">
-                                📍 ${gym.location || 'Sin ubicación'}
+                                📍 ${escapeHtml(gym.location || 'Sin ubicación')}
                             </div>
                             <div class="gym-grades">
                                 ${gradesHtml}${moreGrades}

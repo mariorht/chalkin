@@ -1191,10 +1191,10 @@
                     month: 'long', 
                     day: 'numeric' 
                 });
-                document.getElementById('sessionMeta').innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#6B7280;display:inline-block;vertical-align:middle;margin-right:4px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${session.gym_name || 'Gimnasio'} • ${dateStr}`;
+                document.getElementById('sessionMeta').innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#6B7280;display:inline-block;vertical-align:middle;margin-right:4px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${escapeHtml(session.gym_name || 'Gimnasio')} • ${dateStr}`;
                 
                 if (session.notes) {
-                    document.getElementById('sessionMeta').innerHTML += ` • ${session.notes}`;
+                    document.getElementById('sessionMeta').innerHTML += ` • ${escapeHtml(session.notes)}`;
                 }
                 
                 if (isSessionEnded || !isOwnSession) {
@@ -1388,8 +1388,8 @@
                 container.innerHTML = grades.map(grade => `
                     <button type="button" class="grade-btn" 
                             data-grade-id="${grade.id}"
-                            style="background: ${grade.color_hex || '#666'}">
-                        <span class="grade-name">${grade.label}</span>
+                            style="background: ${escapeHtml(grade.color_hex || '#666')}">
+                        <span class="grade-name">${escapeHtml(grade.label)}</span>
                     </button>
                 `).join('');
                 
@@ -1453,11 +1453,11 @@
                 
                 return `
                     <div class="ascent-item">
-                        <div class="ascent-grade" style="background: ${grade.color_hex || '#666'}">
-                            ${grade.label || '?'}
+                        <div class="ascent-grade" style="background: ${escapeHtml(grade.color_hex || '#666')}">
+                            ${escapeHtml(grade.label || '?')}
                         </div>
                         <div class="ascent-info">
-                            <div class="grade-label">${grade.label || 'Grado'}</div>
+                            <div class="grade-label">${escapeHtml(grade.label || 'Grado')}</div>
                             <div class="time">${time}</div>
                         </div>
                         <div class="ascent-status">${statusIcon}</div>
@@ -1527,11 +1527,11 @@
                 
                 return `
                     <div class="grade-row">
-                        <div class="grade-color" style="background: ${grade.color_hex || '#666'}">
-                            ${grade.label || '?'}
+                        <div class="grade-color" style="background: ${escapeHtml(grade.color_hex || '#666')}">
+                            ${escapeHtml(grade.label || '?')}
                         </div>
                         <div class="grade-info">
-                            <div class="grade-name">${grade.label || 'Grado'}</div>
+                            <div class="grade-name">${escapeHtml(grade.label || 'Grado')}</div>
                             <div class="grade-count">${total} bloque${total !== 1 ? 's' : ''} • ${details.join(' ')}</div>
                         </div>
                     </div>
@@ -2103,9 +2103,9 @@
                 return `
                     <div class="exercise-item">
                         <div class="exercise-info">
-                            <div class="exercise-type">${icon}${typeName}</div>
-                            ${details.length > 0 ? `<div class="exercise-details-text">${details.join(' • ')}</div>` : ''}
-                            ${ex.notes ? `<div class="exercise-notes">"${ex.notes}"</div>` : ''}
+                            <div class="exercise-type">${icon}${escapeHtml(typeName)}</div>
+                            ${details.length > 0 ? `<div class="exercise-details-text">${escapeHtml(details.join(' • '))}</div>` : ''}
+                            ${ex.notes ? `<div class="exercise-notes">"${escapeHtml(ex.notes)}"</div>` : ''}
                         </div>
                         ${canEdit ? `
                             <div class="exercise-actions">

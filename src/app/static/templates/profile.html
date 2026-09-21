@@ -505,9 +505,13 @@
                 <div class="password-section">
                     <h3><svg viewBox="0 0 24 24" fill="#6B7280" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>Cambiar contraseña</h3>
                     <div class="form-group">
+                        <label for="currentPassword">Contraseña actual</label>
+                        <input type="password" id="currentPassword" name="current_password" placeholder="Solo si cambias la contraseña">
+                    </div>
+                    <div class="form-group">
                         <label for="newPassword">Nueva contraseña</label>
-                        <input type="password" id="newPassword" name="password" minlength="6" placeholder="Dejar vacío para no cambiar">
-                        <p class="form-hint">Mínimo 6 caracteres</p>
+                        <input type="password" id="newPassword" name="password" minlength="8" placeholder="Dejar vacío para no cambiar">
+                        <p class="form-hint">Mínimo 8 caracteres. Al cambiarla tendrás que iniciar sesión de nuevo.</p>
                     </div>
                 </div>
 
@@ -882,8 +886,16 @@
             };
             
             const newPassword = document.getElementById('newPassword').value;
+            const currentPassword = document.getElementById('currentPassword').value;
             if (newPassword) {
+                if (!currentPassword) {
+                    showAlert('error', 'Introduce tu contraseña actual para cambiarla');
+                    btn.disabled = false;
+                    btn.textContent = '💾 Guardar cambios';
+                    return;
+                }
                 data.password = newPassword;
+                data.current_password = currentPassword;
             }
             
             try {
@@ -897,8 +909,19 @@
                 
                 if (response.ok) {
                     currentUser = await response.json();
+                    
+                    // Changing the password invalidates the session: re-login.
+                    if (newPassword) {
+                        showAlert('success', 'Contraseña cambiada. Inicia sesión de nuevo.');
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        setTimeout(() => { window.location.href = '/login'; }, 1200);
+                        return;
+                    }
+                    
                     showAlert('success', 'Perfil actualizado');
                     document.getElementById('newPassword').value = '';
+                    document.getElementById('currentPassword').value = '';
                     
                     // Update localStorage and app shell
                     updateLocalStorage();

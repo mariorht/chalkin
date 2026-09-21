@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.db.base import get_db
 from app.core.deps import get_current_user
+from app.core.security import hash_token
 from app.models.user import User
 from app.models.invitation import Invitation
 from app.schemas.invitation import InvitationCreate, InvitationResponse, InvitationLink
@@ -31,9 +32,9 @@ def generate_invitation(
     # Set expiry to 24 hours from now
     expires_at = datetime.utcnow() + timedelta(hours=24)
     
-    # Create invitation
+    # Create invitation (only the hash is stored; the raw token is shown once)
     invitation = Invitation(
-        token=token,
+        token=hash_token(token),
         created_by_user_id=current_user.id,
         expires_at=expires_at,
         used=False
@@ -60,7 +61,7 @@ def validate_invitation(token: str, db: Session = Depends(get_db)):
     Validate if an invitation token is valid and unused.
     Returns basic info about the invitation status.
     """
-    invitation = db.query(Invitation).filter(Invitation.token == token).first()
+    invitation = db.query(Invitation).filter(Invitation.token == hash_token(token)).first()
     
     if not invitation:
         raise HTTPException(

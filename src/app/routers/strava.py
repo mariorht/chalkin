@@ -3,17 +3,20 @@ Strava OAuth router - Handle authorization and token exchange.
 """
 from typing import Optional
 from datetime import datetime, timedelta
+from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session, joinedload
 import httpx
 import io
+import logging
 import xml.etree.ElementTree as ET
 import re
 import math
 
 from app.core.config import settings
 from app.core.deps import get_db, get_current_user
+from app.core.security import create_oauth_state, decrypt_token, encrypt_token, verify_oauth_state
 from app.models.user import User
 from app.models.strava_connection import StravaConnection
 from app.models.session import Session as ClimbingSession
@@ -24,12 +27,12 @@ from app.utils.svg_parser import (
     extract_svg_paths,
     svg_to_points,
     scale_and_center_points,
-    CHALKIN_LOGO_SIMPLIFIED
 )
 import os
 
 
 router = APIRouter(prefix="/strava", tags=["strava"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/connect")
@@ -41,7 +44,8 @@ async def connect_strava(current_user: User = Depends(get_current_user)):
     if not settings.strava_client_id or not settings.strava_redirect_uri:
         raise HTTPException(status_code=500, detail="Strava not configured")
     
-    # Build authorization URL
+    # Build authorization URL with a signed, expiring state (CSRF protection)
+    state = quote(create_oauth_state(current_user.id))
     auth_url = (
         f"https://www.strava.com/oauth/authorize"
         f"?client_id={settings.strava_client_id}"
@@ -49,7 +53,7 @@ async def connect_strava(current_user: User = Depends(get_current_user)):
         f"&redirect_uri={settings.strava_redirect_uri}"
         f"&approval_prompt=auto"
         f"&scope=activity:write,read"
-        f"&state={current_user.id}"  # Use user_id as state for security
+        f"&state={state}"
     )
     
     return {"auth_url": auth_url}
@@ -73,11 +77,10 @@ async def strava_callback(
     if not code or not state:
         raise HTTPException(status_code=400, detail="Missing code or state")
     
-    # Verify state (user_id)
-    try:
-        user_id = int(state)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid state")
+    # Verify the signed state and recover the user id
+    user_id = verify_oauth_state(state)
+    if user_id is None:
+        raise HTTPException(status_code=400, detail="Invalid or expired state")
     
     # Check if user exists
     user = db.query(User).filter(User.id == user_id).first()
@@ -87,9 +90,6 @@ async def strava_callback(
     # Exchange code for tokens
     if not settings.strava_client_id or not settings.strava_client_secret:
         raise HTTPException(status_code=500, detail="Strava not configured")
-    
-    print(f"DEBUG: Exchanging token with redirect_uri: {settings.strava_redirect_uri}")
-    print(f"DEBUG: Client ID: {settings.strava_client_id}")
     
     # Increase timeout for IPv6-only servers
     async with httpx.AsyncClient(timeout=30.0) as client:
@@ -104,30 +104,24 @@ async def strava_callback(
                     "redirect_uri": settings.strava_redirect_uri
                 }
             )
-            print(f"DEBUG: Strava response status: {response.status_code}")
-            print(f"DEBUG: Strava response body: {response.text}")
             
             if response.status_code != 200:
-                error_body = response.text
-                try:
-                    error_json = response.json()
-                    error_body = str(error_json)
-                except:
-                    pass
+                # Do not forward Strava's response body to the client
+                logger.warning(
+                    "Strava token exchange failed with status %s",
+                    response.status_code,
+                )
                 raise HTTPException(
-                    status_code=400, 
-                    detail=f"Strava authentication failed: {error_body}"
+                    status_code=400,
+                    detail="Strava authentication failed"
                 )
             
             token_data = response.json()
         except HTTPException:
             raise
         except Exception as e:
-            error_msg = f"Failed to exchange token: {str(e)}"
-            print(f"ERROR: {error_msg}")
-            import traceback
-            traceback.print_exc()
-            raise HTTPException(status_code=400, detail=error_msg)
+            logger.warning("Strava token exchange error: %s", e)
+            raise HTTPException(status_code=400, detail="Strava authentication failed")
     
     # Extract token data
     access_token = token_data.get("access_token")
@@ -147,8 +141,8 @@ async def strava_callback(
     
     if existing:
         existing.athlete_id = athlete_id
-        existing.access_token = access_token
-        existing.refresh_token = refresh_token
+        existing.access_token = encrypt_token(access_token)
+        existing.refresh_token = encrypt_token(refresh_token)
         existing.expires_at = expires_at
         existing.scope = scope
         existing.updated_at = datetime.utcnow()
@@ -156,8 +150,8 @@ async def strava_callback(
         connection = StravaConnection(
             user_id=user_id,
             athlete_id=athlete_id,
-            access_token=access_token,
-            refresh_token=refresh_token,
+            access_token=encrypt_token(access_token),
+            refresh_token=encrypt_token(refresh_token),
             expires_at=expires_at,
             scope=scope
         )
@@ -246,18 +240,19 @@ async def refresh_access_token(
                 data={
                     "client_id": settings.strava_client_id,
                     "client_secret": settings.strava_client_secret,
-                    "refresh_token": connection.refresh_token,
+                    "refresh_token": decrypt_token(connection.refresh_token),
                     "grant_type": "refresh_token"
                 }
             )
             response.raise_for_status()
             token_data = response.json()
         except httpx.HTTPError as e:
-            raise HTTPException(status_code=400, detail=f"Failed to refresh token: {str(e)}")
+            logger.warning("Failed to refresh Strava token: %s", e)
+            raise HTTPException(status_code=400, detail="Failed to refresh token")
     
     # Update connection with new tokens
-    connection.access_token = token_data.get("access_token")
-    connection.refresh_token = token_data.get("refresh_token")
+    connection.access_token = encrypt_token(token_data.get("access_token"))
+    connection.refresh_token = encrypt_token(token_data.get("refresh_token"))
     connection.expires_at = token_data.get("expires_at")
     connection.updated_at = datetime.utcnow()
     
@@ -294,7 +289,7 @@ async def get_valid_token(user_id: int, db: Session) -> str:
                     data={
                         "client_id": settings.strava_client_id,
                         "client_secret": settings.strava_client_secret,
-                        "refresh_token": connection.refresh_token,
+                        "refresh_token": decrypt_token(connection.refresh_token),
                         "grant_type": "refresh_token"
                     }
                 )
@@ -302,15 +297,16 @@ async def get_valid_token(user_id: int, db: Session) -> str:
                 token_data = response.json()
                 
                 # Update connection
-                connection.access_token = token_data.get("access_token")
-                connection.refresh_token = token_data.get("refresh_token")
+                connection.access_token = encrypt_token(token_data.get("access_token"))
+                connection.refresh_token = encrypt_token(token_data.get("refresh_token"))
                 connection.expires_at = token_data.get("expires_at")
                 connection.updated_at = datetime.utcnow()
                 db.commit()
             except httpx.HTTPError as e:
-                raise HTTPException(status_code=400, detail=f"Failed to refresh token: {str(e)}")
+                logger.warning("Failed to refresh Strava token: %s", e)
+                raise HTTPException(status_code=400, detail="Failed to refresh token")
     
-    return connection.access_token
+    return decrypt_token(connection.access_token)
 
 
 def generate_gpx_file(lat: float, lon: float, start_time: datetime, duration: int, activity_name: str, description: str) -> bytes:
@@ -499,7 +495,7 @@ async def upload_session_to_strava(
                 ).encode('utf-8')
             except Exception as e:
                 # If logo generation fails, use simple single point
-                print(f"Warning: Failed to generate logo GPX, using simple point: {e}")
+                logger.warning("Failed to generate logo GPX, using simple point: %s", e)
                 gpx_content = generate_gpx_file(
                     lat=session.gym.latitude,
                     lon=session.gym.longitude,
@@ -535,15 +531,10 @@ async def upload_session_to_strava(
                     response.raise_for_status()
                     upload_result = response.json()
                 except httpx.HTTPError as e:
-                    error_detail = str(e)
-                    if hasattr(e, 'response') and e.response is not None:
-                        try:
-                            error_detail = e.response.json()
-                        except:
-                            error_detail = e.response.text
+                    logger.warning("Failed to upload GPX to Strava: %s", e)
                     raise HTTPException(
-                        status_code=400, 
-                        detail=f"Failed to upload GPX to Strava: {error_detail}"
+                        status_code=400,
+                        detail="Failed to upload activity to Strava"
                     )
             
             # Get activity ID from upload (may need to poll for completion)
@@ -580,15 +571,10 @@ async def upload_session_to_strava(
                     activity = response.json()
                     activity_id = activity.get("id")
                 except httpx.HTTPError as e:
-                    error_detail = str(e)
-                    if hasattr(e, 'response') and e.response is not None:
-                        try:
-                            error_detail = e.response.json()
-                        except:
-                            error_detail = e.response.text
+                    logger.warning("Failed to upload activity to Strava: %s", e)
                     raise HTTPException(
-                        status_code=400, 
-                        detail=f"Failed to upload to Strava: {error_detail}"
+                        status_code=400,
+                        detail="Failed to upload activity to Strava"
                     )
         
         # Save Strava activity ID
@@ -605,13 +591,11 @@ async def upload_session_to_strava(
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        # Log and return any unexpected errors
-        import traceback
-        error_trace = traceback.format_exc()
-        print(f"Error uploading to Strava: {error_trace}")
+        # Log the details server-side but do not leak them to the client
+        logger.exception("Unexpected error uploading to Strava")
         raise HTTPException(
-            status_code=500, 
-            detail=f"Internal error while uploading to Strava: {str(e)}"
+            status_code=500,
+            detail="Internal error while uploading to Strava"
         )
 
 
@@ -666,7 +650,7 @@ def build_ascent_summary(ascents) -> str:
                     if grade_name and not grade_name.startswith('<') and grade_name != 'None':
                         grade_counts[grade_name] = grade_counts.get(grade_name, 0) + 1
         except Exception as e:
-            print(f"Error processing grade for ascent: {e}")
+            logger.warning("Error processing grade for ascent: %s", e)
             continue
     
     # Color emoji mapping
@@ -766,69 +750,3 @@ def generate_gpx_from_points(points, start_time: datetime, duration: int, activi
     
     return gpx_header + '\n'.join(track_points) + gpx_footer
 
-
-@router.get("/svg-to-gpx")
-async def svg_to_gpx_test(
-    center_lat: float = Query(40.416775, description="Center latitude"),
-    center_lon: float = Query(-3.703790, description="Center longitude"),
-    scale_meters: float = Query(100, description="Size in meters"),
-    num_points: int = Query(200, description="Number of GPS points"),
-    use_logo: bool = Query(True, description="Use Chalkin logo or test shape")
-):
-    """
-    Test endpoint to convert the Chalkin logo SVG to GPX.
-    Returns a GPX file that can be viewed on a map.
-    
-    Example URLs:
-    - /api/strava/svg-to-gpx (uses default Madrid coordinates)
-    - /api/strava/svg-to-gpx?center_lat=40.416775&center_lon=-3.703790&scale_meters=150
-    - /api/strava/svg-to-gpx?use_logo=false (uses simple test shape)
-    """
-    try:
-        if use_logo:
-            # Use simplified Chalkin logo path
-            path_d = CHALKIN_LOGO_SIMPLIFIED
-        else:
-            # Use a simple test shape (triangle)
-            path_d = "M 50 10 L 90 90 L 10 90 Z"
-        
-        # Convert SVG path to points
-        points = svg_to_points(path_d, num_points=num_points)
-        
-        if not points:
-            raise HTTPException(status_code=400, detail="Failed to parse SVG path")
-        
-        # Convert to GPS coordinates
-        gps_points = scale_and_center_points(points, center_lat, center_lon, scale_meters)
-        
-        # Generate GPX
-        start_time = datetime.utcnow()
-        duration = 3600  # 1 hour
-        activity_name = "Chalkin Logo" if use_logo else "Test Shape"
-        description = f"GPS shape centered at ({center_lat:.6f}, {center_lon:.6f}), scale: {scale_meters}m"
-        
-        gpx_content = generate_gpx_from_points(
-            gps_points,
-            start_time,
-            duration,
-            activity_name,
-            description
-        )
-        
-        # Return as downloadable GPX file
-        return Response(
-            content=gpx_content,
-            media_type="application/gpx+xml",
-            headers={
-                "Content-Disposition": f"attachment; filename=chalkin_{'logo' if use_logo else 'test'}.gpx"
-            }
-        )
-        
-    except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        print(f"Error generating GPX: {error_trace}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error generating GPX: {str(e)}"
-        )

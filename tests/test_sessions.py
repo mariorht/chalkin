@@ -79,6 +79,19 @@ class TestSessions:
         assert data["sends"] == 2  # 2 SENDs
         assert data["flashes"] == 1  # 1 FLASH
         assert data["projects"] == 1  # 1 PROJECT
+
+    def test_session_includes_strava_activity_id(self, client, auth_headers, test_session, db):
+        """Uploaded sessions must expose strava_activity_id so the UI can link to it."""
+        test_session.strava_activity_id = 123456789
+        db.commit()
+
+        detail = client.get(f"/api/sessions/{test_session.id}", headers=auth_headers)
+        assert detail.status_code == 200
+        assert detail.json()["strava_activity_id"] == 123456789
+
+        listing = client.get("/api/sessions", headers=auth_headers)
+        assert listing.status_code == 200
+        assert listing.json()[0]["strava_activity_id"] == 123456789
     
     def test_get_session_not_found(self, client, auth_headers):
         """Test getting non-existent session."""

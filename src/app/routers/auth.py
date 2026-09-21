@@ -4,13 +4,15 @@ Authentication router - register, login, profile.
 import os
 import uuid
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Request
 from sqlalchemy.orm import Session
 
 from app.db.base import get_db
 from app.core.security import verify_password, get_password_hash, create_access_token, hash_token
 from app.core.deps import get_current_user
 from app.core.config import settings
+from app.core.ratelimit import SlidingWindowLimiter
 from app.models.user import User
 from app.models.invitation import Invitation
 from app.models.password_reset import PasswordResetToken
@@ -31,6 +33,44 @@ except PermissionError:
     PROFILE_PICS_DIR = os.path.join(os.path.dirname(_base_dir), "uploads", "profiles")
     os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
 
+# Canonical image MIME types we accept, mapped to the extension we store.
+_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+}
+
+
+def detect_image_type(content: bytes) -> Optional[str]:
+    """Detect the real image type from magic bytes (never trust the client)."""
+    if content.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if content.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if content[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if content[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
+# Valid bcrypt hash used to equalize login timing for unknown emails.
+_DUMMY_PASSWORD_HASH = get_password_hash("chalkin-dummy-password")
+
+# Allow 10 failed login attempts per email/IP per 15 minutes.
+_login_limiter = SlidingWindowLimiter(max_attempts=10, window_seconds=900)
+
+
+def _client_ip(request: Request) -> str:
+    """Best-effort client IP, honouring the reverse proxy headers."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.headers.get("x-real-ip") or (
+        request.client.host if request.client else "unknown"
+    )
+
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
@@ -46,7 +86,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         )
     
     invitation = db.query(Invitation).filter(
-        Invitation.token == user_data.invitation_token
+        Invitation.token == hash_token(user_data.invitation_token)
     ).first()
     
     if not invitation:
@@ -107,18 +147,38 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
+def login(credentials: UserLogin, request: Request, db: Session = Depends(get_db)):
     """
     Login and get access token.
     """
+    limiter_key = f"{_client_ip(request)}:{credentials.email.lower()}"
+    if not _login_limiter.allow(limiter_key):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many login attempts. Please try again later.",
+        )
+    
     user = db.query(User).filter(User.email == credentials.email).first()
     
-    if not user or not verify_password(credentials.password, user.password_hash):
+    if not user:
+        # Run a dummy hash verification so the response time does not reveal
+        # whether the email exists (user enumeration via timing).
+        verify_password(credentials.password, _DUMMY_PASSWORD_HASH)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    if not verify_password(credentials.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Successful login clears the failed-attempt counter.
+    _login_limiter.reset(limiter_key)
     
     access_token = create_access_token(
         data={"sub": str(user.id)},
@@ -208,9 +268,19 @@ def update_profile(
     
     # Update fields
     update_data = user_data.model_dump(exclude_unset=True)
+    # current_password is only used for verification, never stored.
+    current_password = update_data.pop("current_password", None)
     
     if "password" in update_data:
+        # Changing the password requires the current one.
+        if not current_password or not verify_password(current_password, current_user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is required and must be correct"
+            )
         update_data["password_hash"] = get_password_hash(update_data.pop("password"))
+        # Invalidate all JWTs issued before this change (the user re-logs in).
+        current_user.password_changed_at = datetime.utcnow()
     
     for field, value in update_data.items():
         setattr(current_user, field, value)
@@ -230,20 +300,40 @@ async def upload_profile_picture(
     """
     Upload a profile picture.
     """
-    # Validate file type
-    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
-    if file.content_type not in allowed_types:
+    # Read with a hard size cap to avoid memory exhaustion.
+    content = await file.read(settings.max_file_size + 1)
+    if len(content) > settings.max_file_size:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large (max {settings.max_file_size} bytes)"
+        )
+    if not content:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be an image (JPEG, PNG, GIF, or WebP)"
+            detail="Empty file"
         )
-    
+
+    # Determine the real type from the file contents, never from the client.
+    detected_type = detect_image_type(content)
+    if detected_type is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be a valid image (JPEG, PNG, GIF, or WebP)"
+        )
+
+    # The declared type must match the actual content type.
+    if file.content_type != detected_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File content does not match its declared type"
+        )
+
     # Create directory if it doesn't exist
     os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
-    
-    # Generate unique filename
-    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-    filename = f"{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
+
+    # Extension is derived from the detected type, never from the filename.
+    ext = _ALLOWED_IMAGE_TYPES[detected_type]
+    filename = f"{current_user.id}_{uuid.uuid4().hex}.{ext}"
     filepath = os.path.join(PROFILE_PICS_DIR, filename)
     
     # Delete old profile picture if exists
@@ -253,7 +343,6 @@ async def upload_profile_picture(
             os.remove(old_path)
     
     # Save new file
-    content = await file.read()
     with open(filepath, "wb") as f:
         f.write(content)
     
