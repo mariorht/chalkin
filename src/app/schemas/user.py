@@ -14,7 +14,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """Schema for creating a new user."""
-    password: str = Field(..., min_length=6, max_length=100)
+    password: str = Field(..., min_length=8, max_length=100)
     home_gym_id: Optional[int] = None
     invitation_token: Optional[str] = None  # Required for registration
 
@@ -28,7 +28,7 @@ class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     home_gym_id: Optional[int] = None
-    password: Optional[str] = Field(None, min_length=6, max_length=100)
+    password: Optional[str] = Field(None, min_length=8, max_length=100)
 
 
 class UserResponse(UserBase):

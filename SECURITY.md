@@ -67,15 +67,19 @@ verificado.
   (`frame-ancestors 'none'; base-uri 'self'; object-src 'none'`); nginx añade
   HSTS. **Pendiente**: `script-src` estricto (requiere quitar los `<script>`
   inline o usar nonces; hoy el CSP no bloquea XSS inline)._
-- [ ] **M4. Sin rate limiting** en `/api/auth/login` (fuerza bruta).
+- [x] **M4. Sin rate limiting** en `/api/auth/login`. _Fix: limitador en memoria
+  (10 fallos / 15 min por email+IP), se resetea al acertar. Tests en
+  `tests/test_auth.py`._
 - [ ] **M5. Gym/Grades sin autorización** — cualquier usuario autenticado puede
   editar/borrar cualquier gym y sus grades (`routers/gyms.py`,
   `routers/grades.py`). **Requiere decisión de producto** (modelo de propiedad).
 - [ ] **M6. Cambio de contraseña sin verificar la actual** — `PATCH /auth/me`
   no pide la contraseña actual y no actualiza `password_changed_at`.
   **Requiere decisión**: exigir la actual e invalidar sesiones se nota en la UX.
-- [ ] **M7. Tokens OAuth de Strava en texto plano** en base de datos
-  (`models/strava_connection.py`).
+- [x] **M7. Tokens OAuth de Strava en texto plano**. _Fix: cifrados con Fernet
+  (clave derivada de `SECRET_KEY`, o `TOKEN_ENCRYPTION_KEY` si se define), con
+  fallback a texto plano para las conexiones existentes. Tests en
+  `tests/test_security.py`._
 
 ## Bajo
 
@@ -89,9 +93,13 @@ verificado.
   hashear como los de reset.
 - [ ] **B5. `get_user_profile`** expone sesiones de cualquier usuario a
   cualquier autenticado (`routers/social.py`).
-- [ ] **B6. Dockerfile** corre como root y usa `--reload` también en producción.
+- [ ] **B6. Dockerfile** corre como root y usaba `--reload` en producción.
+  _Parcial: `--reload` quitado del `Dockerfile` (sigue en `docker-compose.yml`
+  para dev). **Pendiente** ejecutar como usuario no root: requiere un `chown`
+  único del volumen `chalkin_data` existente, o la app no podrá escribir la BD._
 - [x] **B7. `sessions.py`** podía lanzar 500 si la sesión del ejercicio no
   existe. _Fix: comprobación de `session` nula._
-- [ ] **B8. Política de contraseñas débil** (mínimo 6 caracteres).
+- [x] **B8. Política de contraseñas débil** (mínimo 6 caracteres). _Fix: mínimo
+  8 en schemas y formularios._
 - [x] **B9. Bounds de dependencias antiguos**. _Fix: `python-jose>=3.4.0`,
   `python-multipart>=0.0.18`._

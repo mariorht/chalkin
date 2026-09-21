@@ -9,6 +9,23 @@ from app.core.config import Settings
 from app.core.security import create_oauth_state, verify_oauth_state
 
 
+class TestTokenEncryption:
+    """Third-party tokens are encrypted at rest (M7)."""
+
+    def test_roundtrip(self):
+        from app.core.security import encrypt_token, decrypt_token
+
+        secret = "strava-access-token-abc123"
+        encrypted = encrypt_token(secret)
+        assert encrypted != secret
+        assert decrypt_token(encrypted) == secret
+
+    def test_legacy_plaintext_passthrough(self):
+        from app.core.security import decrypt_token
+
+        assert decrypt_token("plain-legacy-token") == "plain-legacy-token"
+
+
 class TestSecretKeyValidation:
     """SECRET_KEY must be strong outside debug mode (A1)."""
 
