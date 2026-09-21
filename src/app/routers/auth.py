@@ -86,7 +86,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         )
     
     invitation = db.query(Invitation).filter(
-        Invitation.token == user_data.invitation_token
+        Invitation.token == hash_token(user_data.invitation_token)
     ).first()
     
     if not invitation:
@@ -268,9 +268,19 @@ def update_profile(
     
     # Update fields
     update_data = user_data.model_dump(exclude_unset=True)
+    # current_password is only used for verification, never stored.
+    current_password = update_data.pop("current_password", None)
     
     if "password" in update_data:
+        # Changing the password requires the current one.
+        if not current_password or not verify_password(current_password, current_user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is required and must be correct"
+            )
         update_data["password_hash"] = get_password_hash(update_data.pop("password"))
+        # Invalidate all JWTs issued before this change (the user re-logs in).
+        current_user.password_changed_at = datetime.utcnow()
     
     for field, value in update_data.items():
         setattr(current_user, field, value)
