@@ -4,6 +4,7 @@ Authentication router - register, login, profile.
 import os
 import uuid
 from datetime import datetime, timedelta
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 
@@ -30,6 +31,27 @@ try:
 except PermissionError:
     PROFILE_PICS_DIR = os.path.join(os.path.dirname(_base_dir), "uploads", "profiles")
     os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
+
+# Canonical image MIME types we accept, mapped to the extension we store.
+_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+}
+
+
+def detect_image_type(content: bytes) -> Optional[str]:
+    """Detect the real image type from magic bytes (never trust the client)."""
+    if content.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if content.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if content[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if content[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        return "image/webp"
+    return None
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -230,20 +252,40 @@ async def upload_profile_picture(
     """
     Upload a profile picture.
     """
-    # Validate file type
-    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
-    if file.content_type not in allowed_types:
+    # Read with a hard size cap to avoid memory exhaustion.
+    content = await file.read(settings.max_file_size + 1)
+    if len(content) > settings.max_file_size:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large (max {settings.max_file_size} bytes)"
+        )
+    if not content:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be an image (JPEG, PNG, GIF, or WebP)"
+            detail="Empty file"
         )
-    
+
+    # Determine the real type from the file contents, never from the client.
+    detected_type = detect_image_type(content)
+    if detected_type is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be a valid image (JPEG, PNG, GIF, or WebP)"
+        )
+
+    # The declared type must match the actual content type.
+    if file.content_type != detected_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File content does not match its declared type"
+        )
+
     # Create directory if it doesn't exist
     os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
-    
-    # Generate unique filename
-    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-    filename = f"{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
+
+    # Extension is derived from the detected type, never from the filename.
+    ext = _ALLOWED_IMAGE_TYPES[detected_type]
+    filename = f"{current_user.id}_{uuid.uuid4().hex}.{ext}"
     filepath = os.path.join(PROFILE_PICS_DIR, filename)
     
     # Delete old profile picture if exists
@@ -253,7 +295,6 @@ async def upload_profile_picture(
             os.remove(old_path)
     
     # Save new file
-    content = await file.read()
     with open(filepath, "wb") as f:
         f.write(content)
     

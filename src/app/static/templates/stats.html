@@ -759,12 +759,12 @@
                 return `
                     <div style="margin-bottom: 1.5rem;">
                         <h3 style="color: var(--dark); font-size: 1rem; margin-bottom: 0.75rem; padding-left: 0.5rem;">
-                            📍 ${gymName}
+                            📍 ${escapeHtml(gymName)}
                         </h3>
                         <div style="background: #F8F9FA; border-radius: 12px; padding: 1rem;">
                             ${gymGrades.map(grade => `
                                 <div class="grade-row">
-                                    <div class="grade-color" style="background: ${grade.color_hex || '#666'}">${grade.grade_label}</div>
+                                    <div class="grade-color" style="background: ${escapeHtml(grade.color_hex || '#666')}">${escapeHtml(grade.grade_label)}</div>
                                     <div class="grade-bar-container">
                                         <div class="grade-bar">
                                             <div class="grade-bar-fill" style="width: ${(grade.count / maxCount) * 100}%"></div>
@@ -800,7 +800,7 @@
                     <tbody>
                         ${gyms.map(gym => `
                             <tr>
-                                <td><strong>${gym.gym_name}</strong></td>
+                                <td><strong>${escapeHtml(gym.gym_name)}</strong></td>
                                 <td class="stat-value">${gym.total_sessions}</td>
                                 <td class="stat-value">${gym.total_ascents}</td>
                             </tr>
@@ -933,14 +933,14 @@
                 
                 html += `
                     <div class="gym-card">
-                        <h3><svg viewBox="0 0 24 24" fill="#2EC4B6" style="width:22px;height:22px;vertical-align:middle;margin-right:8px;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>${gym.gym_name}</h3>
+                        <h3><svg viewBox="0 0 24 24" fill="#2EC4B6" style="width:22px;height:22px;vertical-align:middle;margin-right:8px;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>${escapeHtml(gym.gym_name)}</h3>
                         
                         <!-- Legend -->
                         <div class="chart-legend">
                             ${users.map(u => `
                                 <div class="legend-item">
                                     <div class="legend-dot" style="background: ${userColorMap[u.user_id]}"></div>
-                                    <span class="legend-name ${u.is_current_user ? 'is-me' : ''}">${u.username}${u.is_current_user ? ' (tú)' : ''}</span>
+                                    <span class="legend-name ${u.is_current_user ? 'is-me' : ''}">${escapeHtml(u.username)}${u.is_current_user ? ' (tú)' : ''}</span>
                                 </div>
                             `).join('')}
                         </div>
@@ -948,7 +948,7 @@
                         <!-- Grade bars -->
                         ${gym.grades.map(grade => `
                             <div class="grade-chart-row">
-                                <div class="grade-label-box" style="background: ${grade.color}">${grade.label}</div>
+                                <div class="grade-label-box" style="background: ${escapeHtml(grade.color)}">${escapeHtml(grade.label)}</div>
                                 <div class="bars-container">
                                     ${grade.users.filter(u => userIds.has(u.user_id)).map(u => `
                                         <div class="user-bar-row">
@@ -967,8 +967,8 @@
                                 <div class="total-row">
                                     <div class="total-rank ${u.rank === 1 ? 'r1' : u.rank === 2 ? 'r2' : u.rank === 3 ? 'r3' : ''}">${u.rank === 1 ? '🥇' : u.rank === 2 ? '🥈' : u.rank === 3 ? '🥉' : u.rank}</div>
                                     <div class="total-user">
-                                        <div class="total-avatar" style="background: ${userColorMap[u.user_id]}">${u.username.charAt(0).toUpperCase()}</div>
-                                        <span class="total-name ${u.is_current_user ? 'is-me' : ''}">${u.username}</span>
+                                        <div class="total-avatar" style="background: ${userColorMap[u.user_id]}">${escapeHtml(u.username.charAt(0).toUpperCase())}</div>
+                                        <span class="total-name ${u.is_current_user ? 'is-me' : ''}">${escapeHtml(u.username)}</span>
                                     </div>
                                     <div class="total-value">${u.total_sends}</div>
                                 </div>
