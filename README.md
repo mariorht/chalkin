@@ -96,8 +96,8 @@ pip install -r requirements.txt
 ### 2. Configure
 
 ```bash
-# Copy environment template
-cp .env.example .env
+# Copy environment template (from the repo root into src/, where the app reads it)
+cp ../.env.example .env
 
 # Edit .env with your settings (especially SECRET_KEY for production!)
 ```
@@ -469,7 +469,7 @@ pip install -r src/requirements.txt
 ### 2. Configurar y crear BD
 
 ```bash
-cp src/.env.example src/.env
+cp .env.example src/.env
 
 cd src
 source ../venv/bin/activate
