@@ -77,6 +77,21 @@ class TestAuth:
         
         assert response.status_code == 401
     
+    def test_login_rate_limited_after_failures(self, client, test_user):
+        """Too many failed attempts for the same email/IP return 429."""
+        for _ in range(10):
+            client.post("/api/auth/login", json={
+                "email": "test@example.com",
+                "password": "wrongpassword"
+            })
+        
+        response = client.post("/api/auth/login", json={
+            "email": "test@example.com",
+            "password": "wrongpassword"
+        })
+        
+        assert response.status_code == 429
+    
     def test_get_profile(self, client, auth_headers, test_user):
         """Test getting current user profile."""
         response = client.get("/api/auth/me", headers=auth_headers)

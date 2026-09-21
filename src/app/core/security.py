@@ -18,6 +18,36 @@ from app.core.config import settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+def _token_cipher():
+    """Return a Fernet instance for encrypting third-party tokens at rest.
+
+    Uses TOKEN_ENCRYPTION_KEY when provided, otherwise derives a stable key
+    from SECRET_KEY so no extra configuration is required.
+    """
+    from cryptography.fernet import Fernet
+
+    if settings.token_encryption_key:
+        return Fernet(settings.token_encryption_key.encode("utf-8"))
+    digest = hashlib.sha256(settings.secret_key.encode("utf-8")).digest()
+    return Fernet(base64.urlsafe_b64encode(digest))
+
+
+def encrypt_token(plaintext: str) -> str:
+    """Encrypt a token before storing it in the database."""
+    return _token_cipher().encrypt(plaintext.encode("utf-8")).decode("ascii")
+
+
+def decrypt_token(value: str) -> str:
+    """Decrypt a stored token. Returns the value unchanged if it is not
+    encrypted (legacy plaintext rows written before encryption existed)."""
+    from cryptography.fernet import InvalidToken
+
+    try:
+        return _token_cipher().decrypt(value.encode("ascii")).decode("utf-8")
+    except (InvalidToken, ValueError):
+        return value
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against a hashed one."""
     return pwd_context.verify(plain_password, hashed_password)

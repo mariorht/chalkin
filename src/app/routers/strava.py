@@ -16,7 +16,7 @@ import math
 
 from app.core.config import settings
 from app.core.deps import get_db, get_current_user
-from app.core.security import create_oauth_state, verify_oauth_state
+from app.core.security import create_oauth_state, decrypt_token, encrypt_token, verify_oauth_state
 from app.models.user import User
 from app.models.strava_connection import StravaConnection
 from app.models.session import Session as ClimbingSession
@@ -141,8 +141,8 @@ async def strava_callback(
     
     if existing:
         existing.athlete_id = athlete_id
-        existing.access_token = access_token
-        existing.refresh_token = refresh_token
+        existing.access_token = encrypt_token(access_token)
+        existing.refresh_token = encrypt_token(refresh_token)
         existing.expires_at = expires_at
         existing.scope = scope
         existing.updated_at = datetime.utcnow()
@@ -150,8 +150,8 @@ async def strava_callback(
         connection = StravaConnection(
             user_id=user_id,
             athlete_id=athlete_id,
-            access_token=access_token,
-            refresh_token=refresh_token,
+            access_token=encrypt_token(access_token),
+            refresh_token=encrypt_token(refresh_token),
             expires_at=expires_at,
             scope=scope
         )
@@ -240,7 +240,7 @@ async def refresh_access_token(
                 data={
                     "client_id": settings.strava_client_id,
                     "client_secret": settings.strava_client_secret,
-                    "refresh_token": connection.refresh_token,
+                    "refresh_token": decrypt_token(connection.refresh_token),
                     "grant_type": "refresh_token"
                 }
             )
@@ -251,8 +251,8 @@ async def refresh_access_token(
             raise HTTPException(status_code=400, detail="Failed to refresh token")
     
     # Update connection with new tokens
-    connection.access_token = token_data.get("access_token")
-    connection.refresh_token = token_data.get("refresh_token")
+    connection.access_token = encrypt_token(token_data.get("access_token"))
+    connection.refresh_token = encrypt_token(token_data.get("refresh_token"))
     connection.expires_at = token_data.get("expires_at")
     connection.updated_at = datetime.utcnow()
     
@@ -289,7 +289,7 @@ async def get_valid_token(user_id: int, db: Session) -> str:
                     data={
                         "client_id": settings.strava_client_id,
                         "client_secret": settings.strava_client_secret,
-                        "refresh_token": connection.refresh_token,
+                        "refresh_token": decrypt_token(connection.refresh_token),
                         "grant_type": "refresh_token"
                     }
                 )
@@ -297,8 +297,8 @@ async def get_valid_token(user_id: int, db: Session) -> str:
                 token_data = response.json()
                 
                 # Update connection
-                connection.access_token = token_data.get("access_token")
-                connection.refresh_token = token_data.get("refresh_token")
+                connection.access_token = encrypt_token(token_data.get("access_token"))
+                connection.refresh_token = encrypt_token(token_data.get("refresh_token"))
                 connection.expires_at = token_data.get("expires_at")
                 connection.updated_at = datetime.utcnow()
                 db.commit()
@@ -306,7 +306,7 @@ async def get_valid_token(user_id: int, db: Session) -> str:
                 logger.warning("Failed to refresh Strava token: %s", e)
                 raise HTTPException(status_code=400, detail="Failed to refresh token")
     
-    return connection.access_token
+    return decrypt_token(connection.access_token)
 
 
 def generate_gpx_file(lat: float, lon: float, start_time: datetime, duration: int, activity_name: str, description: str) -> bytes:

@@ -52,6 +52,16 @@ def override_get_db():
 app.dependency_overrides[get_db] = override_get_db
 
 
+@pytest.fixture(autouse=True)
+def _reset_login_limiter():
+    """Keep the in-memory login rate limiter from leaking across tests."""
+    from app.routers.auth import _login_limiter
+
+    _login_limiter.clear()
+    yield
+    _login_limiter.clear()
+
+
 @pytest.fixture(scope="function")
 def db():
     """Create fresh database tables for each test."""

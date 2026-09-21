@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     secret_key: str = "your-secret-key-change-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7  # 1 week
+
+    # Optional Fernet key used to encrypt third-party tokens at rest.
+    # If unset, a key is derived from SECRET_KEY.
+    token_encryption_key: Optional[str] = None
     
     # File uploads
     upload_dir: str = "uploads"
