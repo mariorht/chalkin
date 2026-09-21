@@ -8,7 +8,6 @@ Esta funcionalidad convierte el logo de Chalkin (o cualquier forma SVG) en un ar
 
 1. **`app/utils/svg_parser.py`**: Utilidades para parsear SVG paths y convertirlos a puntos GPS
 2. **`app/routers/strava.py`**: Endpoint `/api/strava/svg-to-gpx` para probar la conversión
-3. **`test_svg_to_gpx.py`**: Script de prueba para generar archivos GPX localmente
 
 ## Cómo funciona
 
@@ -42,17 +41,6 @@ curl "http://localhost:8000/api/strava/svg-to-gpx?use_logo=false" -o test.gpx
 - `scale_meters` (float): Tamaño de la forma en metros (default: 100)
 - `num_points` (int): Número de puntos GPS a generar (default: 200)
 - `use_logo` (bool): Usar logo de Chalkin o forma simple de prueba (default: true)
-
-### Script de prueba local
-
-```bash
-cd src
-python test_svg_to_gpx.py
-```
-
-Esto generará dos archivos:
-- `test_triangle.gpx`: Forma triangular simple
-- `test_logo.gpx`: Logo de Chalkin simplificado
 
 ### Visualizar los GPX
 
