@@ -212,6 +212,7 @@
         const API_URL = '/api';
         const token = AppShell.token;
         const alert = document.getElementById('alert');
+        const userEmails = {};
 
         function showAlert(message, type = 'error') {
             alert.textContent = message;
@@ -258,6 +259,7 @@
                     list.innerHTML = '<p class="empty">Sin resultados</p>';
                     return;
                 }
+                users.forEach(u => { userEmails[u.id] = u.email; });
                 list.innerHTML = users.map(u => `
                     <div class="user-row">
                         <div class="user-info">
@@ -293,8 +295,9 @@
                 document.getElementById('resetUrl').value = resetUrl;
                 document.getElementById('emailSubject').value = data.email_subject;
                 document.getElementById('emailBody').value = emailBody;
+                const recipient = userEmails[userId] || '';
                 document.getElementById('mailtoBtn').onclick = () => {
-                    const mailto = `mailto:?subject=${encodeURIComponent(data.email_subject)}&body=${encodeURIComponent(emailBody)}`;
+                    const mailto = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(data.email_subject)}&body=${encodeURIComponent(emailBody)}`;
                     window.location.href = mailto;
                 };
 
