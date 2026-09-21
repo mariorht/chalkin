@@ -69,7 +69,7 @@ def _b64url_decode(data: str) -> bytes:
     return base64.urlsafe_b64decode(data + padding)
 
 
-def create_oauth_state(user_id: int, ttl_seconds: int = 600) -> str:
+def create_oauth_state(user_id: int, ttl_seconds: int = 1800) -> str:
     """Create a signed, expiring ``state`` value for OAuth flows.
 
     Prevents CSRF/account-linking attacks: the value is unpredictable and
