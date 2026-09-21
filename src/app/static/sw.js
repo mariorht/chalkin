@@ -7,8 +7,8 @@ self.addEventListener('push', function(event) {
   const title = data.title || 'Chalkin';
   const options = {
     body: data.body || '',
-    icon: '/static/icons/icon-192.png',
-    badge: '/static/icons/icon-192.png',
+    icon: '/static/icons/logoChalkin_invertido_180.png',
+    badge: '/static/icons/logoChalkin_invertido_48.png',
     data: {
       url: data.url || '/friends'
     }
