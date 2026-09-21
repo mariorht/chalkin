@@ -365,8 +365,8 @@
                         <input type="radio" name="gym_id" value="${gym.id}">
                         <div class="gym-icon">🏠</div>
                         <div class="gym-details">
-                            <h3>${gym.name}</h3>
-                            <p>${gym.location || gym.grading_system_type}</p>
+                            <h3>${escapeHtml(gym.name)}</h3>
+                            <p>${escapeHtml(gym.location || gym.grading_system_type)}</p>
                         </div>
                         <div class="gym-check">✓</div>
                     </label>

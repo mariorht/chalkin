@@ -48,12 +48,12 @@
             const user = AppShell.user || {};
             const initial = (user.username || 'U').charAt(0).toUpperCase();
             const avatarContent = user.profile_picture 
-                ? `<img src="${user.profile_picture}" alt="${user.username}">` 
-                : initial;
+                ? `<img src="${escapeHtml(user.profile_picture)}" alt="${escapeHtml(user.username)}">` 
+                : escapeHtml(initial);
             
-            const displayTitle = session.title || `📍 ${session.gym_name}`;
-            const subtitleHtml = session.subtitle ? `<span class="session-subtitle">${session.subtitle}</span>` : '';
-            const locationHtml = session.title ? `<span class="session-location">📍 ${session.gym_name}</span>` : '';
+            const displayTitle = session.title ? escapeHtml(session.title) : `📍 ${escapeHtml(session.gym_name)}`;
+            const subtitleHtml = session.subtitle ? `<span class="session-subtitle">${escapeHtml(session.subtitle)}</span>` : '';
+            const locationHtml = session.title ? `<span class="session-location">📍 ${escapeHtml(session.gym_name)}</span>` : '';
             
             return `
                 <div class="feed-card" onclick="window.location.href='/sessions/${session.id}'">
@@ -61,7 +61,7 @@
                         <div class="user-info">
                             <div class="avatar own" onclick="event.stopPropagation(); window.location.href='/users?id=${user.id || AppShell.user?.id}'">${avatarContent}</div>
                             <div class="user-details">
-                                <span class="username own">${user.username || 'Tú'}</span>
+                                <span class="username own">${escapeHtml(user.username || 'Tú')}</span>
                                 <span class="gym-name">${displayTitle}</span>
                                 ${subtitleHtml}
                                 ${locationHtml}
@@ -91,7 +91,7 @@
                             <div class="stat-label">Sends</div>
                         </div>
                         <div class="stat">
-                            <div class="stat-value grade">${session.max_grade_label || '-'}</div>
+                            <div class="stat-value grade">${escapeHtml(session.max_grade_label || '-')}</div>
                             <div class="stat-label">Máx. grado</div>
                         </div>
                     </div>

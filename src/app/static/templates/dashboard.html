@@ -1258,12 +1258,12 @@
                         <div class="friend-request-info">
                             <div class="friend-avatar">
                                 ${req.user_profile_picture ? 
-                                    `<img src="${req.user_profile_picture}" alt="${req.user_username}">` : 
-                                    req.user_username.charAt(0).toUpperCase()
+                                    `<img src="${escapeHtml(req.user_profile_picture)}" alt="${escapeHtml(req.user_username)}">` : 
+                                    escapeHtml(req.user_username.charAt(0).toUpperCase())
                                 }
                             </div>
                             <div>
-                                <strong>${req.user_username}</strong>
+                                <strong>${escapeHtml(req.user_username)}</strong>
                                 <div style="font-size: 0.8rem; opacity: 0.8;">quiere ser tu amigo</div>
                             </div>
                         </div>

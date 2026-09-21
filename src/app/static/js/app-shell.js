@@ -3,6 +3,15 @@
    Maneja autenticación, navegación y funcionalidades comunes
    ============================================= */
 
+// Escapa valores no confiables antes de insertarlos en HTML.
+// Seguro tanto en contexto de texto como entre comillas de atributo.
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
 const AppShell = {
     API_URL: '/api',
     
@@ -148,8 +157,10 @@ const AppShell = {
         
         const profilePic = this.getProfilePicture();
         const avatarContent = profilePic 
-            ? `<img src="${profilePic}" alt="Perfil">` 
-            : this.getUserInitial();
+            ? `<img src="${escapeHtml(profilePic)}" alt="Perfil">` 
+            : escapeHtml(this.getUserInitial());
+        
+        const username = escapeHtml(this.getUsername());
         
         header.innerHTML = `
             <a href="/dashboard" class="logo">
@@ -157,8 +168,8 @@ const AppShell = {
                 <span>Chalkin</span>
             </a>
             <div class="user-section">
-                <span class="user-name">${this.getUsername()}</span>
-                <a href="/profile" class="user-avatar" title="${this.getUsername()}">${avatarContent}</a>
+                <span class="user-name">${username}</span>
+                <a href="/profile" class="user-avatar" title="${username}">${avatarContent}</a>
                 <button class="btn-logout" onclick="AppShell.logout()">Salir</button>
             </div>
         `;

@@ -20,11 +20,14 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    """Schema for updating user info."""
+    """Schema for updating user info.
+
+    ``profile_picture`` is intentionally NOT settable here: it is only updated
+    through the upload endpoint, so users cannot inject arbitrary URLs/paths.
+    """
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     home_gym_id: Optional[int] = None
-    profile_picture: Optional[str] = None
     password: Optional[str] = Field(None, min_length=6, max_length=100)
 
 

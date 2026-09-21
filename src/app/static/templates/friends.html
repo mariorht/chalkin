@@ -377,9 +377,9 @@
 
         function renderAvatar(user) {
             if (user.profile_picture) {
-                return `<img src="${user.profile_picture}" alt="${user.username}">`;
+                return `<img src="${escapeHtml(user.profile_picture)}" alt="${escapeHtml(user.username)}">`;
             }
-            return user.username.charAt(0).toUpperCase();
+            return escapeHtml(user.username.charAt(0).toUpperCase());
         }
 
         async function searchUsers(query, loadMore = false) {
@@ -431,7 +431,7 @@
                     <div class="user-item" onclick="goToProfile(${user.id}, event)">
                         <div class="user-info">
                             <div class="avatar">${renderAvatar(user)}</div>
-                            <span class="username">${user.username}</span>
+                            <span class="username">${escapeHtml(user.username)}</span>
                             ${user.friendship_status ? `
                                 <span class="status-badge ${user.friendship_status === 'accepted' ? 'badge-friends' : 'badge-pending'}">
                                     ${getStatusLabel(user.friendship_status)}
@@ -556,13 +556,13 @@
                         <div class="user-info">
                             <div class="avatar">${renderAvatar(friend)}</div>
                             <div>
-                                <span class="username">${friend.username}</span>
+                                <span class="username">${escapeHtml(friend.username)}</span>
                                 <div style="font-size: 0.8rem; color: #666;">
                                     Amigos desde ${parseUTCDate(friend.since).toLocaleDateString('es-ES')}
                                 </div>
                             </div>
                         </div>
-                        <button class="btn btn-danger" onclick="removeFriend(${friend.id}, '${friend.username}', event)">
+                        <button class="btn btn-danger" onclick="removeFriend(${friend.id}, event)">
                             Eliminar
                         </button>
                     </div>
@@ -600,7 +600,7 @@
                         <div class="user-info">
                             <div class="avatar">${renderAvatar({ username: req.user_username, profile_picture: req.user_profile_picture })}</div>
                             <div>
-                                <span class="username">${req.user_username}</span>
+                                <span class="username">${escapeHtml(req.user_username)}</span>
                                 <div style="font-size: 0.8rem; color: #666;">
                                     ${parseUTCDate(req.created_at).toLocaleDateString('es-ES')}
                                 </div>
@@ -661,9 +661,9 @@
             window.location.href = `/users?id=${userId}`;
         }
 
-        async function removeFriend(friendId, username, event) {
+        async function removeFriend(friendId, event) {
             if (event) event.stopPropagation();
-            if (!confirm(`¿Eliminar a ${username} de tus amigos?`)) return;
+            if (!confirm('¿Eliminar a este usuario de tus amigos?')) return;
             
             try {
                 const res = await fetch(`${API_URL}/social/friends/${friendId}`, {

@@ -94,14 +94,28 @@ async def serve_manifest():
     return FileResponse(manifest_path, media_type="application/manifest+json")
 
 # Serve service worker at root scope
-# DESACTIVADO TEMPORALMENTE - Descomentar cuando se quiera usar
-# @app.get("/sw.js", response_class=FileResponse)
+# DESACTIVADO: notificaciones push no se usan de momento.
+# Descomentar junto con AppShell.setupPush() en static/js/app-shell.js.
+# @app.get("/sw.js")
 # def serve_sw():
-#     return os.path.join(static_dir, "sw.js")
+#     return FileResponse(
+#         os.path.join(static_dir, "sw.js"),
+#         media_type="application/javascript",
+#         headers={"Cache-Control": "no-cache"},
+#     )
 
 # Serve uploaded files from uploads directory
+class NoSniffStaticFiles(StaticFiles):
+    """Serve static files while preventing MIME-type sniffing."""
+
+    async def get_response(self, path: str, scope) -> Response:
+        response = await super().get_response(path, scope)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
+
 try:
-    app.mount("/data/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+    app.mount("/data/uploads", NoSniffStaticFiles(directory=uploads_dir), name="uploads")
 except RuntimeError:
     pass  # Directory doesn't exist yet, will be created on first upload
 

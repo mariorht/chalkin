@@ -103,6 +103,16 @@ class TestAuth:
         assert response.status_code == 200
         assert response.json()["username"] == "updatedname"
 
+    def test_update_profile_cannot_set_profile_picture(self, client, auth_headers):
+        """profile_picture must not be settable through PATCH /auth/me."""
+        response = client.patch("/api/auth/me",
+            headers=auth_headers,
+            json={"profile_picture": 'x" onerror="alert(1)'}
+        )
+
+        assert response.status_code == 200
+        assert response.json()["profile_picture"] is None
+
 
 class TestProfilePicture:
     """Tests for profile picture upload/delete."""
@@ -138,6 +148,32 @@ class TestProfilePicture:
         
         assert response.status_code == 400
         assert "image" in response.json()["detail"].lower()
+
+    def test_upload_rejects_disguised_html(self, client, auth_headers):
+        """Non-image contents must be rejected even if declared as an image."""
+        from io import BytesIO
+        fake = BytesIO(b"<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>")
+        
+        response = client.post(
+            "/api/auth/me/picture",
+            headers=auth_headers,
+            files={"file": ("evil.svg", fake, "image/png")}
+        )
+        
+        assert response.status_code == 400
+
+    def test_upload_rejects_type_mismatch(self, client, auth_headers):
+        """Declared Content-Type must match the real image type."""
+        from io import BytesIO
+        fake = BytesIO(b'\x89PNG\r\n\x1a\n' + b'\x00' * 100)
+        
+        response = client.post(
+            "/api/auth/me/picture",
+            headers=auth_headers,
+            files={"file": ("test.png", fake, "image/jpeg")}
+        )
+        
+        assert response.status_code == 400
     
     def test_delete_profile_picture(self, client, auth_headers):
         """Test deleting profile picture."""
