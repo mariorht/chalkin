@@ -25,44 +25,44 @@
             background: var(--light);
         }
 
-        .main-container { max-width: 960px; margin: 0 auto; padding: 2rem; }
+        .main-container { max-width: 960px; margin: 0 auto; padding: 1.25rem; }
 
-        .page-header { margin-bottom: 1.5rem; }
+        .page-header { margin-bottom: 1rem; }
         .page-header h1 {
             color: var(--dark);
-            font-size: 1.8rem;
+            font-size: 1.35rem;
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: 0.5rem;
             flex-wrap: wrap;
         }
-        .page-header p { color: var(--gray); margin-top: 0.4rem; }
+        .page-header p { color: var(--gray); margin-top: 0.35rem; font-size: 0.9rem; }
 
         .badge-beta {
             background: var(--primary);
             color: #fff;
-            font-size: 0.7rem;
+            font-size: 0.62rem;
             font-weight: 700;
             letter-spacing: 0.04em;
             text-transform: uppercase;
-            padding: 3px 10px;
+            padding: 2px 8px;
             border-radius: 999px;
         }
 
         .card {
             background: #fff;
             border-radius: 16px;
-            padding: 1.5rem;
+            padding: 1.1rem;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .notice {
-            border-radius: 16px;
-            padding: 1rem 1.25rem;
-            margin-bottom: 1.5rem;
-            font-size: 0.92rem;
-            line-height: 1.5;
+            border-radius: 14px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.88rem;
+            line-height: 1.45;
         }
         .notice.warn { background: #FFF4E5; color: #8A5300; border: 1px solid #FFE0B2; }
         .notice.error { background: #FDECEC; color: #9B1C1C; border: 1px solid #F5C2C2; }
@@ -70,16 +70,16 @@
         .status-row {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
             flex-wrap: wrap;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1rem;
         }
         #status {
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 999px;
             background: #E5E7EB;
             color: var(--gray);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
         }
         #status.on { background: #DCFCE7; color: #166534; }
@@ -89,30 +89,30 @@
             color: #fff;
             border: none;
             border-radius: 10px;
-            padding: 0.6rem 1.1rem;
-            font-size: 0.9rem;
+            padding: 0.5rem 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             transition: opacity 0.15s;
         }
         button.btn:hover { opacity: 0.88; }
         button.btn.primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
-        button.btn.danger { background: #EF4444; }
-        button.btn.ghost { background: #fff; color: var(--dark); border: 1px solid var(--gray-light, #E5E7EB); }
+        button.btn.danger { background: var(--error); }
+        button.btn.ghost { background: #fff; color: var(--dark); border: 1px solid #E5E7EB; }
         button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        .monitor {
-            background: #0B0B0F;
-            border-radius: 12px;
-            padding: 1rem;
-            color: #DDD;
+        .section-label {
+            font-size: 0.78rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 0.9rem 0 0.5rem;
         }
-        .monitor h2 { font-size: 0.95rem; color: #9CA3AF; margin-bottom: 0.75rem; }
         canvas {
             width: 100%;
-            height: 320px;
-            background: #000;
-            border: 1px solid #26262E;
+            height: 200px;
+            background: #fff;
+            border: 1px solid #E5E7EB;
             border-radius: 8px;
             display: block;
         }
@@ -120,66 +120,72 @@
         .metrics {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 0.6rem;
-            margin-top: 0.9rem;
+            gap: 0.5rem;
+            margin-top: 0.7rem;
         }
-        @media (max-width: 760px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+        .metrics-5 { grid-template-columns: repeat(5, 1fr); }
+        @media (max-width: 640px) { .metrics-5 { grid-template-columns: repeat(2, 1fr); } }
         .metric {
-            background: #15151C;
-            border: 1px solid #26262E;
-            border-radius: 8px;
-            padding: 0.6rem 0.8rem;
+            background: var(--light);
+            border: 1px solid #EDEFF2;
+            border-radius: 10px;
+            padding: 0.45rem 0.6rem;
         }
-        .metric span { display: block; font-size: 0.72rem; color: #9CA3AF; }
-        .metric b { font-size: 1.35rem; color: #fff; }
+        .metric span { display: block; font-size: 0.66rem; color: var(--gray); line-height: 1.2; }
+        .metric b { font-size: 1rem; color: var(--dark); }
 
         .calrow {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 0.6rem;
-            margin-top: 1rem;
-            padding: 0.8rem;
-            background: #15151C;
-            border: 1px solid #26262E;
-            border-radius: 8px;
+            gap: 0.5rem;
+            margin-top: 0.6rem;
+            padding-top: 0.85rem;
+            border-top: 1px solid #E5E7EB;
         }
-        .calrow label { font-size: 0.82rem; color: #9CA3AF; }
+        .calrow label { font-size: 0.78rem; color: var(--gray); }
         .calrow input {
-            background: #0B0B0F;
-            color: #fff;
-            border: 1px solid #3A3A45;
+            background: #fff;
+            color: var(--dark);
+            border: 1px solid #D1D5DB;
             border-radius: 8px;
-            padding: 0.45rem 0.6rem;
-            width: 90px;
+            padding: 0.4rem 0.55rem;
+            width: 80px;
+            font-size: 0.9rem;
         }
-        .hint { font-size: 0.78rem; color: #9CA3AF; margin-top: 0.5rem; line-height: 1.5; }
+        .hint { font-size: 0.75rem; color: var(--gray); margin-top: 0.45rem; line-height: 1.45; }
 
-        .btnrow { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
+        .btnrow { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
 
         #log {
-            background: #000;
-            border: 1px solid #26262E;
+            background: var(--light);
+            border: 1px solid #E5E7EB;
             border-radius: 8px;
-            height: 220px;
+            height: 180px;
             overflow-y: auto;
             font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
             padding: 0.6rem;
-            color: #DDD;
+            color: var(--dark);
         }
         #log div { white-space: pre-wrap; word-break: break-word; }
 
         #denied { display: none; }
+
+        @media (max-width: 640px) {
+            .main-container { padding: 0.6rem; }
+            .card { padding: 0.85rem; border-radius: 14px; }
+            .metrics { gap: 0.4rem; }
+            .metric { padding: 0.4rem 0.5rem; }
+            .metric b { font-size: 0.95rem; }
+            canvas { height: 150px; }
+            #log { height: 150px; }
+            .page-header h1 { font-size: 1.15rem; }
+        }
     </style>
 </head>
 <body>
     <main class="main-container">
-        <div class="page-header">
-            <h1>🧪 Chalkin Sense · Laboratorio <span class="badge-beta">Admin</span></h1>
-            <p>Modo de prueba del sensor, fuera de cualquier entrenamiento. Las mediciones de
-               esta pantalla no se guardan.</p>
-        </div>
-
         <div id="unsupported" class="notice warn" style="display: none;"></div>
 
         <div id="denied" class="notice error">
@@ -189,6 +195,12 @@
 
         <div id="senseContent" style="display: none;">
             <div class="card">
+                <div class="page-header">
+                    <h1>🧪 Chalkin Sense · Laboratorio <span class="badge-beta">Admin</span></h1>
+                    <p>Modo de prueba del sensor, fuera de cualquier entrenamiento. Las mediciones
+                       de esta pantalla no se guardan.</p>
+                </div>
+
                 <div class="status-row">
                     <button id="btnConnect" class="btn primary">Conectar</button>
                     <button id="btnDisconnect" class="btn danger" disabled>Desconectar</button>
@@ -196,24 +208,21 @@
                     <span class="hint" id="sdkVersion" style="margin: 0;"></span>
                 </div>
 
-                <div class="monitor">
-                    <h2>Fuerza en vivo</h2>
-                    <canvas id="chart" width="800" height="320"></canvas>
-                    <div class="metrics">
-                        <div class="metric"><span>Fuerza actual</span><b id="cur">0.0 kg</b></div>
-                        <div class="metric"><span>Fuerza máxima total</span><b id="totalMax">— kg</b></div>
-                        <div class="metric"><span>Muestreo</span><b id="rate">— Hz</b></div>
-                        <div class="metric"><span>Paquetes perdidos</span><b id="lost">0</b></div>
-                    </div>
+                <canvas id="chart" width="800" height="320"></canvas>
+                <div class="metrics">
+                    <div class="metric"><span>Fuerza actual</span><b id="cur">0.0 kg</b></div>
+                    <div class="metric"><span>Fuerza máxima total</span><b id="totalMax">— kg</b></div>
+                    <div class="metric"><span>Muestreo</span><b id="rate">— Hz</b></div>
+                    <div class="metric"><span>Paquetes perdidos</span><b id="lost">0</b></div>
+                </div>
 
-                    <h2 style="margin-top: 1.1rem;">Último pull</h2>
-                    <div class="metrics">
-                        <div class="metric"><span>Fuerza máxima</span><b id="pullMax">— kg</b></div>
-                        <div class="metric"><span>Fuerza media</span><b id="pullMean">— kg</b></div>
-                        <div class="metric"><span>RFD</span><b id="pullRfd">— kg/s</b></div>
-                        <div class="metric"><span>TUT</span><b id="pullTut">— s</b></div>
-                        <div class="metric"><span>Duración</span><b id="pullDur">— s</b></div>
-                    </div>
+                <h2 class="section-label">Último pull</h2>
+                <div class="metrics metrics-5">
+                    <div class="metric"><span>Fuerza máxima</span><b id="pullMax">— kg</b></div>
+                    <div class="metric"><span>Fuerza media</span><b id="pullMean">— kg</b></div>
+                    <div class="metric"><span>RFD</span><b id="pullRfd">— kg/s</b></div>
+                    <div class="metric"><span>TUT</span><b id="pullTut">— s</b></div>
+                    <div class="metric"><span>Duración</span><b id="pullDur">— s</b></div>
                 </div>
 
                 <div class="hint" id="calinfo">Calibración: — (pulsa «Ver calibración»)</div>
@@ -233,10 +242,8 @@
                     <button data-cmd="STATS" class="btn ghost">STATS</button>
                     <button data-cmd="RESET" class="btn danger">RESET</button>
                 </div>
-            </div>
 
-            <div class="card">
-                <h2 style="color: var(--dark); font-size: 1rem; margin-bottom: 0.6rem;">Registro</h2>
+                <h2 class="section-label">Registro</h2>
                 <div id="log"></div>
             </div>
         </div>
@@ -454,57 +461,72 @@
         // --- Gráfica (usa la ventana de muestras del SDK) ---
         const canvas = $('chart');
         const ctx = canvas.getContext('2d');
-        const W = canvas.width;
-        const H = canvas.height;
+
+        function sizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            canvas.width = Math.round(rect.width * dpr);
+            canvas.height = Math.round(rect.height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
 
         function draw() {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, W, H);
+            const W = canvas.clientWidth;
+            const H = canvas.clientHeight;
+            if (W && H) {
+                ctx.clearRect(0, 0, W, H);
 
-            const gridY = 5;
-            const maxY = 60;
-            const x0 = 40;
-            const yBottom = H - 20;
+                const maxY = 60;
+                const x0 = 30;
+                const yBottom = H - 12;
 
-            ctx.strokeStyle = '#333';
-            ctx.beginPath();
-            ctx.moveTo(x0, 10);
-            ctx.lineTo(x0, yBottom);
-            ctx.lineTo(W - 8, yBottom);
-            ctx.stroke();
-
-            ctx.font = '11px monospace';
-            ctx.fillStyle = '#888';
-            ctx.textAlign = 'right';
-            for (let kg = 0; kg <= maxY; kg += gridY) {
-                const y = yBottom - (kg / maxY) * (yBottom - 10);
-                ctx.strokeStyle = '#222';
-                ctx.beginPath();
-                ctx.moveTo(x0, y);
-                ctx.lineTo(W - 8, y);
-                ctx.stroke();
-                ctx.fillText(kg + ' kg', x0 - 6, y + 4);
-            }
-
-            const samples = client ? client.samples : [];
-            if (samples.length > 1) {
-                const tLast = samples[samples.length - 1].t;
-                const xScale = (W - x0 - 8) / WINDOW_MS;
-                const yScale = (yBottom - 10) / maxY;
-
-                ctx.strokeStyle = '#4caf50';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                let started = false;
-                for (const s of samples) {
-                    if (s.t < tLast - WINDOW_MS) continue;
-                    const x = x0 + (s.t - (tLast - WINDOW_MS)) * xScale;
-                    const y = yBottom - s.kg * yScale;
-                    if (!started) { ctx.moveTo(x, y); started = true; }
-                    else ctx.lineTo(x, y);
-                }
-                ctx.stroke();
+                // Eje
+                ctx.strokeStyle = '#D1D5DB';
                 ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x0, 8);
+                ctx.lineTo(x0, yBottom);
+                ctx.lineTo(W - 6, yBottom);
+                ctx.stroke();
+
+                // Rejilla + etiquetas
+                ctx.font = '10px monospace';
+                ctx.fillStyle = '#6B7280';
+                ctx.textAlign = 'right';
+                for (let kg = 0; kg <= maxY; kg += 5) {
+                    const y = yBottom - (kg / maxY) * (yBottom - 8);
+                    if (kg > 0) {
+                        ctx.strokeStyle = '#EEF0F3';
+                        ctx.beginPath();
+                        ctx.moveTo(x0, y);
+                        ctx.lineTo(W - 6, y);
+                        ctx.stroke();
+                    }
+                    ctx.fillText(String(kg), x0 - 5, y + 3);
+                }
+
+                // Datos
+                const samples = client ? client.samples : [];
+                if (samples.length > 1) {
+                    const tLast = samples[samples.length - 1].t;
+                    const xScale = (W - x0 - 6) / WINDOW_MS;
+                    const yScale = (yBottom - 8) / maxY;
+
+                    ctx.strokeStyle = '#FF6B35';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    let started = false;
+                    for (const s of samples) {
+                        if (s.t < tLast - WINDOW_MS) continue;
+                        const x = x0 + (s.t - (tLast - WINDOW_MS)) * xScale;
+                        const y = yBottom - s.kg * yScale;
+                        if (!started) { ctx.moveTo(x, y); started = true; }
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                    ctx.lineWidth = 1;
+                }
             }
             requestAnimationFrame(draw);
         }
@@ -523,6 +545,8 @@
             log(`SDK ${PROTOCOL_VERSION} · URL: ${location.href} · contexto seguro: ` +
                 `${window.isSecureContext} · Web Bluetooth: ${!!navigator.bluetooth}`);
             setupClient();
+            sizeCanvas();
+            window.addEventListener('resize', sizeCanvas);
             draw();
             window.__chalkinReady = true;
         }
