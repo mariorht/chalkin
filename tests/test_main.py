@@ -36,3 +36,22 @@ def test_openapi_schema():
     schema = response.json()
     assert schema["info"]["title"] == "Chalkin"
 
+
+def test_serve_sense_page():
+    """Test that the Chalkin Sense test-lab page is served."""
+    response = client.get("/sense")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "text/html; charset=utf-8"
+    assert "/static/sdk/js/index.js" in response.text
+
+
+def test_sense_sdk_is_served():
+    """Test that the vendored Chalkin Sense SDK modules are served as JS."""
+    for name in ("index.js", "protocol.js", "metrics.js", "client.js"):
+        response = client.get(f"/static/sdk/js/{name}")
+        assert response.status_code == 200, name
+        assert "javascript" in response.headers["content-type"], name
+
+    protocol = client.get("/static/sdk/js/protocol.js")
+    assert "PROTOCOL_VERSION" in protocol.text
+
