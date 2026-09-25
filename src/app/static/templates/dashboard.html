@@ -183,6 +183,24 @@
             font-size: 0.9rem;
         }
 
+        /* Admin tools (solo administradores) */
+        .admin-tools-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .admin-tools-card .section-header {
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-tools-card p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
         /* Sessions List */
         .sessions-list {
             background: white;
@@ -975,6 +993,16 @@
                 </div>
             </div>
         </section>
+
+        <!-- Chalkin Lab (solo administradores) -->
+        <section id="adminSenseSection" style="display: none; margin-top: 1.5rem;">
+            <div class="admin-tools-card">
+                <div class="section-header" style="margin-bottom: 0;">
+                    <h2>Chalkin Lab</h2>
+                    <a href="/sense">Abrir</a>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script src="/static/js/app-shell.js"></script>
@@ -1015,6 +1043,18 @@
                 document.getElementById('welcomeMessage').textContent = message;
             } catch (error) {
                 console.error('Error loading stats:', error);
+            }
+        }
+
+        // Mostrar herramientas de administrador (p. ej. laboratorio Chalkin Sense)
+        async function loadAdminStatus() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/admin/me`);
+                if (response && response.ok) {
+                    document.getElementById('adminSenseSection').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
             }
         }
 
@@ -1552,6 +1592,7 @@
         loadStats();
         loadActivityChart();
         loadFriendRequests();
+        loadAdminStatus();
         
         // Redimensionar gráfico al cambiar tamaño de ventana
         let resizeTimeout;
