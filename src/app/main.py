@@ -238,6 +238,12 @@ def serve_admin():
     return os.path.join(template_dir, "admin.html")
 
 
+@app.get("/sense", response_class=FileResponse)
+def serve_sense():
+    """Serve the Chalkin Sense test-lab page (admin-only, checked by the API)."""
+    return os.path.join(template_dir, "sense.html")
+
+
 @app.get("/users", response_class=FileResponse)
 def serve_user_profile():
     """Serve the user profile page."""
