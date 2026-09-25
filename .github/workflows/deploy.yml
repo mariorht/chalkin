@@ -35,6 +35,7 @@ jobs:
           # Si SERVER_HOST contiene ':', es IPv6 y necesita corchetes para SSH
           if [[ $SERVER_HOST == *":"* ]]; then
             ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
+              set -e
               # Crear directorio de backups si no existe
               mkdir -p ~/db_backup
               
@@ -56,13 +57,18 @@ jobs:
               
               # Deploy
               cd ~/chalkin
-              git pull origin main
+              # Traer main exacto descartando cambios locales del clon de despliegue.
+              # Antes, un fichero trackeado modificado (p. ej. backup.sh) abortaba
+              # `git pull` y, sin `set -e`, el deploy quedaba "success" pero sin desplegar.
+              git fetch origin main
+              git reset --hard origin/main
               docker compose -f docker-compose.prod.yml up -d --build
               docker compose -f docker-compose.prod.yml exec -T api alembic upgrade head
-              echo "✅ Deployed at $(date)"
+              echo "✅ Deployed at $(date) [$(git rev-parse --short HEAD)]"
           EOF
           else
             ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
+              set -e
               # Crear directorio de backups si no existe
               mkdir -p ~/db_backup
               
@@ -84,9 +90,13 @@ jobs:
               
               # Deploy
               cd ~/chalkin
-              git pull origin main
+              # Traer main exacto descartando cambios locales del clon de despliegue.
+              # Antes, un fichero trackeado modificado (p. ej. backup.sh) abortaba
+              # `git pull` y, sin `set -e`, el deploy quedaba "success" pero sin desplegar.
+              git fetch origin main
+              git reset --hard origin/main
               docker compose -f docker-compose.prod.yml up -d --build
               docker compose -f docker-compose.prod.yml exec -T api alembic upgrade head
-              echo "✅ Deployed at $(date)"
+              echo "✅ Deployed at $(date) [$(git rev-parse --short HEAD)]"
           EOF
           fi
