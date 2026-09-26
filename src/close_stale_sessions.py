@@ -19,6 +19,7 @@ Pensado para ejecutarse desde cron o un timer de systemd. En docker:
 import argparse
 import sys
 from datetime import datetime, timedelta
+from typing import Optional
 
 from app.db.base import SessionLocal
 from app.models.session import Session as ClimbingSession
@@ -40,7 +41,7 @@ def find_stale_sessions(db, cutoff: datetime):
     )
 
 
-def close_stale_sessions(db, days: int = 7, now: datetime | None = None, dry_run: bool = False):
+def close_stale_sessions(db, days: int = 7, now: Optional[datetime] = None, dry_run: bool = False):
     """Cierra las sesiones abiertas de más de ``days`` días.
 
     Devuelve la lista de sesiones afectadas (o que se habrían afectado en
