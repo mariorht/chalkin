@@ -1005,10 +1005,11 @@
             border-top: 1px solid #F0F0F0;
         }
     </style>
+    <link rel="stylesheet" href="/static/css/flat.css">
 </head>
 <body>
     <!-- Session status bar -->
-    <div id="sessionStatusBar" style="position: fixed; top: var(--header-height, 60px); left: 0; right: 0; background: var(--dark); padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 999; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <div id="sessionStatusBar" style="position: fixed; top: var(--header-height, 60px); left: 0; right: 0; background: var(--surface); padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 999; border-bottom: var(--hairline);">
         <span class="session-status-badge active" id="statusBadge" style="background: var(--success); color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">En curso</span>
         <span id="timerContainer" style="color: var(--secondary); font-weight: 700;">⏱️ <span id="timer">00:00</span></span>
     </div>

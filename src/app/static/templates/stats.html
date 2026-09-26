@@ -425,6 +425,7 @@
             color: var(--dark);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/flat.css">
 </head>
 <body>
     <main class="main-container">
@@ -605,18 +606,23 @@
             align-items: center;
             height: 16px;
         }
-        .user-bar {
+        .user-bar-track {
+            flex: 1;
+            height: 18px;
+            background: #F0F0F0;
+            overflow: hidden;
+        }
+        .user-bar-fill {
             height: 100%;
-            border-radius: 3px;
             min-width: 2px;
             transition: width 0.3s ease;
         }
-        .user-bar-value {
-            font-size: 0.7rem;
+        .user-bar-count {
+            font-size: 0.8rem;
             font-weight: 600;
             color: var(--dark);
-            margin-left: 4px;
-            min-width: 20px;
+            min-width: 28px;
+            text-align: right;
         }
         .totals-section {
             margin-top: 1rem;
@@ -750,30 +756,33 @@
                 }
                 gradesByGym[gymName].push(grade);
             });
-            
+
+            // Gimnasios ordenados de más a menos bloques encadenados
+            const gymOrder = Object.keys(gradesByGym).sort((a, b) => {
+                const totalA = gradesByGym[a].reduce((sum, g) => sum + g.count, 0);
+                const totalB = gradesByGym[b].reduce((sum, g) => sum + g.count, 0);
+                return totalB - totalA;
+            });
+
             // Render a card for each gym
-            container.innerHTML = Object.keys(gradesByGym).map(gymName => {
+            container.innerHTML = gymOrder.map(gymName => {
                 const gymGrades = gradesByGym[gymName];
                 const maxCount = Math.max(...gymGrades.map(g => g.count));
                 
                 return `
-                    <div style="margin-bottom: 1.5rem;">
-                        <h3 style="color: var(--dark); font-size: 1rem; margin-bottom: 0.75rem; padding-left: 0.5rem;">
-                            📍 ${escapeHtml(gymName)}
-                        </h3>
-                        <div style="background: #F8F9FA; border-radius: 12px; padding: 1rem;">
-                            ${gymGrades.map(grade => `
-                                <div class="grade-row">
-                                    <div class="grade-color" style="background: ${escapeHtml(grade.color_hex || '#666')}">${escapeHtml(grade.grade_label)}</div>
-                                    <div class="grade-bar-container">
-                                        <div class="grade-bar">
-                                            <div class="grade-bar-fill" style="width: ${(grade.count / maxCount) * 100}%"></div>
-                                        </div>
-                                        <div class="grade-count">${grade.count}</div>
+                    <div class="grade-group">
+                        <h3 class="grade-group-title"><svg viewBox="0 0 24 24" fill="#2EC4B6" style="width:20px;height:20px;flex:0 0 auto;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>${escapeHtml(gymName)}</h3>
+                        ${gymGrades.map(grade => `
+                            <div class="grade-row">
+                                <div class="grade-color"><span class="grade-dot" style="background: ${escapeHtml(grade.color_hex || '#666')}"></span>${escapeHtml(grade.grade_label)}</div>
+                                <div class="grade-bar-container">
+                                    <div class="grade-bar">
+                                        <div class="grade-bar-fill" style="width: ${(grade.count / maxCount) * 100}%"></div>
                                     </div>
+                                    <div class="grade-count">${grade.count}</div>
                                 </div>
-                            `).join('')}
-                        </div>
+                            </div>
+                        `).join('')}
                     </div>
                 `;
             }).join('');
@@ -898,10 +907,17 @@
                 container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>Añade amigos para comparar</p></div>';
                 return;
             }
-            
+
+            // Gimnasios ordenados de más a menos bloques encadenados
+            const sortedGyms = [...gyms].sort((a, b) => {
+                const totalA = (a.user_totals || []).reduce((sum, u) => sum + (u.total_sends || 0), 0);
+                const totalB = (b.user_totals || []).reduce((sum, u) => sum + (u.total_sends || 0), 0);
+                return totalB - totalA;
+            });
+
             let html = '';
             
-            gyms.forEach(gym => {
+            sortedGyms.forEach(gym => {
                 // Get all unique users
                 const allUsers = gym.user_totals || [];
                 
@@ -948,12 +964,14 @@
                         <!-- Grade bars -->
                         ${gym.grades.map(grade => `
                             <div class="grade-chart-row">
-                                <div class="grade-label-box" style="background: ${escapeHtml(grade.color)}">${escapeHtml(grade.label)}</div>
+                                <div class="grade-label-box"><span class="grade-dot" style="background: ${escapeHtml(grade.color)}"></span>${escapeHtml(grade.label)}</div>
                                 <div class="bars-container">
                                     ${grade.users.filter(u => userIds.has(u.user_id)).map(u => `
                                         <div class="user-bar-row">
-                                            <div class="user-bar" style="background: ${userColorMap[u.user_id]}; width: ${(u.sends / maxSends) * 100}%"></div>
-                                            ${u.sends > 0 ? `<span class="user-bar-value">${u.sends}</span>` : ''}
+                                            <div class="user-bar-track">
+                                                <div class="user-bar-fill" style="background: ${userColorMap[u.user_id]}; width: ${(u.sends / maxSends) * 100}%"></div>
+                                            </div>
+                                            <div class="user-bar-count">${u.sends}</div>
                                         </div>
                                     `).join('')}
                                 </div>

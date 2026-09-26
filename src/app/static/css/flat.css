@@ -1,0 +1,649 @@
+/* =============================================
+   Chalkin - Tema "Flat-Editorial" (experimento)
+   Hoja de overrides cargada DESPUÉS del <style> de cada plantilla.
+   Objetivo: eliminar el concepto de tarjeta, iconos con fondo y sombras,
+   y dar jerarquía tipográfica plana sobre un fondo claro continuo.
+   ============================================= */
+
+/* --- Fondo continuo --- */
+body,
+body.has-app-shell {
+    background: var(--surface) !important;
+    color: var(--ink);
+}
+.main-container,
+.container,
+.app-container,
+.app-main {
+    background: transparent !important;
+}
+
+/* --- 1. Quitar tarjetas: sin fondo, sombra, borde ni radio --- */
+.card,
+.feed-card,
+.stat-card,
+.gym-card,
+.sessions-list,
+.session-card,
+.session-info,
+.tabs,
+.stats-section,
+.profile-header,
+.activity-chart-section,
+.activity-calendar-section,
+.friend-requests-card,
+.admin-tools-card,
+.comparison-table,
+.monthly-chart,
+.chart-container,
+.exercises-section,
+.ascents-section,
+.grade-selector,
+.summary-section,
+.sense-box,
+.gym-option,
+.friend-request-item {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+/* --- 2. Números héroes y etiquetas --- */
+.stat-value,
+.stat-card .stat-value,
+.metric b,
+.stat .stat-value {
+    font-size: 2.3rem !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    color: var(--ink) !important;
+    letter-spacing: -0.03em !important;
+}
+
+.stat-label,
+.stat-card .stat-label,
+.metric span,
+.stat .stat-label {
+    font-size: 0.72rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.07em !important;
+    color: var(--muted) !important;
+    font-weight: 600 !important;
+}
+
+/* La "tarjeta destacada" deja de ser bloque naranja: solo el número */
+.stat-card.highlight {
+    background: transparent !important;
+    color: var(--ink) !important;
+    border: none !important;
+}
+.stat-card.highlight .stat-value { color: var(--primary) !important; }
+.stat-card.highlight .stat-label { color: var(--muted) !important; }
+
+/* --- 3. Iconos flotantes (sin fondo ni círculo) --- */
+.stat-icon,
+.stat-card .stat-icon,
+.gym-icon,
+.exercise-item .exercise-type svg {
+    background: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    width: auto !important;
+    height: auto !important;
+}
+.stat-icon svg { width: 22px !important; height: 22px !important; }
+
+/* --- 4. Cabeceras y títulos --- */
+.section-title,
+.section-header h2,
+.activity-chart-section h2,
+.activity-calendar-section h2,
+.feed-header h2,
+.welcome-section h1,
+.profile-username,
+.page-header h1 {
+    color: var(--ink) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em;
+}
+.welcome-section p,
+.page-header p { color: var(--muted) !important; }
+
+/* --- 5. Feed: separación por hairline y espacio negativo --- */
+.feed-card {
+    border-bottom: var(--hairline) !important;
+    padding: 1.15rem 0 !important;
+    margin: 0 !important;
+}
+.feed-card:last-child { border-bottom: none !important; }
+.feed-stats .stat-value { font-size: 1.4rem !important; }
+.feed-stats .stat-label { font-size: 0.68rem !important; }
+
+/* --- 6. Indicadores de grado planos (texto/dot, sin contenedor) --- */
+.grade,
+.badge,
+.friendship-badge,
+.badge-pending {
+    background: transparent !important;
+    color: inherit !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+}
+
+/* --- 7. Botones planos --- */
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-generate-invitation,
+.end-session-btn,
+button.btn {
+    box-shadow: none !important;
+    text-transform: none;
+}
+.btn-primary,
+button.btn.primary {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 8px !important;
+}
+.btn-secondary,
+button.btn.ghost {
+    background: transparent !important;
+    border: var(--hairline) !important;
+    color: var(--ink) !important;
+    border-radius: 8px !important;
+}
+
+/* --- 8. Badges de color: planos --- */
+.streak-badge,
+.date-badge,
+.period-btn.active,
+.status-btn {
+    box-shadow: none !important;
+}
+
+/* --- 9. Calendario: celdas planas --- */
+.calendar-day,
+.calendar-nav-btn {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+/* --- 10. Inputs planos --- */
+input, select, textarea {
+    box-shadow: none !important;
+}
+
+/* --- 11. Patrón de "stat" y separación de secciones --- */
+.stat-card {
+    display: block !important;
+    padding: 0 !important;
+}
+
+.stat-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.stat-head .stat-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 !important;
+}
+
+.stat-head .stat-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+    fill: var(--muted) !important;
+}
+
+.stat-card.highlight .stat-head .stat-icon svg {
+    fill: var(--primary) !important;
+}
+
+.stat-head .stat-label {
+    margin: 0 !important;
+}
+
+/* Rótulo de sección */
+.section-kicker {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--muted);
+    font-weight: 700;
+    margin: 0 0 0.7rem;
+}
+
+/* Ritmo vertical y separación entre secciones */
+.stats-grid {
+    gap: 1.35rem 1.5rem !important;
+    padding-bottom: 1.5rem;
+    border-bottom: var(--hairline);
+    margin-bottom: 1.5rem !important;
+}
+
+.activity-calendar-section,
+.activity-chart-section {
+    border-top: var(--hairline);
+    padding-top: 1.5rem;
+}
+
+/* En pantallas amplias: stats en una sola fila de 4 (más editorial) */
+@media (min-width: 700px) {
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+/* Barra inferior plana también en escritorio */
+@media (min-width: 768px) {
+    .bottom-nav {
+        max-width: none;
+        left: 0;
+        right: 0;
+        transform: none;
+        border-radius: 0;
+    }
+}
+
+/* --- 12. Feed: cada actividad claramente separada --- */
+.feed-card {
+    padding: 1.5rem 0 !important;
+    margin: 0 !important;
+    border: none !important;
+}
+/* Sin separador entre actividades: solo el aire/espacio negativo,
+   igual que en la "actividad reciente" del dashboard. */
+.feed-header {
+    align-items: flex-start !important;
+    gap: 0.75rem;
+}
+/* Hairline fina entre la cabecera y el resumen de la actividad */
+.feed-stats {
+    margin-top: 1.1rem !important;
+    padding-top: 0.9rem !important;
+    border-top: 1px solid #F3F4F6;
+    gap: 2.25rem !important;
+    justify-content: flex-start !important;
+}
+.feed-stats .stat-value {
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+    color: var(--ink) !important;
+    letter-spacing: -0.02em;
+}
+.feed-stats .stat-value.flash,
+.feed-stats .stat-value.send {
+    color: var(--ink) !important;
+}
+.feed-stats .stat-label {
+    font-size: 0.66rem !important;
+}
+.activity-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-top: 1px;
+}
+.avatar {
+    box-shadow: none !important;
+}
+
+/* --- 13. Stats: secciones diferenciadas y números héroes --- */
+.tabs {
+    display: flex;
+    gap: 1.5rem;
+    border-bottom: var(--hairline);
+    margin-bottom: 1.75rem;
+}
+.tab-btn {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    border-radius: 0 !important;
+    padding: 0.6rem 0 !important;
+    color: var(--muted) !important;
+    font-weight: 600;
+    box-shadow: none !important;
+}
+.tab-btn.active {
+    color: var(--ink) !important;
+    border-bottom-color: var(--primary) !important;
+}
+
+.stats-section {
+    border-top: var(--hairline);
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+}
+.stats-section:first-child {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
+.stats-section h2 {
+    display: flex;
+    align-items: center;
+    font-size: 1.05rem !important;
+    color: var(--ink) !important;
+    font-weight: 700 !important;
+    padding-bottom: 0.6rem !important;
+    margin-bottom: 1rem !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    gap: 0.5rem;
+}
+.stats-section h2 svg {
+    fill: var(--muted) !important;
+    width: 20px !important;
+    height: 20px !important;
+    margin-right: 0 !important;
+    flex: 0 0 auto;
+}
+.stats-section .stat-card {
+    display: block !important;
+    padding: 0 !important;
+}
+.stats-section .stat-card .value {
+    font-size: 2.3rem !important;
+    font-weight: 800 !important;
+    color: var(--ink) !important;
+    letter-spacing: -0.03em;
+    line-height: 1.05 !important;
+}
+.stats-section .stat-card.highlight .value {
+    color: var(--primary) !important;
+}
+.stats-section .stat-card .label {
+    font-size: 0.72rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted) !important;
+    font-weight: 600;
+}
+
+.period-toggle {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    display: flex;
+    gap: 1.5rem;
+}
+.period-btn {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    border-radius: 0 !important;
+    color: var(--muted) !important;
+    box-shadow: none !important;
+    padding: 0.5rem 0 !important;
+}
+.period-btn.active {
+    color: var(--ink) !important;
+    border-bottom-color: var(--primary) !important;
+}
+
+/* --- 14. Stats: grados, chips y tablas planas --- */
+.grade-group {
+    margin-top: 1.5rem;
+}
+.grade-group:first-child {
+    margin-top: 0;
+}
+.grade-group + .grade-group {
+    border-top: 3px solid var(--border);
+    padding-top: 1.5rem;
+}
+/* Barras de grado: etiqueta estrecha para empezar más a la izquierda */
+.grade-bar-container {
+    gap: 0.5rem !important;
+}
+.grade-count {
+    min-width: 28px !important;
+}
+.grade-group-title {
+    font-size: 1rem !important;
+    color: var(--ink) !important;
+    font-weight: 700 !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.6rem !important;
+    margin-bottom: 0.85rem !important;
+    border-bottom: 1px solid #E5E7EB !important;
+}
+.grade-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 7px;
+    vertical-align: middle;
+}
+.grade-color {
+    background: transparent !important;
+    color: var(--ink) !important;
+    text-shadow: none !important;
+    border-radius: 0 !important;
+    width: 84px !important;
+    min-width: 84px !important;
+    flex: 0 0 84px !important;
+    height: auto !important;
+    justify-content: flex-start !important;
+    font-weight: 600 !important;
+    margin-right: 0.75rem !important;
+    font-size: 0.85rem !important;
+}
+.grade-label-box {
+    background: transparent !important;
+    color: var(--ink) !important;
+    text-shadow: none !important;
+    border-radius: 0 !important;
+    width: 84px !important;
+    min-width: 84px !important;
+    flex: 0 0 84px !important;
+    height: auto !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: flex-start !important;
+    font-weight: 600 !important;
+}
+.grade-bar {
+    background: #F0F0F0 !important;
+    height: 18px !important;
+    border-radius: 0 !important;
+}
+.grade-bar-container,
+.grade-bar-fill {
+    border-radius: 0 !important;
+}
+
+.comparison-table {
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 100%;
+}
+.comparison-table th {
+    text-align: left;
+    color: var(--muted) !important;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: var(--hairline) !important;
+    background: transparent !important;
+}
+.comparison-table td {
+    border-bottom: var(--hairline) !important;
+    color: var(--ink) !important;
+    background: transparent !important;
+}
+.comparison-table td.stat-value {
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+}
+.gym-card h3 svg {
+    fill: #2EC4B6 !important;
+    width: 20px !important;
+    height: 20px !important;
+    margin-right: 0 !important;
+    flex: 0 0 auto;
+}
+/* Mismo estilo de título que las stats individuales */
+.gym-card h3 {
+    font-size: 1.05rem !important;
+    color: var(--ink) !important;
+    font-weight: 700 !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.6rem !important;
+    margin-bottom: 1rem !important;
+    border-bottom: 1px solid #E5E7EB !important;
+}
+/* La leyenda ya no necesita su propia línea: la del título basta */
+.chart-legend {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+}
+
+/* --- 15. Fechas y badges de color: texto plano --- */
+.date-badge {
+    background: transparent !important;
+    color: var(--muted) !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    font-weight: 600;
+}
+
+/* --- 16. Session detail: ejercicios separados por hairline --- */
+.exercise-item {
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 1rem 0 !important;
+    border-bottom: var(--hairline) !important;
+}
+.exercise-item:last-child {
+    border-bottom: none !important;
+}
+
+/* --- 17. Gimnasios: chips de grado como dot + texto --- */
+.grade-pill {
+    background: transparent !important;
+    color: var(--ink) !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-right: 0.85rem;
+}
+
+/* --- 18. Profile: resumen plano y selects claros --- */
+.stat-item {
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+.stat-item .value {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    color: var(--ink) !important;
+}
+.stat-item .label {
+    font-size: 0.7rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted) !important;
+}
+select {
+    background: #fff !important;
+    color: var(--ink) !important;
+}
+
+/* --- 19. Amigos/usuarios: filas separadas por hairline --- */
+.user-item,
+.friend-item,
+.request-item {
+    background: transparent !important;
+    border-radius: 0 !important;
+    border-bottom: var(--hairline) !important;
+    padding: 0.9rem 0 !important;
+}
+.user-item:last-child,
+.friend-item:last-child,
+.request-item:last-child {
+    border-bottom: none !important;
+}
+
+/* --- 20. Comparativa amigos (stats): separación clara entre gimnasios --- */
+.gym-card {
+    border-top: 3px solid var(--border) !important;
+    padding-top: 1.75rem !important;
+    margin-top: 2rem !important;
+    margin-bottom: 0 !important;
+}
+.gym-card:first-child {
+    border-top: none !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+/* La etiqueta del grado mantiene el mismo ancho fijo que en las stats
+   individuales, para que todas las barras empiecen en el mismo eje. */
+.grade-label-box {
+    width: 84px !important;
+    min-width: 84px !important;
+    flex: 0 0 84px !important;
+    justify-content: flex-start !important;
+}
+.bars-container {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    gap: 4px !important;
+}
+/* Barras por usuario con EL MISMO patrón que las barras de bloques por
+   grado en las stats individuales: track gris de 18px + relleno de color
+   + número a la derecha del track, alineado con el de "Total". */
+.user-bar-row {
+    display: flex !important;
+    align-items: center !important;
+    height: auto !important;
+    background: transparent !important;
+    gap: 0.5rem !important;
+}
+.user-bar-track {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    height: 18px !important;
+    background: #F0F0F0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+}
+.user-bar-fill {
+    height: 100% !important;
+    border-radius: 0 !important;
+    transition: width 0.3s ease;
+}
+.user-bar-count {
+    min-width: 28px !important;
+    text-align: right !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    color: var(--ink) !important;
+}
