@@ -84,8 +84,7 @@ body.has-app-shell {
 /* --- 3. Iconos flotantes (sin fondo ni círculo) --- */
 .stat-icon,
 .stat-card .stat-icon,
-.gym-icon,
-.exercise-item .exercise-type svg {
+.gym-icon {
     background: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
@@ -93,6 +92,15 @@ body.has-app-shell {
     height: auto !important;
 }
 .stat-icon svg { width: 22px !important; height: 22px !important; }
+/* Icono del tipo de ejercicio: 20px fijos (antes se estiraba a pantalla completa) */
+.exercise-item .exercise-type svg {
+    background: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    width: 20px !important;
+    height: 20px !important;
+    flex: 0 0 auto;
+}
 
 /* --- 4. Cabeceras y títulos --- */
 .section-title,
@@ -299,6 +307,15 @@ input, select, textarea {
 }
 .avatar {
     box-shadow: none !important;
+}
+
+/* Acciones de la sesión (Compartir / Strava / Editar / Eliminar) */
+.session-actions {
+    display: flex;
+    margin-top: 1.5rem;
+}
+.session-actions:empty {
+    display: none;
 }
 
 /* Botón de borrar actividad: discreto, plano, sin contenedor */
