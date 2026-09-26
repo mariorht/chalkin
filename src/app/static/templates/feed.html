@@ -16,10 +16,11 @@
     <meta name="apple-mobile-web-app-title" content="Chalkin">
         <link rel="stylesheet" href="/static/css/app-shell.css">
     <link rel="stylesheet" href="/static/css/cards.css">
+    <link rel="stylesheet" href="/static/css/flat.css">
 </head>
 <body class="has-app-shell">
     <div class="container">
-        <div id="feedContainer">
+        <div id="feedContainer" class="feed-list">
             <div class="loading">
                 <div class="loading-spinner"></div>
                 <p>Cargando actividades...</p>
@@ -56,6 +57,9 @@
             // Title logic: use custom title or default to gym name
             const displayTitle = item.title ? escapeHtml(item.title) : `<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${escapeHtml(item.gym_name)}`;
             const subtitleHtml = item.subtitle ? `<span class="session-subtitle">${escapeHtml(item.subtitle)}</span>` : '';
+            const typeTag = item.activity_type === 'home'
+                ? '<span class="activity-tag">🏠 En casa</span>'
+                : '';
             // If custom title, show gym name
             const locationHtml = item.title ? `<span class="session-location"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${escapeHtml(item.gym_name)}</span>` : '';
             
@@ -66,6 +70,7 @@
                             <div class="avatar ${item.is_own ? 'own' : ''}" onclick="event.stopPropagation(); window.location.href='/users?id=${item.user_id}'">${avatarContent}</div>
                             <div class="user-details">
                                 <span class="username ${item.is_own ? 'own' : ''}">${escapeHtml(item.username)}</span>
+                                ${typeTag}
                                 <span class="gym-name">${displayTitle}</span>
                                 ${subtitleHtml}
                                 ${locationHtml}
@@ -80,7 +85,7 @@
                             <span class="date-full">${dateIcon.day} ${dateIcon.month}</span>
                         </div>
                     </div>
-                    
+
                     <div class="feed-stats">
                         <div class="stat">
                             <div class="stat-value">${item.total_ascents}</div>
@@ -149,7 +154,7 @@
                 const feedHTML = data.items.map(renderFeedItem).join('');
 
                 if (append) {
-                    container.innerHTML += feedHTML;
+                    container.insertAdjacentHTML('beforeend', feedHTML);
                 } else {
                     container.innerHTML = feedHTML;
                 }
