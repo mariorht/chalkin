@@ -1,25 +1,41 @@
 """
-Session model - a climbing session at a gym.
+Session model - a climbing session or a home training activity.
 """
+import enum
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, DateTime, Date, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, Date, ForeignKey, Text, Enum
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 
 
+class ActivityType(str, enum.Enum):
+    """Type of activity a session represents.
+
+    - GYM: climbing at a gym. Requires a gym and allows ascents (grades are
+      gym-scoped).
+    - HOME: training at home or anywhere outside a gym. No gym, no grades;
+      only complementary exercises (and force measurements).
+    """
+    GYM = "gym"
+    HOME = "home"
+
+
 class Session(Base):
     """
-    Climbing session entity.
-    
-    Represents a single visit to a gym where the user logs their climbs.
+    Session entity - a visit to a gym or a training activity.
+
+    When ``activity_type`` is ``gym`` the session is tied to a gym and can log
+    ascents. When it is ``home`` there is no gym and only exercises/measurements
+    apply.
     """
     
     __tablename__ = "sessions"
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    gym_id = Column(Integer, ForeignKey("gyms.id"), nullable=False)
+    gym_id = Column(Integer, ForeignKey("gyms.id"), nullable=True)
+    activity_type = Column(Enum(ActivityType), default=ActivityType.GYM, nullable=False)
     
     # When
     date = Column(Date, default=date.today, nullable=False)

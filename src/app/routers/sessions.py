@@ -12,13 +12,15 @@ from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.gym import Gym
 from app.models.grade import Grade
-from app.models.session import Session as ClimbingSession
+from app.models.session import Session as ClimbingSession, ActivityType
 from app.models.ascent import Ascent, AscentStatus
 from app.models.friendship import Friendship, FriendshipStatus
 from app.models.session_exercise import SessionExercise
 from app.schemas.session import SessionCreate, SessionResponse, SessionUpdate, SessionWithAscents
 from app.schemas.ascent import AscentCreate, AscentResponse
 from app.schemas.session_exercise import SessionExerciseCreate, SessionExerciseResponse, SessionExerciseUpdate
+from app.models.sense_rep import SenseRep
+from app.schemas.sense_rep import SenseRepCreate, SenseRepResponse
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
@@ -39,10 +41,12 @@ def is_friend(db: Session, user_id: int, other_user_id: int) -> bool:
 
 def enrich_session(session: ClimbingSession, db: Session) -> dict:
     """Add computed fields to a session."""
-    # Get gym name and location
-    gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
-    gym_name = gym.name if gym else "Gimnasio"
+    # Get gym name and location (home activities have no gym)
+    gym = db.query(Gym).filter(Gym.id == session.gym_id).first() if session.gym_id else None
+    gym_name = gym.name if gym else "Entrenamiento en casa"
     gym_location = gym.location if gym else None
+    activity_type = session.activity_type or ActivityType.GYM
+    is_gym = activity_type == ActivityType.GYM
     
     # Count ascents by status
     ascents = db.query(Ascent).filter(Ascent.session_id == session.id).all()
@@ -65,6 +69,7 @@ def enrich_session(session: ClimbingSession, db: Session) -> dict:
         "id": session.id,
         "user_id": session.user_id,
         "gym_id": session.gym_id,
+        "activity_type": activity_type,
         "date": session.date,
         "title": session.title,
         "subtitle": session.subtitle,
@@ -88,6 +93,7 @@ def list_sessions(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     gym_id: Optional[int] = None,
+    activity_type: Optional[ActivityType] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     db: Session = Depends(get_db),
@@ -102,6 +108,9 @@ def list_sessions(
     
     if gym_id:
         query = query.filter(ClimbingSession.gym_id == gym_id)
+    
+    if activity_type:
+        query = query.filter(ClimbingSession.activity_type == activity_type)
     
     if date_from:
         query = query.filter(ClimbingSession.date >= date_from)
@@ -122,19 +131,32 @@ def create_session(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Create a new climbing session (check-in to a gym).
+    Create a new session.
+
+    - ``activity_type=gym``: requires ``gym_id`` (climbing at a gym).
+    - ``activity_type=home``: ``gym_id`` is ignored/cleared (training at home).
     """
-    # Verify gym exists
-    gym = db.query(Gym).filter(Gym.id == session_data.gym_id).first()
-    if not gym:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Gym not found"
-        )
-    
+    data = session_data.model_dump()
+
+    if session_data.activity_type == ActivityType.GYM:
+        if not session_data.gym_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="gym_id is required for gym activities"
+            )
+        gym = db.query(Gym).filter(Gym.id == session_data.gym_id).first()
+        if not gym:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Gym not found"
+            )
+    else:
+        # Home activities are not tied to a gym.
+        data["gym_id"] = None
+
     session = ClimbingSession(
         user_id=current_user.id,
-        **session_data.model_dump()
+        **data
     )
     
     db.add(session)
@@ -173,8 +195,9 @@ def get_session(
             )
     
     # Get gym name
-    gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
-    gym_name = gym.name if gym else "Gimnasio"
+    gym = db.query(Gym).filter(Gym.id == session.gym_id).first() if session.gym_id else None
+    gym_name = gym.name if gym else "Entrenamiento en casa"
+    activity_type = session.activity_type or ActivityType.GYM
     
     # Get session owner username
     session_owner = db.query(User).filter(User.id == session.user_id).first()
@@ -188,6 +211,7 @@ def get_session(
         "id": session.id,
         "user_id": session.user_id,
         "gym_id": session.gym_id,
+        "activity_type": activity_type,
         "date": session.date,
         "title": session.title,
         "subtitle": session.subtitle,
@@ -231,6 +255,27 @@ def update_session(
         )
     
     update_data = session_data.model_dump(exclude_unset=True)
+    target_type = update_data.get("activity_type", session.activity_type) or ActivityType.GYM
+    target_gym_id = update_data.get("gym_id", session.gym_id)
+
+    if target_type == ActivityType.GYM:
+        if not target_gym_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="gym_id is required for gym activities"
+            )
+        gym = db.query(Gym).filter(Gym.id == target_gym_id).first()
+        if not gym:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gym not found")
+    else:
+        # Switching to a home activity: only allowed if it has no ascents.
+        if session.ascents:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot convert a session with ascents into a home activity"
+            )
+        update_data["gym_id"] = None
+
     for field, value in update_data.items():
         setattr(session, field, value)
     
@@ -340,6 +385,13 @@ def add_ascent(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found"
+        )
+    
+    # Ascents need a gym (grades are gym-scoped). Home activities can't have them.
+    if session.gym_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot log ascents in an activity without a gym. Use exercises instead."
         )
     
     # Verify grade exists and belongs to the session's gym
@@ -534,4 +586,112 @@ def delete_exercise(
     db.delete(db_exercise)
     db.commit()
     
+    return None
+
+
+# ===== Chalkin Sense reps (force measurements per exercise) =====
+
+def _get_owned_exercise(db: Session, exercise_id: int, current_user: User) -> SessionExercise:
+    """Fetch an exercise verifying it belongs to the current user's session."""
+    exercise = db.query(SessionExercise).filter(SessionExercise.id == exercise_id).first()
+    if not exercise:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Exercise not found"
+        )
+    session = db.query(ClimbingSession).filter(ClimbingSession.id == exercise.session_id).first()
+    if not session or session.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only manage your own exercises"
+        )
+    return exercise
+
+
+@router.post(
+    "/exercises/{exercise_id}/reps",
+    response_model=List[SenseRepResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+def add_sense_reps(
+    exercise_id: int,
+    reps: List[SenseRepCreate],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Save one or more force reps measured with Chalkin Sense for an exercise.
+
+    The client records a set of reps and posts them in bulk.
+    """
+    exercise = _get_owned_exercise(db, exercise_id, current_user)
+
+    created = []
+    for index, rep in enumerate(reps, start=1):
+        data = rep.model_dump()
+        # Defaults for optional fields
+        data.setdefault("source", "sense")
+        if data.get("rep_index") is None:
+            data["rep_index"] = index
+        db_rep = SenseRep(
+            exercise_id=exercise.id,
+            session_id=exercise.session_id,
+            **data,
+        )
+        db.add(db_rep)
+        created.append(db_rep)
+
+    db.commit()
+    for rep in created:
+        db.refresh(rep)
+
+    return created
+
+
+@router.get("/exercises/{exercise_id}/reps", response_model=List[SenseRepResponse])
+def list_sense_reps(
+    exercise_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    List the force reps of an exercise. Owners and friends can view them.
+    """
+    exercise = db.query(SessionExercise).filter(SessionExercise.id == exercise_id).first()
+    if not exercise:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Exercise not found"
+        )
+    session = db.query(ClimbingSession).filter(ClimbingSession.id == exercise.session_id).first()
+    if session and session.user_id != current_user.id:
+        if not is_friend(db, current_user.id, session.user_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only view your own sessions or your friends' sessions"
+            )
+    return (
+        db.query(SenseRep)
+        .filter(SenseRep.exercise_id == exercise_id)
+        .order_by(SenseRep.set_index, SenseRep.rep_index)
+        .all()
+    )
+
+
+@router.delete("/reps/{rep_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_sense_rep(
+    rep_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a single force rep."""
+    rep = db.query(SenseRep).filter(SenseRep.id == rep_id).first()
+    if not rep:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Rep not found"
+        )
+    _get_owned_exercise(db, rep.exercise_id, current_user)
+    db.delete(rep)
+    db.commit()
     return None

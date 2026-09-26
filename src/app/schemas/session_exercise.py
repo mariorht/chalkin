@@ -2,7 +2,7 @@
 SessionExercise schemas for request/response validation.
 """
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -13,6 +13,13 @@ class SessionExerciseBase(BaseModel):
     reps: Optional[str] = Field(None, max_length=50, description="Reps (e.g., '10', 'max', '5-3-2')")
     weight: Optional[float] = Field(None, description="Weight in kg for weighted exercises")
     notes: Optional[str] = None
+    # Fingerboard/hangboard context
+    protocol: Optional[str] = Field(None, max_length=50)
+    edge_depth_mm: Optional[int] = Field(None, ge=0)
+    hand: Optional[str] = Field(None, max_length=10)  # left | right | both
+    grip: Optional[str] = Field(None, max_length=30)  # open | half_crimp | full_crimp | pinch | mono | two_finger | other
+    added_weight_kg: Optional[float] = None
+    body_weight_kg: Optional[float] = Field(None, gt=0)
 
 
 class SessionExerciseCreate(SessionExerciseBase):
@@ -27,6 +34,12 @@ class SessionExerciseUpdate(BaseModel):
     reps: Optional[str] = Field(None, max_length=50)
     weight: Optional[float] = None
     notes: Optional[str] = None
+    protocol: Optional[str] = Field(None, max_length=50)
+    edge_depth_mm: Optional[int] = Field(None, ge=0)
+    hand: Optional[str] = Field(None, max_length=10)
+    grip: Optional[str] = Field(None, max_length=30)
+    added_weight_kg: Optional[float] = None
+    body_weight_kg: Optional[float] = Field(None, gt=0)
 
 
 class SessionExerciseResponse(SessionExerciseBase):
@@ -34,5 +47,12 @@ class SessionExerciseResponse(SessionExerciseBase):
     id: int
     session_id: int
     created_at: datetime
+    sense_reps: List["SenseRepResponse"] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# Forward reference resolution
+from app.schemas.sense_rep import SenseRepResponse
+SessionExerciseResponse.model_rebuild()
+

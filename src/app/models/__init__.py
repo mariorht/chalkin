@@ -10,6 +10,7 @@ from app.models.strava_connection import StravaConnection
 from app.models.invitation import Invitation
 from app.models.session_exercise import SessionExercise
 from app.models.password_reset import PasswordResetToken
+from app.models.sense_rep import SenseRep
 
 __all__ = [
 	"User",
@@ -23,4 +24,5 @@ __all__ = [
 	"Invitation",
 	"SessionExercise",
 	"PasswordResetToken",
+	"SenseRep",
 ]

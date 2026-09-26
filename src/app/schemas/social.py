@@ -60,8 +60,9 @@ class FeedItem(BaseModel):
     user_id: int
     username: str
     profile_picture: Optional[str] = None
-    gym_id: int
-    gym_name: str
+    activity_type: Optional[str] = None
+    gym_id: Optional[int] = None
+    gym_name: Optional[str] = None
     gym_location: Optional[str] = None
     title: Optional[str] = None
     subtitle: Optional[str] = None

@@ -792,7 +792,8 @@
             margin-bottom: 0.75rem;
         }
 
-        .exercise-inputs input {
+        .exercise-inputs input,
+        .exercise-inputs select {
             width: 100%;
             padding: 0.75rem;
             border: 2px solid #E5E7EB;
@@ -800,6 +801,16 @@
             font-size: 0.9rem;
             box-sizing: border-box;
             min-width: 0;
+            background: #fff;
+            color: var(--dark);
+            font-family: inherit;
+            height: 42px;
+        }
+
+        .exercise-inputs select:focus,
+        .exercise-inputs input:focus {
+            outline: none;
+            border-color: var(--primary);
         }
 
         #exerciseNotes {
@@ -907,6 +918,91 @@
 
         .exercise-actions button:hover {
             opacity: 1;
+        }
+
+        /* Chalkin Sense recording box */
+        .sense-box {
+            margin-top: 0.75rem;
+            padding: 0.85rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            background: var(--light);
+        }
+        .sense-head {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .sense-head #senseStatus {
+            font-size: 0.8rem;
+            color: var(--gray);
+            font-weight: 600;
+        }
+        .sense-head #senseStatus.on { color: var(--success, #22C55E); }
+        .btn-sense {
+            background: var(--dark);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .sense-live {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.7rem;
+            font-size: 0.9rem;
+            color: var(--dark);
+        }
+        .sense-live b { font-size: 1.1rem; }
+        .sense-live .sense-actions { display: flex; gap: 0.5rem; margin-left: auto; }
+        .sense-live .sense-actions button {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 0.35rem 0.7rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--dark);
+            cursor: pointer;
+        }
+        .sense-reps {
+            margin-top: 0.6rem;
+            font-size: 0.85rem;
+            color: var(--dark);
+        }
+        .sense-reps .rep-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            border-top: 1px solid #E5E7EB;
+        }
+        .exercise-sense-reps {
+            margin-top: 0.4rem;
+        }
+        .exercise-sense-reps .sense-set {
+            margin-top: 0.35rem;
+        }
+        .exercise-sense-reps .sense-set-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .exercise-sense-reps .rep-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--dark);
+            padding: 0.15rem 0;
+            border-top: 1px solid #F0F0F0;
         }
     </style>
 </head>
@@ -1033,6 +1129,7 @@
                         Fingerboard
                     </button>
                     <button type="button" class="exercise-type-btn" data-type="other">➕ Otro</button>
+                    <button type="button" class="exercise-type-btn" data-type="block">🧱 Levantamiento</button>
                 </div>
                 
                 <div class="exercise-details" id="exerciseDetails" style="display:none;">
@@ -1045,6 +1142,46 @@
                     </div>
                     
                     <textarea id="exerciseNotes" placeholder="Notas (opcional)..." rows="2"></textarea>
+                    
+                    <!-- Fingerboard context (optional) -->
+                    <div class="exercise-inputs" style="margin-top:0.5rem;">
+                        <input type="text" id="exerciseProtocol" placeholder="Protocolo (ej: 7:3)">
+                        <input type="number" id="exerciseEdge" placeholder="Regleta (mm)" min="0">
+                        <select id="exerciseHand">
+                            <option value="">Mano</option>
+                            <option value="left">Izquierda</option>
+                            <option value="right">Derecha</option>
+                            <option value="both">Ambas</option>
+                        </select>
+                        <select id="exerciseGrip">
+                            <option value="">Agarre</option>
+                            <option value="open">Abierta</option>
+                            <option value="half_crimp">Semicrimp</option>
+                            <option value="full_crimp">Crimp</option>
+                            <option value="pinch">Pinza</option>
+                            <option value="mono">Mono</option>
+                            <option value="two_finger">Dos dedos</option>
+                            <option value="other">Otra</option>
+                        </select>
+                        <input type="number" id="exerciseAddedWeight" placeholder="Lastre (kg)" step="0.5">
+                    </div>
+
+                    <!-- Chalkin Sense recording -->
+                    <div class="sense-box" id="senseBox">
+                        <div class="sense-head">
+                            <button type="button" class="btn-sense" id="senseConnectBtn">🎛️ Conectar Chalkin Sense</button>
+                            <span id="senseStatus">Desconectado</span>
+                        </div>
+                        <div class="sense-live" id="senseLive" style="display:none;">
+                            <div>Fuerza: <b id="senseForce">0.0</b> kg</div>
+                            <div>Serie <b id="senseSetLabel">1</b>: <b id="senseRepCount">0</b> reps</div>
+                            <div class="sense-actions">
+                                <button type="button" id="senseNewSetBtn">Nueva serie</button>
+                                <button type="button" id="senseClearBtn">Borrar</button>
+                            </div>
+                        </div>
+                        <div class="sense-reps" id="senseRepsList"></div>
+                    </div>
                     
                     <div class="exercise-form-actions">
                         <button class="btn-secondary" onclick="cancelExerciseForm()">Cancelar</button>
@@ -1137,6 +1274,15 @@
             return `${minutes} minutos`;
         }
 
+        function applyActivityType(isHome) {
+            ['gradeSelector', 'summarySection'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = isHome ? 'none' : '';
+            });
+            const ascentsSection = document.querySelector('.ascents-section');
+            if (ascentsSection) ascentsSection.style.display = isHome ? 'none' : '';
+        }
+
         async function loadSession() {
             try {
                 const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}`);
@@ -1151,6 +1297,9 @@
                 session = await response.json();
                 startTime = parseUTCDate(session.started_at);
                 isSessionEnded = session.ended_at !== null;
+
+                // Home activities have no gym/grades: hide ascent logging UI.
+                applyActivityType(session.activity_type === 'home');
                 
                 // Check if this is someone else's session
                 const isOwnSession = session.is_own !== false;
@@ -1165,7 +1314,7 @@
                 }
                 
                 // Show owner name for friend's sessions
-                let gymTitle = session.gym_name || 'Sesión de escalada';
+                let gymTitle = session.gym_name || 'Entrenamiento en casa';
                 if (!isOwnSession && session.owner_username) {
                     gymTitle = `${session.owner_username} en ${gymTitle}`;
                 }
@@ -1191,7 +1340,7 @@
                     month: 'long', 
                     day: 'numeric' 
                 });
-                document.getElementById('sessionMeta').innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#6B7280;display:inline-block;vertical-align:middle;margin-right:4px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${escapeHtml(session.gym_name || 'Gimnasio')} • ${dateStr}`;
+                document.getElementById('sessionMeta').innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#6B7280;display:inline-block;vertical-align:middle;margin-right:4px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${escapeHtml(session.gym_name || 'Entrenamiento en casa')} • ${dateStr}`;
                 
                 if (session.notes) {
                     document.getElementById('sessionMeta').innerHTML += ` • ${escapeHtml(session.notes)}`;
@@ -1207,8 +1356,10 @@
                     updateTimer();
                 }
                 
-                // Load grades for this gym
-                await loadGrades(session.gym_id);
+                // Load grades for this gym (home activities have no grades)
+                if (session.gym_id) {
+                    await loadGrades(session.gym_id);
+                }
                 
                 // Load ascents from session data
                 ascents = session.ascents || [];
@@ -2080,7 +2231,8 @@
                 'pullups': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M4 4h16v2H4V4zm8 4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2v4h4v-4c0-1.1-.9-2-2-2z"/></svg>',
                 'campus': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/></svg>',
                 'fingerboard': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>',
-                'other': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>'
+                'other': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>',
+                'block': '🧱 '
             };
             
             container.innerHTML = exercises.map(ex => {
@@ -2088,13 +2240,40 @@
                 const typeName = {
                     'pullups': 'Dominadas',
                     'campus': 'Campus',
-                    'fingerboard': 'Fingerboard'
+                    'fingerboard': 'Fingerboard',
+                    'block': 'Levantamiento'
                 }[ex.exercise_type] || ex.exercise_type;
                 
                 let details = [];
                 if (ex.sets) details.push(`${ex.sets} series`);
                 if (ex.reps) details.push(`${ex.reps} reps`);
                 if (ex.weight) details.push(`${ex.weight} kg`);
+                if (ex.protocol) details.push(ex.protocol);
+                if (ex.edge_depth_mm) details.push(`${ex.edge_depth_mm} mm`);
+                if (ex.hand) details.push({ left: 'izq', right: 'der', both: 'ambas' }[ex.hand] || ex.hand);
+                if (ex.grip) details.push('agarre ' + ({ open: 'abierta', half_crimp: 'semicrimp', full_crimp: 'crimp', pinch: 'pinza', mono: 'mono', two_finger: '2 dedos', other: 'otra' }[ex.grip] || ex.grip));
+                if (ex.added_weight_kg) details.push(`+${ex.added_weight_kg} kg`);
+
+                // Chalkin Sense reps, shown individually and grouped by set
+                const reps = ex.sense_reps || [];
+                let senseSummary = '';
+                if (reps.length) {
+                    const bySet = {};
+                    reps.forEach(r => {
+                        const s = r.set_index || 1;
+                        (bySet[s] = bySet[s] || []).push(r);
+                    });
+                    const fmt = v => (v == null ? '—' : Number(v).toFixed(1));
+                    const groups = Object.keys(bySet).sort((a, b) => a - b).map(s => {
+                        const rows = bySet[s].map(r => `
+                            <div class="rep-row">
+                                <span>rep ${r.rep_index}</span>
+                                <span>${fmt(r.peak_force_kg)} kg · RFD ${r.rfd_kg_s == null ? '—' : Math.round(r.rfd_kg_s)} · TUT ${fmt(r.tut_s)} s</span>
+                            </div>`).join('');
+                        return `<div class="sense-set"><div class="sense-set-title">Serie ${s}</div>${rows}</div>`;
+                    }).join('');
+                    senseSummary = `<div class="exercise-sense-reps">${groups}</div>`;
+                }
                 
                 // Show delete button if session is active OR in edit mode
                 const isOwnSession = session && (session.is_own !== false);
@@ -2106,6 +2285,7 @@
                             <div class="exercise-type">${icon}${escapeHtml(typeName)}</div>
                             ${details.length > 0 ? `<div class="exercise-details-text">${escapeHtml(details.join(' • '))}</div>` : ''}
                             ${ex.notes ? `<div class="exercise-notes">"${escapeHtml(ex.notes)}"</div>` : ''}
+                            ${senseSummary}
                         </div>
                         ${canEdit ? `
                             <div class="exercise-actions">
@@ -2143,6 +2323,20 @@
                 } else {
                     customInput.style.display = 'none';
                 }
+
+                // Levantamiento: la fuerza la mide el sensor, no se añade lastre
+                const addedWeight = document.getElementById('exerciseAddedWeight');
+                const measuresWithSensor = selectedExerciseType === 'block';
+                addedWeight.style.display = measuresWithSensor ? 'none' : '';
+                if (measuresWithSensor) addedWeight.value = '';
+
+                // El peso se toma del sensor si está conectado; si no, manual
+                const weightInput = document.getElementById('exerciseWeight');
+                if (measuresWithSensor) {
+                    updateExerciseWeightField();
+                } else {
+                    weightInput.disabled = false;
+                }
             });
         });
 
@@ -2158,7 +2352,142 @@
             document.getElementById('exerciseReps').value = '';
             document.getElementById('exerciseWeight').value = '';
             document.getElementById('exerciseNotes').value = '';
+            document.getElementById('exerciseProtocol').value = '';
+            document.getElementById('exerciseEdge').value = '';
+            document.getElementById('exerciseHand').value = '';
+            document.getElementById('exerciseGrip').value = '';
+            document.getElementById('exerciseAddedWeight').value = '';
             selectedExerciseType = null;
+            resetSense();
+        }
+
+        // ===== Chalkin Sense recording =====
+        let senseClient = null;
+        let senseReps = [];
+        let senseSetIndex = 1;
+        let senseRepInSet = 0;
+        let sensePull = null;
+        let senseConnected = false;
+
+        // Para levantamiento: el peso se toma del sensor si hay conexión;
+        // si no, se permite escribirlo a mano.
+        function updateExerciseWeightField() {
+            if (selectedExerciseType !== 'block') return;
+            const weightInput = document.getElementById('exerciseWeight');
+            if (!weightInput) return;
+            if (senseConnected) {
+                const peaks = senseReps.map(r => r.peak_force_kg).filter(v => v != null);
+                weightInput.value = peaks.length ? Math.max(...peaks).toFixed(1) : '';
+                weightInput.disabled = true;
+            } else {
+                weightInput.disabled = false;
+            }
+        }
+
+        function renderSenseReps() {
+            document.getElementById('senseRepCount').textContent = String(senseRepInSet);
+            document.getElementById('senseSetLabel').textContent = String(senseSetIndex);
+            const list = document.getElementById('senseRepsList');
+            if (!senseReps.length) { list.innerHTML = ''; return; }
+            list.innerHTML = senseReps.map((r) => `
+                <div class="rep-row">
+                    <span>Serie ${r.set_index} · rep ${r.rep_index}</span>
+                    <span>${r.peak_force_kg != null ? r.peak_force_kg.toFixed(1) + ' kg' : '—'}
+                        · RFD ${r.rfd_kg_s != null ? Math.round(r.rfd_kg_s) : '—'}
+                        · TUT ${r.tut_s != null ? r.tut_s.toFixed(1) + ' s' : '—'}</span>
+                </div>
+            `).join('');
+        }
+
+        async function connectSense() {
+            const statusEl = document.getElementById('senseStatus');
+            try {
+                const sdk = await import('/static/sdk/js/index.js');
+                senseClient = new sdk.SenseClient();
+
+                senseClient.addEventListener(sdk.SenseEvent.STATUS, (e) => {
+                    const on = e.detail.connected;
+                    senseConnected = on;
+                    statusEl.textContent = on ? 'Conectado' : 'Desconectado';
+                    statusEl.className = on ? 'on' : '';
+                    document.getElementById('senseLive').style.display = on ? 'flex' : 'none';
+                    document.getElementById('senseConnectBtn').textContent =
+                        on ? '🎛️ Reconectar' : '🎛️ Conectar Chalkin Sense';
+                    updateExerciseWeightField();
+                });
+
+                senseClient.addEventListener(sdk.SenseEvent.SAMPLE, (e) => {
+                    const kg = e.detail.kg;
+                    document.getElementById('senseForce').textContent = kg.toFixed(1);
+                    if (!sensePull && kg > 2.0) sensePull = { sum: 0, count: 0 };
+                    if (sensePull && kg > 1.0) { sensePull.sum += kg; sensePull.count += 1; }
+                });
+
+                senseClient.addEventListener(sdk.SenseEvent.PULL_END, (e) => {
+                    const p = e.detail;
+                    const mean = sensePull && sensePull.count ? sensePull.sum / sensePull.count : null;
+                    sensePull = null;
+                    senseRepInSet += 1;
+                    senseReps.push({
+                        set_index: senseSetIndex,
+                        rep_index: senseRepInSet,
+                        peak_force_kg: p.peakKg,
+                        mean_force_kg: mean,
+                        rfd_kg_s: p.rfdKgS,
+                        tut_s: p.tutS,
+                        duration_s: p.durationS,
+                        source: 'sense',
+                    });
+                    renderSenseReps();
+                    updateExerciseWeightField();
+                });
+
+                senseClient.addEventListener(sdk.SenseEvent.ERROR, (e) => {
+                    statusEl.textContent = 'Error: ' + e.detail.error.message;
+                });
+
+                await senseClient.connect();
+            } catch (err) {
+                statusEl.textContent = 'Error: ' + err.message;
+            }
+        }
+
+        document.getElementById('senseConnectBtn')?.addEventListener('click', connectSense);
+
+        document.getElementById('senseNewSetBtn')?.addEventListener('click', () => {
+            if (senseRepInSet > 0) {
+                senseSetIndex += 1;
+                senseRepInSet = 0;
+                renderSenseReps();
+            }
+        });
+
+        document.getElementById('senseClearBtn')?.addEventListener('click', () => {
+            if (!senseReps.length || !confirm('¿Borrar las reps grabadas?')) return;
+            senseReps = [];
+            senseSetIndex = 1;
+            senseRepInSet = 0;
+            renderSenseReps();
+        });
+
+        function resetSense() {
+            if (senseClient && senseClient.isConnected) senseClient.disconnect();
+            senseClient = null;
+            senseReps = [];
+            senseSetIndex = 1;
+            senseRepInSet = 0;
+            sensePull = null;
+            senseConnected = false;
+            const weightInput = document.getElementById('exerciseWeight');
+            if (weightInput) weightInput.disabled = false;
+            const live = document.getElementById('senseLive');
+            if (live) live.style.display = 'none';
+            const statusEl = document.getElementById('senseStatus');
+            if (statusEl) { statusEl.textContent = 'Desconectado'; statusEl.className = ''; }
+            const btn = document.getElementById('senseConnectBtn');
+            if (btn) btn.textContent = '🎛️ Conectar Chalkin Sense';
+            const list = document.getElementById('senseRepsList');
+            if (list) list.innerHTML = '';
         }
 
         async function saveExercise() {
@@ -2181,7 +2510,12 @@
                 sets: parseInt(document.getElementById('exerciseSets').value) || null,
                 reps: document.getElementById('exerciseReps').value.trim() || null,
                 weight: parseFloat(document.getElementById('exerciseWeight').value) || null,
-                notes: document.getElementById('exerciseNotes').value.trim() || null
+                notes: document.getElementById('exerciseNotes').value.trim() || null,
+                protocol: document.getElementById('exerciseProtocol').value.trim() || null,
+                edge_depth_mm: parseInt(document.getElementById('exerciseEdge').value) || null,
+                hand: document.getElementById('exerciseHand').value || null,
+                grip: document.getElementById('exerciseGrip').value || null,
+                added_weight_kg: parseFloat(document.getElementById('exerciseAddedWeight').value) || null
             };
             
             try {
@@ -2191,6 +2525,15 @@
                 });
                 
                 if (response.ok) {
+                    const exercise = await response.json();
+                    // Save any reps captured with Chalkin Sense
+                    if (senseReps.length) {
+                        await fetchWithAuth(`${API_URL}/sessions/exercises/${exercise.id}/reps`, {
+                            method: 'POST',
+                            body: JSON.stringify(senseReps)
+                        });
+                    }
+                    resetSense();
                     cancelExerciseForm();
                     await loadExercises();
                 } else {
