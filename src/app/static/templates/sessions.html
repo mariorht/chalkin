@@ -77,6 +77,10 @@
                         <div class="date-info">
                             <span class="date-badge">${Utils.formatDateBadge(session.date)}</span>
                             <span class="date-full">${dateIcon.day} ${dateIcon.month}</span>
+                            <button type="button" class="session-delete-btn" title="Borrar actividad"
+                                    aria-label="Borrar actividad" onclick="deleteSession(${session.id}, event)">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            </button>
                         </div>
                     </div>
                     
@@ -100,6 +104,36 @@
                     </div>
                 </div>
             `;
+        }
+
+        async function deleteSession(sessionId, event) {
+            // La tarjeta navega al detalle al hacer clic; evita que el borrado la abra.
+            if (event) event.stopPropagation();
+
+            if (!confirm('¿Borrar esta actividad? Se eliminarán también sus bloques y ejercicios. Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            try {
+                const response = await AppShell.fetchWithAuth(`${API_URL}/sessions/${sessionId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response || response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                if (response.status === 204) {
+                    loadSessions();
+                    return;
+                }
+
+                alert('No se pudo borrar la actividad. Inténtalo de nuevo.');
+            } catch (error) {
+                console.error('Error deleting session:', error);
+                alert('No se pudo borrar la actividad. Inténtalo de nuevo.');
+            }
         }
 
         async function loadSessions() {

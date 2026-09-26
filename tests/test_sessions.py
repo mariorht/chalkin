@@ -4,6 +4,10 @@ Tests for session endpoints.
 import pytest
 from datetime import date
 
+from app.core.security import create_access_token
+from app.models.ascent import Ascent
+from app.models.session import Session
+
 
 class TestSessions:
     """Tests for /api/sessions endpoints."""
@@ -168,7 +172,84 @@ class TestSessions:
         # Verify deleted
         response = client.get(f"/api/sessions/{test_session.id}", headers=auth_headers)
         assert response.status_code == 404
-    
+
+    def test_delete_session_not_found(self, client, auth_headers):
+        """Test deleting a session that does not exist."""
+        response = client.delete("/api/sessions/9999", headers=auth_headers)
+
+        assert response.status_code == 404
+
+    def test_delete_session_unauthorized(self, client, test_session):
+        """Test deleting a session without authentication."""
+        response = client.delete(f"/api/sessions/{test_session.id}")
+
+        assert response.status_code == 401
+
+    def test_delete_session_forbidden_for_other_user(
+        self, client, db, test_session, create_user
+    ):
+        """Test that a user cannot delete someone else's session."""
+        other = create_user("intruder", "intruder@example.com", "intruderpass123")
+        other_token = create_access_token(data={"sub": str(other.id)})
+        other_headers = {"Authorization": f"Bearer {other_token}"}
+
+        response = client.delete(
+            f"/api/sessions/{test_session.id}", headers=other_headers
+        )
+
+        # No se revela que existe: 404 y la sesión sigue intacta
+        assert response.status_code == 404
+
+        db.expire_all()
+        assert db.query(Session).filter(Session.id == test_session.id).first() is not None
+
+    def test_delete_session_removes_ascents(
+        self, client, db, auth_headers, test_session, test_grades
+    ):
+        """Test that deleting a session also removes its ascents."""
+        session_id = test_session.id
+        client.post(
+            f"/api/sessions/{session_id}/ascents",
+            headers=auth_headers,
+            json={"grade_id": test_grades[0].id, "status": "flash"},
+        )
+        client.post(
+            f"/api/sessions/{session_id}/ascents",
+            headers=auth_headers,
+            json={"grade_id": test_grades[1].id, "status": "send"},
+        )
+
+        assert db.query(Ascent).filter(Ascent.session_id == session_id).count() == 2
+
+        response = client.delete(f"/api/sessions/{session_id}", headers=auth_headers)
+        assert response.status_code == 204
+
+        db.expire_all()
+        assert db.query(Ascent).filter(Ascent.session_id == session_id).count() == 0
+
+    def test_delete_session_does_not_affect_other_sessions(
+        self, client, db, auth_headers, test_user, test_gym, test_session
+    ):
+        """Test that deleting one session leaves the user's other sessions untouched."""
+        deleted_id = test_session.id
+        other = Session(user_id=test_user.id, gym_id=test_gym.id, date=date.today())
+        db.add(other)
+        db.commit()
+        db.refresh(other)
+        other_id = other.id
+
+        response = client.delete(f"/api/sessions/{deleted_id}", headers=auth_headers)
+        assert response.status_code == 204
+
+        db.expire_all()
+        assert db.query(Session).filter(Session.id == other_id).first() is not None
+
+        response = client.get("/api/sessions", headers=auth_headers)
+        assert response.status_code == 200
+        remaining_ids = [s["id"] for s in response.json()]
+        assert other_id in remaining_ids
+        assert deleted_id not in remaining_ids
+
     def test_add_ascent_to_session(self, client, auth_headers, test_session, test_grades):
         """Test adding an ascent to a session."""
         response = client.post(f"/api/sessions/{test_session.id}/ascents",
