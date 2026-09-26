@@ -647,7 +647,7 @@ def _build_feed_item(
         title=session.title,
         subtitle=session.subtitle,
         date=session.date,
-        started_at=session.started_at,
+        started_at=session.started_at or session.created_at,
         ended_at=session.ended_at,
         total_ascents=total_ascents,
         flashes=flashes,
