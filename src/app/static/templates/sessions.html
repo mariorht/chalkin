@@ -53,6 +53,8 @@
         let profileOwner = isOwnProfile ? (AppShell.user || {}) : null;
 
         function renderSessionCard(session) {
+            // El endpoint propio devuelve `id`; el social (perfil ajeno), `session_id`.
+            const sessionId = session.id != null ? session.id : session.session_id;
             const isActive = !session.ended_at;
             const duration = Utils.formatDuration(session.started_at, session.ended_at);
             const dateIcon = Utils.formatDateIcon(session.date);
@@ -69,7 +71,7 @@
             const locationHtml = session.title ? `<span class="session-location">${locIcon}${escapeHtml(session.gym_name)}</span>` : '';
             
             return `
-                <div class="feed-card" onclick="window.location.href='/sessions/${session.id}'">
+                <div class="feed-card" onclick="window.location.href='/sessions/${sessionId}'">
                     <div class="feed-header">
                         <div class="user-info">
                             <div class="avatar ${isOwnProfile ? 'own' : ''}" onclick="event.stopPropagation(); window.location.href='/users?id=${user.id || ''}'">${avatarContent}</div>
@@ -88,7 +90,7 @@
                             <span class="date-badge">${Utils.formatDateBadge(session.date)}</span>
                             <span class="date-full">${dateIcon.day} ${dateIcon.month}</span>
                             ${isOwnProfile ? `<button type="button" class="session-delete-btn" title="Borrar actividad"
-                                    aria-label="Borrar actividad" onclick="deleteSession(${session.id}, event)">
+                                    aria-label="Borrar actividad" onclick="deleteSession(${sessionId}, event)">
                                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                             </button>` : ''}
                         </div>
@@ -255,6 +257,12 @@
         }
 
         loadSessions();
+        window.addEventListener('popstate', loadSessions);
+
+        // La app-shell maneja el enrutado; al volver a /sessions reengancha el render.
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) loadSessions();
+        });
     </script>
 </body>
 </html>
