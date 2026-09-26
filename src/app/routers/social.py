@@ -542,46 +542,10 @@ def get_user_profile(
     ).order_by(desc(ClimbingSession.date), desc(ClimbingSession.started_at)).limit(10).all()
     
     # Build feed items for recent sessions
-    recent_sessions = []
-    for session in recent_sessions_data:
-        gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
-        ascents = db.query(Ascent).filter(Ascent.session_id == session.id).all()
-        total_ascents = len(ascents)
-        flashes = len([a for a in ascents if a.status == AscentStatus.FLASH])
-        sends = len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.FLASH]])
-        
-        # Get max grade for this session
-        session_max_grade_label = None
-        if ascents:
-            send_ascents = [a for a in ascents if a.status != AscentStatus.PROJECT]
-            if send_ascents:
-                grade_ids = [a.grade_id for a in send_ascents]
-                session_max_grade = db.query(Grade).filter(
-                    Grade.id.in_(grade_ids)
-                ).order_by(desc(Grade.relative_difficulty)).first()
-                if session_max_grade:
-                    session_max_grade_label = session_max_grade.label
-        
-        recent_sessions.append(FeedItem(
-            session_id=session.id,
-            user_id=session.user_id,
-            username=user.username,
-            profile_picture=user.profile_picture,
-            activity_type=session.activity_type.value if session.activity_type else None,
-            gym_id=session.gym_id,
-            gym_name=gym.name if gym else "Entrenamiento en casa",
-            gym_location=gym.location if gym else None,
-            title=session.title,
-            subtitle=session.subtitle,
-            date=session.date,
-            started_at=session.started_at,
-            ended_at=session.ended_at,
-            total_ascents=total_ascents,
-            flashes=flashes,
-            sends=sends,
-            max_grade_label=session_max_grade_label,
-            is_own=user_id == current_user.id
-        ))
+    recent_sessions = [
+        _build_feed_item(db, session, user, user_id == current_user.id)
+        for session in recent_sessions_data
+    ]
     
     return UserProfileResponse(
         id=user.id,
@@ -594,4 +558,100 @@ def get_user_profile(
         total_sends=total_sends,
         max_grade_label=max_grade_label,
         recent_sessions=recent_sessions
+    )
+
+
+@router.get("/users/{user_id}/sessions", response_model=FeedResponse)
+def get_user_sessions(
+    user_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    List all sessions of a user.
+
+    Only the user themselves or an accepted friend can see them; for anyone
+    else this behaves as if the user had no sessions (no data leak).
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    is_self = user_id == current_user.id
+    if not is_self and not _are_friends(db, current_user.id, user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only friends can see this user's activities"
+        )
+
+    sessions = db.query(ClimbingSession).filter(
+        ClimbingSession.user_id == user_id
+    ).order_by(
+        desc(ClimbingSession.date), desc(ClimbingSession.started_at)
+    ).offset(skip).limit(limit + 1).all()
+
+    has_more = len(sessions) > limit
+    sessions = sessions[:limit]
+
+    items = [_build_feed_item(db, session, user, is_self) for session in sessions]
+
+    return FeedResponse(items=items, has_more=has_more)
+
+
+def _are_friends(db: Session, user_a_id: int, user_b_id: int) -> bool:
+    """Return True if the two users are accepted friends."""
+    friendship = db.query(Friendship).filter(
+        or_(
+            and_(Friendship.user_id == user_a_id, Friendship.friend_id == user_b_id),
+            and_(Friendship.user_id == user_b_id, Friendship.friend_id == user_a_id)
+        ),
+        Friendship.status == FriendshipStatus.ACCEPTED
+    ).first()
+    return friendship is not None
+
+
+def _build_feed_item(
+    db: Session, session: ClimbingSession, user: User, is_own: bool
+) -> FeedItem:
+    """Build a FeedItem for a session, with its ascent/gym aggregates."""
+    gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
+    ascents = db.query(Ascent).filter(Ascent.session_id == session.id).all()
+    total_ascents = len(ascents)
+    flashes = len([a for a in ascents if a.status == AscentStatus.FLASH])
+    sends = len([a for a in ascents if a.status in [AscentStatus.SEND, AscentStatus.FLASH]])
+
+    max_grade_label = None
+    send_ascents = [a for a in ascents if a.status != AscentStatus.PROJECT]
+    if send_ascents:
+        grade_ids = [a.grade_id for a in send_ascents]
+        max_grade = db.query(Grade).filter(
+            Grade.id.in_(grade_ids)
+        ).order_by(desc(Grade.relative_difficulty)).first()
+        if max_grade:
+            max_grade_label = max_grade.label
+
+    return FeedItem(
+        session_id=session.id,
+        user_id=session.user_id,
+        username=user.username,
+        profile_picture=user.profile_picture,
+        activity_type=session.activity_type.value if session.activity_type else None,
+        gym_id=session.gym_id,
+        gym_name=gym.name if gym else "Entrenamiento en casa",
+        gym_location=gym.location if gym else None,
+        title=session.title,
+        subtitle=session.subtitle,
+        date=session.date,
+        started_at=session.started_at,
+        ended_at=session.ended_at,
+        total_ascents=total_ascents,
+        flashes=flashes,
+        sends=sends,
+        max_grade_label=max_grade_label,
+        is_own=is_own
     )
