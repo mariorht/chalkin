@@ -301,6 +301,30 @@ input, select, textarea {
     box-shadow: none !important;
 }
 
+/* Botón de borrar actividad: discreto, plano, sin contenedor */
+.session-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.35rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    opacity: 0.7;
+    transition: color 0.15s ease, opacity 0.15s ease;
+}
+.session-delete-btn:hover {
+    color: #EF4444;
+    opacity: 1;
+}
+.date-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
 /* --- 13. Stats: secciones diferenciadas y números héroes --- */
 .tabs {
     display: flex;
