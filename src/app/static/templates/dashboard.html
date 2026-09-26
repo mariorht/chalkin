@@ -52,21 +52,6 @@
             padding: 2rem;
         }
 
-        /* Welcome */
-        .welcome-section {
-            margin-bottom: 2rem;
-        }
-
-        .welcome-section h1 {
-            color: var(--dark);
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .welcome-section p {
-            color: var(--gray);
-        }
-
         /* Stats Cards */
         .stats-grid {
             display: grid;
@@ -887,11 +872,6 @@
     <!-- Header y navegación se inyectan por app-shell.js -->
 
     <main class="main-container">
-        <section class="welcome-section">
-            <h1>¡Hola, <span id="userName">escalador</span>!</h1>
-            <p id="welcomeMessage">Cargando tus estadísticas...</p>
-        </section>
-
         <h2 class="section-kicker">Resumen</h2>
         <section class="stats-grid" id="statsGrid">
             <div class="stat-card highlight">
@@ -928,7 +908,7 @@
         <section id="friendRequestsSection" style="display: none; margin-bottom: 1.5rem;">
             <div class="friend-requests-card">
                 <div class="section-header">
-                    <h2>👥 Solicitudes de amistad</h2>
+                    <h2><svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Solicitudes de amistad</h2>
                     <a href="/friends">Ver todas</a>
                 </div>
                 <div id="friendRequestsList" class="friend-requests-list"></div>
@@ -1015,6 +995,7 @@
         </section>
     </main>
 
+    <script src="/static/js/icons.js"></script>
     <script src="/static/js/app-shell.js"></script>
     <script>
         // Inicializar App Shell
@@ -1022,10 +1003,6 @@
         
         const API_URL = '/api';
         const token = AppShell.token;
-        const user = AppShell.user || {};
-
-        // Set user info
-        document.getElementById('userName').textContent = user.username || 'escalador';
 
         // Usar funciones del AppShell
         function logout() {
@@ -1047,10 +1024,6 @@
                 document.getElementById('statFlashes').textContent = stats.flashes_this_week || 0;
                 document.getElementById('statSessions').textContent = stats.total_sessions || 0;
                 document.getElementById('statMaxGrade').textContent = stats.max_grade_label || '-';
-                
-                // Update welcome message
-                const message = stats.message || '¡A escalar!';
-                document.getElementById('welcomeMessage').textContent = message;
             } catch (error) {
                 console.error('Error loading stats:', error);
             }
@@ -1318,8 +1291,8 @@
                             </div>
                         </div>
                         <div class="friend-request-actions">
-                            <button class="btn-accept" onclick="acceptRequest(${req.id})">✓ Aceptar</button>
-                            <button class="btn-reject" onclick="rejectRequest(${req.id})">✗</button>
+                            <button class="btn-accept" onclick="acceptRequest(${req.id})"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Aceptar</button>
+                            <button class="btn-reject" onclick="rejectRequest(${req.id})"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                         </div>
                     </div>
                 `).join('');
