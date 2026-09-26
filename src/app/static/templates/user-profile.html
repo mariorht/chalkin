@@ -139,6 +139,26 @@
             color: #333;
             margin-bottom: 16px;
         }
+        .section-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 16px;
+        }
+        .section-head .section-title {
+            margin-bottom: 0;
+        }
+        .see-all-link {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .see-all-link:hover {
+            text-decoration: underline;
+        }
         .loading {
             text-align: center;
             color: #666;
@@ -316,7 +336,10 @@
                     </div>
                     
                     ${profile.recent_sessions.length > 0 ? `
-                        <div class="section-title">Actividad reciente</div>
+                        <div class="section-head">
+                            <div class="section-title">Actividad reciente</div>
+                            <a class="see-all-link" href="${profile.id === AppShell.user?.id ? '/sessions' : `/sessions?user_id=${profile.id}`}">Ver todas</a>
+                        </div>
                         <div id="sessionsList">
                             ${profile.recent_sessions.map(session => renderSession(session)).join('')}
                         </div>

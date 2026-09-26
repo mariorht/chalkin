@@ -50,9 +50,10 @@ body.has-app-shell {
 }
 
 /* --- 2. Números héroes y etiquetas --- */
+/* Nota: no incluir .metric (Chalkin Lab): allí son lecturas del sensor y
+   deben conservar su tamaño propio. */
 .stat-value,
 .stat-card .stat-value,
-.metric b,
 .stat .stat-value {
     font-size: 2.3rem !important;
     font-weight: 800 !important;
@@ -63,7 +64,6 @@ body.has-app-shell {
 
 .stat-label,
 .stat-card .stat-label,
-.metric span,
 .stat .stat-label {
     font-size: 0.72rem !important;
     text-transform: uppercase !important;
@@ -316,6 +316,22 @@ input, select, textarea {
 }
 .session-actions:empty {
     display: none;
+}
+
+/* Cabecera de la lista de sesiones (título + botón nueva) */
+.sessions-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+.sessions-header h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0;
 }
 
 /* Botón de borrar actividad: discreto, plano, sin contenedor */

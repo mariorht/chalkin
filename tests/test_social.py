@@ -593,3 +593,134 @@ class TestFriendsProfilePictures:
         assert request_data is not None
         assert request_data["user_profile_picture"] == "/data/uploads/profiles/sender.png"
 
+
+class TestUserSessions:
+    """Tests for the all-sessions-of-a-user endpoint."""
+
+    def _make_friends(self, client, auth_headers, create_user, username="sess_friend"):
+        """Create a user, make them friends with the test user, return (user, headers)."""
+        friend = create_user(
+            username=username,
+            email=f"{username}@test.com",
+            password="password123",
+        )
+        login = client.post(
+            "/api/auth/login",
+            json={"email": f"{username}@test.com", "password": "password123"},
+        )
+        friend_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        me = client.get("/api/auth/me", headers=auth_headers)
+        my_id = me.json()["id"]
+
+        client.post(
+            "/api/social/friends",
+            headers=friend_headers,
+            json={"friend_id": my_id},
+        )
+        requests = client.get("/api/social/friends/requests", headers=auth_headers)
+        request_id = next(
+            r["id"] for r in requests.json() if r["user_id"] == friend.id
+        )
+        client.post(
+            f"/api/social/friends/requests/{request_id}/accept", headers=auth_headers
+        )
+        return friend, friend_headers
+
+    def test_own_sessions_via_social_endpoint(
+        self, client: TestClient, auth_headers, test_session
+    ):
+        """Test that a user can list their own sessions via the social endpoint."""
+        me = client.get("/api/auth/me", headers=auth_headers)
+        my_id = me.json()["id"]
+
+        response = client.get(
+            f"/api/social/users/{my_id}/sessions", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 1
+        assert data["items"][0]["session_id"] == test_session.id
+        assert data["items"][0]["is_own"] is True
+
+    def test_friend_can_see_sessions(
+        self, client: TestClient, auth_headers, create_user, create_gym
+    ):
+        """Test that an accepted friend can see another user's sessions."""
+        friend, friend_headers = self._make_friends(
+            client, auth_headers, create_user
+        )
+        gym = create_gym(name="Friend Gym", location="Somewhere")
+
+        client.post(
+            "/api/sessions",
+            headers=friend_headers,
+            json={"gym_id": gym.id, "title": "Entreno del amigo"},
+        )
+
+        response = client.get(
+            f"/api/social/users/{friend.id}/sessions", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 1
+        assert data["items"][0]["title"] == "Entreno del amigo"
+        assert data["items"][0]["gym_name"] == "Friend Gym"
+        assert data["items"][0]["is_own"] is False
+
+    def test_stranger_cannot_see_sessions(
+        self, client: TestClient, auth_headers, create_user, create_gym
+    ):
+        """Test that a non-friend cannot see another user's sessions."""
+        stranger = create_user(
+            username="stranger", email="stranger@test.com", password="password123"
+        )
+        login = client.post(
+            "/api/auth/login",
+            json={"email": "stranger@test.com", "password": "password123"},
+        )
+        stranger_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        gym = create_gym(name="Private Gym", location="Nowhere")
+        client.post(
+            "/api/sessions",
+            headers=stranger_headers,
+            json={"gym_id": gym.id, "title": "Sesión privada"},
+        )
+
+        response = client.get(
+            f"/api/social/users/{stranger.id}/sessions", headers=auth_headers
+        )
+        assert response.status_code == 403
+
+    def test_pending_friendship_cannot_see_sessions(
+        self, client: TestClient, auth_headers, create_user
+    ):
+        """Test that a pending (non-accepted) friendship does not grant access."""
+        pending = create_user(
+            username="pending_user", email="pending@test.com", password="password123"
+        )
+        # Only a request is sent; it is never accepted.
+        client.post(
+            "/api/social/friends",
+            headers=auth_headers,
+            json={"friend_id": pending.id},
+        )
+
+        response = client.get(
+            f"/api/social/users/{pending.id}/sessions", headers=auth_headers
+        )
+        assert response.status_code == 403
+
+    def test_user_sessions_not_found(self, client: TestClient, auth_headers):
+        """Test the social sessions endpoint for a non-existent user."""
+        response = client.get(
+            "/api/social/users/99999/sessions", headers=auth_headers
+        )
+        assert response.status_code == 404
+
+    def test_user_sessions_requires_auth(self, client: TestClient, test_user):
+        """Test that the social sessions endpoint requires authentication."""
+        response = client.get(f"/api/social/users/{test_user.id}/sessions")
+        assert response.status_code == 401
+
