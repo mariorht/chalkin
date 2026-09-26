@@ -34,6 +34,12 @@ const AppShell = {
         this.renderHeader();
         this.renderBottomNav(options.activePage || '');
         
+        // Refrescar los datos del usuario desde el servidor y repintar el header
+        // (así se recoge, por ejemplo, una foto de perfil subida después del login)
+        if (this.token) {
+            this.refreshUser();
+        }
+
         // Cargar notificaciones de amigos
         if (this.token) {
             this.loadFriendRequestsCount();
@@ -124,6 +130,40 @@ const AppShell = {
         } catch (e) {
             console.error('Error parsing user:', e);
             this.user = {};
+        }
+    },
+
+    // Refrescar los datos del usuario desde la API y repintar el header si cambian
+    refreshUser: async function() {
+        try {
+            const res = await fetch(`${this.API_URL}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (res.status === 401) return;
+            if (!res.ok) return;
+
+            const fresh = await res.json();
+            const user = {
+                id: fresh.id,
+                username: fresh.username,
+                email: fresh.email,
+                profile_picture: fresh.profile_picture,
+            };
+
+            // ¿Cambió algo relevante para el header?
+            const prev = this.user || {};
+            const changed = prev.username !== user.username
+                || prev.profile_picture !== user.profile_picture;
+
+            this.user = user;
+            localStorage.setItem('user', JSON.stringify(user));
+
+            if (changed) {
+                this.renderHeader();
+            }
+        } catch (e) {
+            // Silencioso: si falla, se mantiene lo que hubiera en localStorage
+            console.error('Error refreshing user:', e);
         }
     },
     

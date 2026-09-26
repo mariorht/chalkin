@@ -1011,14 +1011,14 @@
     <!-- Session status bar -->
     <div id="sessionStatusBar" style="position: fixed; top: var(--header-height, 60px); left: 0; right: 0; background: var(--surface); padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 999; border-bottom: var(--hairline);">
         <span class="session-status-badge active" id="statusBadge" style="background: var(--success); color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">En curso</span>
-        <span id="timerContainer" style="color: var(--secondary); font-weight: 700;">⏱️ <span id="timer">00:00</span></span>
+        <span id="timerContainer" style="color: var(--secondary); font-weight: 700;"><svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px;vertical-align:-2px;margin-right:4px;"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg><span id="timer">00:00</span></span>
     </div>
 
     <main class="main-container" style="padding-top: 40px;">
         <section class="session-info" id="sessionInfo">
             <h1 id="sessionTitle">
                 <span id="gymName">Cargando...</span>
-                <button class="title-edit-btn" id="editTitleBtn" title="Editar título">✏️</button>
+                <button class="title-edit-btn" id="editTitleBtn" title="Editar título"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
             </h1>
             
             <!-- Editor de título (oculto por defecto) -->
@@ -1057,7 +1057,7 @@
 
         <!-- Summary section (only for ended sessions) -->
         <section class="summary-section hidden" id="summarySection">
-            <h2>📊 Resumen por grado</h2>
+            <h2><svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>Resumen por grado</h2>
             <div class="grade-breakdown" id="gradeBreakdown">
                 <!-- Filled by JS -->
             </div>
@@ -1129,8 +1129,8 @@
                         <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"><path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>
                         Fingerboard
                     </button>
-                    <button type="button" class="exercise-type-btn" data-type="other">➕ Otro</button>
-                    <button type="button" class="exercise-type-btn" data-type="block">🧱 Levantamiento</button>
+                    <button type="button" class="exercise-type-btn" data-type="other"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Otro</button>
+                    <button type="button" class="exercise-type-btn" data-type="block"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>Levantamiento</button>
                 </div>
                 
                 <div class="exercise-details" id="exerciseDetails" style="display:none;">
@@ -1170,7 +1170,7 @@
                     <!-- Chalkin Sense recording -->
                     <div class="sense-box" id="senseBox">
                         <div class="sense-head">
-                            <button type="button" class="btn-sense" id="senseConnectBtn">🎛️ Conectar Chalkin Sense</button>
+                            <button type="button" class="btn-sense" id="senseConnectBtn"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 16c-3.31 0-6-2.69-6-6h2c0 2.21 1.79 4 4 4s4-1.79 4-4h2c0 3.31-2.69 6-6 6zm0-12c-3.31 0-6 2.69-6 6h2c0-2.21 1.79-4 4-4s4 1.79 4 4h2c0-3.31-2.69-6-6-6z"/></svg>Conectar Chalkin Sense</button>
                             <span id="senseStatus">Desconectado</span>
                         </div>
                         <div class="sense-live" id="senseLive" style="display:none;">
@@ -1200,10 +1200,11 @@
 
     <div class="bottom-bar" id="bottomBar">
         <button class="end-session-btn" onclick="endSession()">
-            🛑 Terminar sesión
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"><path d="M6 6h12v12H6z"/></svg>Terminar sesión
         </button>
     </div>
 
+    <script src="/static/js/icons.js"></script>
     <script src="/static/js/app-shell.js"></script>
     <script>
         // Inicializar App Shell
@@ -1387,11 +1388,11 @@
             
             const isActive = !session.ended_at;
             if (isActive) {
-                document.getElementById('statusBadge').textContent = '🟢 En curso';
+                document.getElementById('statusBadge').innerHTML = '<svg viewBox="0 0 24 24" fill="#22C55E" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>En curso';
                 document.getElementById('statusBadge').classList.add('active');
                 document.getElementById('statusBadge').classList.remove('ended');
             } else {
-                document.getElementById('statusBadge').textContent = '✓ Completada';
+                document.getElementById('statusBadge').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Completada';
                 document.getElementById('statusBadge').classList.remove('active');
                 document.getElementById('statusBadge').classList.add('ended');
             }
@@ -1405,7 +1406,7 @@
 
         function showActiveSessionView() {
             document.body.classList.add('active-session');
-            document.getElementById('statusBadge').textContent = '🟢 En curso';
+            document.getElementById('statusBadge').innerHTML = '<svg viewBox="0 0 24 24" fill="#22C55E" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>En curso';
             document.getElementById('statusBadge').classList.remove('ended');
             document.getElementById('statusBadge').classList.add('active');
             document.getElementById('timerContainer').classList.remove('hidden');
@@ -1417,7 +1418,7 @@
 
         function showEndedSessionView() {
             document.body.classList.remove('active-session');
-            document.getElementById('statusBadge').textContent = '✓ Completada';
+            document.getElementById('statusBadge').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Completada';
             document.getElementById('statusBadge').classList.remove('active');
             document.getElementById('statusBadge').classList.add('ended');
             document.getElementById('timerContainer').classList.add('hidden');
@@ -1500,7 +1501,7 @@
                 editBtn.classList.remove('btn-reopen');
                 editBtn.classList.add('btn-primary');
                 gradeSelector.classList.remove('hidden');
-                document.getElementById('statusBadge').textContent = '✏️ Editando';
+                document.getElementById('statusBadge').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>Editando';
                 document.getElementById('statusBadge').style.background = 'var(--flash)';
                 // Reload ascents to show delete buttons
                 updateAscentsList();
@@ -1513,7 +1514,7 @@
                 editBtn.classList.add('btn-reopen');
                 editBtn.classList.remove('btn-primary');
                 gradeSelector.classList.add('hidden');
-                document.getElementById('statusBadge').textContent = '✓ Completada';
+                document.getElementById('statusBadge').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Completada';
                 document.getElementById('statusBadge').style.background = '';
                 // Reload ascents to hide delete buttons
                 updateAscentsList();
@@ -1725,7 +1726,7 @@
                     
                     // Brief visual feedback
                     const btn = document.getElementById('addAscentBtn');
-                    btn.textContent = '✓ Añadido!';
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Añadido!';
                     setTimeout(() => {
                         btn.textContent = '+ Añadir bloque';
                     }, 1000);
@@ -1793,7 +1794,7 @@
                     // Check if it was already uploaded
                     if (data.already_uploaded) {
                         session.strava_activity_id = data.strava_activity_id;
-                        btn.innerHTML = '✓ Ver en Strava';
+                        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Ver en Strava';
                         btn.classList.add('uploaded');
                         btn.disabled = false;
                         btn.onclick = () => {
@@ -1804,19 +1805,19 @@
                         session.strava_activity_id = data.strava_activity_id;
                         
                         // Update button
-                        btn.innerHTML = '✓ Ver en Strava';
+                        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Ver en Strava';
                         btn.classList.add('uploaded');
                         btn.disabled = false;
                         btn.onclick = () => {
                             window.open(data.strava_url, '_blank');
                         };
                         
-                        alert('✓ Sesión subida a Strava correctamente');
+                        alert('Sesión subida a Strava correctamente');
                     }
                 } else {
                     const error = await response.json();
                     btn.disabled = false;
-                    btn.innerHTML = '🏃 Subir a Strava';
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/></svg>Subir a Strava';
                     
                     if (error.detail && error.detail.includes('not connected')) {
                         alert('Conecta tu cuenta de Strava en el perfil primero');
@@ -1827,7 +1828,7 @@
             } catch (error) {
                 console.error('Error uploading to Strava:', error);
                 btn.disabled = false;
-                btn.innerHTML = '🏃 Subir a Strava';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/></svg>Subir a Strava';
                 alert('Error al subir a Strava');
             }
         }
@@ -2087,7 +2088,7 @@
                 canvas.toBlob(async (blob) => {
                     const file = new File([blob], 'chalkin-session.png', { type: 'image/png' });
                     const sessionUrl = window.location.href;
-                    const shareText = `${title} - ${total} bloques registrados\n\n🔗 Ver sesión: ${sessionUrl}`;
+                    const shareText = `${title} - ${total} bloques registrados\n\nVer sesión: ${sessionUrl}`;
                     
                     btn.disabled = false;
                     btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;"><path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 5.12548 15.0077 5.24917 15.0227 5.37061L8.08259 9.19019C7.54305 8.46365 6.67916 8 5.7 8C3.89117 8 2.42624 9.46493 2.42624 11.274C2.42624 13.0831 3.89117 14.548 5.7 14.548C6.67916 14.548 7.54305 14.0844 8.08259 13.3578L15.0227 17.1774C15.0077 17.2988 15 17.4225 15 17.548C15 19.2049 16.3431 20.548 18 20.548C19.6569 20.548 21 19.2049 21 17.548C21 15.8911 19.6569 14.548 18 14.548C17.021 14.548 16.157 15.0116 15.6174 15.7382L8.67733 11.9186C8.69229 11.7972 8.7 11.6735 8.7 11.548C8.7 11.4225 8.69229 11.2988 8.67733 11.1774L15.6174 7.35777C16.157 8.08431 17.021 8.54793 18 8.54793V8Z" fill="currentColor"/></svg> Compartir actividad';
@@ -2233,11 +2234,11 @@
                 'campus': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/></svg>',
                 'fingerboard': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>',
                 'other': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>',
-                'block': '🧱 '
+                'block': '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>'
             };
             
             container.innerHTML = exercises.map(ex => {
-                const icon = exerciseIcons[ex.exercise_type] || '💪';
+                const icon = exerciseIcons[ex.exercise_type] || '<svg viewBox="0 0 24 24" fill="#4A5568" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>';
                 const typeName = {
                     'pullups': 'Dominadas',
                     'campus': 'Campus',
@@ -2413,7 +2414,7 @@
                     statusEl.className = on ? 'on' : '';
                     document.getElementById('senseLive').style.display = on ? 'flex' : 'none';
                     document.getElementById('senseConnectBtn').textContent =
-                        on ? '🎛️ Reconectar' : '🎛️ Conectar Chalkin Sense';
+                        on ? '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 16c-3.31 0-6-2.69-6-6h2c0 2.21 1.79 4 4 4s4-1.79 4-4h2c0 3.31-2.69 6-6 6zm0-12c-3.31 0-6 2.69-6 6h2c0-2.21 1.79-4 4-4s4 1.79 4 4h2c0-3.31-2.69-6-6-6z"/></svg>Reconectar' : '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 16c-3.31 0-6-2.69-6-6h2c0 2.21 1.79 4 4 4s4-1.79 4-4h2c0 3.31-2.69 6-6 6zm0-12c-3.31 0-6 2.69-6 6h2c0-2.21 1.79-4 4-4s4 1.79 4 4h2c0-3.31-2.69-6-6-6z"/></svg>Conectar Chalkin Sense';
                     updateExerciseWeightField();
                 });
 
@@ -2486,7 +2487,7 @@
             const statusEl = document.getElementById('senseStatus');
             if (statusEl) { statusEl.textContent = 'Desconectado'; statusEl.className = ''; }
             const btn = document.getElementById('senseConnectBtn');
-            if (btn) btn.textContent = '🎛️ Conectar Chalkin Sense';
+            if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 16c-3.31 0-6-2.69-6-6h2c0 2.21 1.79 4 4 4s4-1.79 4-4h2c0 3.31-2.69 6-6 6zm0-12c-3.31 0-6 2.69-6 6h2c0-2.21 1.79-4 4-4s4 1.79 4 4h2c0-3.31-2.69-6-6-6z"/></svg>Conectar Chalkin Sense';
             const list = document.getElementById('senseRepsList');
             if (list) list.innerHTML = '';
         }

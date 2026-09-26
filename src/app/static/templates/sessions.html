@@ -32,6 +32,7 @@
         </div>
     </div>
 
+    <script src="/static/js/icons.js"></script>
     <script src="/static/js/app-shell.js"></script>
     <script src="/static/js/utils.js"></script>
     <script>
@@ -52,9 +53,10 @@
                 ? `<img src="${escapeHtml(user.profile_picture)}" alt="${escapeHtml(user.username)}">` 
                 : escapeHtml(initial);
             
-            const displayTitle = session.title ? escapeHtml(session.title) : `📍 ${escapeHtml(session.gym_name)}`;
+            const locIcon = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>';
+            const displayTitle = session.title ? escapeHtml(session.title) : `${locIcon}${escapeHtml(session.gym_name)}`;
             const subtitleHtml = session.subtitle ? `<span class="session-subtitle">${escapeHtml(session.subtitle)}</span>` : '';
-            const locationHtml = session.title ? `<span class="session-location">📍 ${escapeHtml(session.gym_name)}</span>` : '';
+            const locationHtml = session.title ? `<span class="session-location">${locIcon}${escapeHtml(session.gym_name)}</span>` : '';
             
             return `
                 <div class="feed-card" onclick="window.location.href='/sessions/${session.id}'">
@@ -68,7 +70,7 @@
                                 ${locationHtml}
                                 ${isActive ? 
                                     '<span class="session-status status-active"><span class="pulse"></span> En curso</span>' :
-                                    (duration ? `<span class="duration">⏱️ ${duration}</span>` : '')
+                                    (duration ? `<span class="duration"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>${duration}</span>` : '')
                                 }
                             </div>
                         </div>
@@ -84,11 +86,11 @@
                             <div class="stat-label">Bloques</div>
                         </div>
                         <div class="stat">
-                            <div class="stat-value flash">⚡ ${session.flashes || 0}</div>
+                            <div class="stat-value flash"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:2px;"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>${session.flashes || 0}</div>
                             <div class="stat-label">Flashes</div>
                         </div>
                         <div class="stat">
-                            <div class="stat-value send">✓ ${session.sends || 0}</div>
+                            <div class="stat-value send"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:2px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>${session.sends || 0}</div>
                             <div class="stat-label">Sends</div>
                         </div>
                         <div class="stat">
@@ -116,7 +118,7 @@
                 if (sessions.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
-                            <span>🧗</span>
+                            <span><svg viewBox="0 0 24 24" fill="currentColor" style="width:48px;height:48px;"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg></span>
                             <h2>Sin sesiones aún</h2>
                             <p>¡Empieza tu primera sesión de escalada!</p>
                             <a href="/sessions/new">+ Iniciar sesión</a>
@@ -146,7 +148,7 @@
                 console.error('Error loading sessions:', error);
                 container.innerHTML = `
                     <div class="empty-state">
-                        <span>❌</span>
+                        <span><svg viewBox="0 0 24 24" fill="#EF4444" style="width:48px;height:48px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></span>
                         <h2>Error al cargar</h2>
                         <p>No pudimos cargar tus sesiones. Inténtalo de nuevo.</p>
                         <a href="javascript:location.reload()">Reintentar</a>

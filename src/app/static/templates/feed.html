@@ -58,7 +58,7 @@
             const displayTitle = item.title ? escapeHtml(item.title) : `<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${escapeHtml(item.gym_name)}`;
             const subtitleHtml = item.subtitle ? `<span class="session-subtitle">${escapeHtml(item.subtitle)}</span>` : '';
             const typeTag = item.activity_type === 'home'
-                ? '<span class="activity-tag">🏠 En casa</span>'
+                ? '<span class="activity-tag"><svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;vertical-align:-1px;margin-right:3px;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>En casa</span>'
                 : '';
             // If custom title, show gym name
             const locationHtml = item.title ? `<span class="session-location"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${escapeHtml(item.gym_name)}</span>` : '';
