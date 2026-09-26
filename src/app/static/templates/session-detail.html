@@ -1063,6 +1063,10 @@
             </div>
         </section>
 
+        <!-- Acciones de la sesión (Compartir / Strava / Editar / Eliminar).
+             Fuera de summarySection: así también aparecen en entrenamientos en casa. -->
+        <div class="session-actions" id="sessionActions"></div>
+
         <section class="grade-selector" id="gradeSelector">
             <h2>Registrar bloque</h2>
             <div class="grades-grid" id="gradesGrid">
@@ -1385,6 +1389,7 @@
             
             // Hide edit button for friend's sessions
             document.getElementById('editTitleBtn').style.display = 'none';
+            document.getElementById('sessionActions').style.display = 'none';
             
             const isActive = !session.ended_at;
             if (isActive) {
@@ -1414,6 +1419,7 @@
             document.getElementById('bottomBar').classList.remove('hidden');
             document.getElementById('ascentsTitle').textContent = 'Bloques de hoy';
             document.getElementById('summarySection').classList.add('hidden');
+            document.getElementById('sessionActions').style.display = 'none';
         }
 
         function showEndedSessionView() {
@@ -1426,10 +1432,13 @@
             document.getElementById('bottomBar').classList.add('hidden');
             document.getElementById('ascentsTitle').textContent = 'Bloques registrados';
             document.getElementById('summarySection').classList.remove('hidden');
+            document.getElementById('sessionActions').style.display = 'flex';
             
             // Show edit and delete buttons
             if (!document.getElementById('editModeBtn')) {
-                const summarySection = document.getElementById('summarySection');
+                const actionsContainer = document.getElementById('sessionActions');
+                if (!actionsContainer) return;
+                actionsContainer.innerHTML = '';
                 
                 const buttonsContainer = document.createElement('div');
                 buttonsContainer.id = 'sessionActionButtons';
@@ -1487,7 +1496,7 @@
                 buttonsContainer.appendChild(stravaBtn);
                 buttonsContainer.appendChild(editBtn);
                 buttonsContainer.appendChild(deleteBtn);
-                summarySection.appendChild(buttonsContainer);
+                actionsContainer.appendChild(buttonsContainer);
             }
         }
 
