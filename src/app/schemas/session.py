@@ -5,10 +5,14 @@ from datetime import datetime, date as date_type
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
+from app.models.session import ActivityType
+
 
 class SessionBase(BaseModel):
     """Base session schema with common fields."""
-    gym_id: int
+    # gym_id is required for GYM activities and must be absent for HOME ones.
+    gym_id: Optional[int] = None
+    activity_type: ActivityType = ActivityType.GYM
     date: date_type = Field(default_factory=date_type.today)
     title: Optional[str] = None
     subtitle: Optional[str] = None
@@ -23,6 +27,7 @@ class SessionCreate(SessionBase):
 class SessionUpdate(BaseModel):
     """Schema for updating session info."""
     gym_id: Optional[int] = None
+    activity_type: Optional[ActivityType] = None
     date: Optional[date_type] = None
     title: Optional[str] = None
     subtitle: Optional[str] = None
@@ -75,7 +80,7 @@ class SessionSummary(BaseModel):
     """Quick summary of a session."""
     id: int
     date: date_type
-    gym_name: str
+    gym_name: Optional[str] = None
     total_ascents: int
     max_grade_label: Optional[str] = None
 
