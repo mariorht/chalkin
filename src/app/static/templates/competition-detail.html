@@ -533,10 +533,19 @@
 
         // --- Gráfico de evolución semanal ---
 
+        // Line colours: 12 hues spread evenly around the wheel, skipping the
+        // navy band (215-265deg) so no line can be mistaken for the dark chip
+        // used to mark a selected person. Lightness alternates too.
         const CHART_COLORS = [
-            '#FF6B35', '#2EC4B6', '#1A1A2E', '#F59E0B',
-            '#3B82F6', '#22C55E', '#8B5CF6', '#EC4899'
+            '#6826C5', '#C443DB', '#C52698', '#DB436E',
+            '#C53D26', '#DB9C43', '#C2C526', '#96DB43',
+            '#38C526', '#43DB73', '#26C59D', '#43BFDB'
         ];
+
+        // Handed out in this order so the people shown by default (the first
+        // ones) get colours spread all around the wheel instead of six
+        // neighbouring hues in a row.
+        const COLOR_ORDER = [0, 2, 4, 6, 8, 10, 1, 3, 5, 7, 9, 11];
 
         // Selected user ids for the chart. null = not initialised yet.
         let chartSelection = null;
@@ -544,11 +553,23 @@
         const MAX_CHIPS = 6;
         // A chart with many lines is unreadable, so cap how many can be shown.
         const MAX_SELECTED = 8;
+        // user_id -> colour, assigned so that no two participants share one.
+        let chartColors = {};
+
+        function assignChartColors() {
+            chartColors = {};
+            const taken = new Set();
+            const pool = COLOR_ORDER.map(i => CHART_COLORS[i]);
+            (leaderboardData.board.total || []).forEach(entry => {
+                let color = pool.find(c => !taken.has(c));
+                if (!color) color = pool[taken.size % pool.length];
+                taken.add(color);
+                chartColors[entry.user_id] = color;
+            });
+        }
 
         function colorForUser(userId) {
-            const index = (leaderboardData.board.total || [])
-                .findIndex(e => e.user_id === userId);
-            return CHART_COLORS[(index < 0 ? 0 : index) % CHART_COLORS.length];
+            return chartColors[userId] || CHART_COLORS[0];
         }
 
         // Accumulated points per week for every participant.
@@ -613,14 +634,22 @@
 
         // --- Selector de participantes (para when there are many) ---
 
+        // Kept in variables because picking a person re-renders the section and
+        // would otherwise close the sheet and lose the search text.
+        let peopleSheetOpen = false;
+        let peopleQuery = '';
+
         function openPeopleSheet() {
-            renderPeopleSheet(document.getElementById('peopleSearch').value || '');
+            peopleSheetOpen = true;
             const sheet = document.getElementById('peopleSheet');
+            if (!sheet) return;
+            renderPeopleSheet(peopleQuery);
             sheet.classList.add('open');
             sheet.setAttribute('aria-hidden', 'false');
         }
 
         function closePeopleSheet() {
+            peopleSheetOpen = false;
             const sheet = document.getElementById('peopleSheet');
             if (!sheet) return;
             sheet.classList.remove('open');
@@ -652,8 +681,9 @@
 
             list.querySelectorAll('.sheet-person').forEach(row => {
                 row.addEventListener('click', () => {
+                    // Keeps the sheet open so several people can be picked
+                    // before pressing "Listo".
                     toggleChartPerson(parseInt(row.dataset.user, 10));
-                    renderPeopleSheet(document.getElementById('peopleSearch').value || '');
                 });
             });
         }
@@ -802,6 +832,7 @@
 
             const section = document.getElementById('chartSection');
             if (!section) return;
+            const wasSheetOpen = peopleSheetOpen;
             section.innerHTML = `
                 <div class="chart-head">
                     <h3>Puntos acumulados</h3>
@@ -810,7 +841,7 @@
                 <div class="chart-people">${chips}${moreBtn}</div>
                 <div id="weeklyChart"></div>
                 <div class="chart-legend">${legend}</div>
-                <div class="people-sheet" id="peopleSheet" aria-hidden="true">
+                <div class="people-sheet${wasSheetOpen ? ' open' : ''}" id="peopleSheet" aria-hidden="${wasSheetOpen ? 'false' : 'true'}">
                     <div class="sheet-backdrop" onclick="closePeopleSheet()"></div>
                     <div class="sheet-panel">
                         <div class="sheet-head">
@@ -818,11 +849,13 @@
                             <button type="button" class="sheet-done" onclick="closePeopleSheet()">Listo</button>
                         </div>
                         <input type="text" id="peopleSearch" class="sheet-search"
-                               placeholder="Buscar persona…" autocomplete="off">
+                               placeholder="Buscar persona…" value="${escapeHtml(peopleQuery)}" autocomplete="off">
                         <div class="sheet-list" id="peopleList"></div>
                     </div>
                 </div>
             `;
+
+            if (wasSheetOpen) renderPeopleSheet(peopleQuery);
 
             const moreButton = document.getElementById('openPeopleSheet');
             if (moreButton) {
@@ -831,7 +864,10 @@
 
             const search = document.getElementById('peopleSearch');
             if (search) {
-                search.addEventListener('input', () => renderPeopleSheet(search.value));
+                search.addEventListener('input', () => {
+                    peopleQuery = search.value;
+                    renderPeopleSheet(peopleQuery);
+                });
             }
 
             section.querySelectorAll('.person-chip[data-user]').forEach(chip => {
@@ -926,6 +962,7 @@
                 }
 
                 leaderboardData = { competition, board: await boardRes.json() };
+                assignChartColors();
                 render();
             } catch (error) {
                 console.error('Error loading competition:', error);
