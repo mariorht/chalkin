@@ -9,17 +9,35 @@ suma puntos según su dificultad.
 - **Evento**: un `Competition` está atado a un gimnasio y tiene fecha de inicio
   y fin. Las semanas se derivan del calendario (semana 1 empieza en `start_date`,
   cada 7 días), así que no hay que definir cada semana a mano.
+- **Semanas de descanso**: el admin marca qué semanas son de descanso
+  (`week_offsets`). En una semana de descanso no se pueden marcar bloques de liga
+  ni puntúan.
 - **Puntos**: se definen **por grado** (`CompetitionPoint`). En Boulder Up los
   grados son colores, así que cada color vale lo que el admin decida.
 - **Marcar un bloque**: al registrar un bloque, si la sesión es en el gimnasio
-  del evento y la fecha cae dentro del evento, aparece un toggle "Superliga".
-  Al marcarlo, el ascent guarda `competition_id`.
+  del evento y la fecha cae dentro del evento (y no es descanso), aparece un
+  toggle "Superliga". Al marcarlo, el ascent guarda `competition_id`.
 - **Participación**: es implícita. En cuanto marcas un bloque de liga, entras en
   la clasificación. Cualquier participante puede ver la clasificación completa
   (no solo amigos).
 - **Puntuación**: un bloque puntúa **una vez por (usuario, grado, día)**. Repetir
   el mismo bloque el mismo día no vuelve a sumar. Proyectos e intentos no
   puntúan.
+
+## Crear y configurar un evento (panel de administración)
+
+1. Entra en **Administración** (`/admin`) con un usuario admin.
+2. En la sección **Ligas**, pulsa **+ Nueva liga**.
+3. Rellena nombre, gimnasio, descripción, fechas de inicio y fin, y estado.
+4. En **Puntos por grado**, asigna puntos a cada color (el grado que dejes a 0 no
+   puntúa).
+5. Pulsa **Calcular semanas**, revisa las semanas generadas y **desmarca** las que
+   sean de descanso.
+6. Guarda. La liga aparece en la lista y, si está activa y en fecha, en el
+   dashboard de los usuarios.
+
+Se puede editar en cualquier momento (botón **Editar**) o borrar. También se
+puede enlazar directamente a la edición con `/admin?edit=<id>`.
 
 ## API
 
@@ -29,15 +47,33 @@ suma puntos según su dificultad.
 | GET | `/api/competitions/running?gym_id=` | auth | Evento activo hoy en ese gimnasio (o `null`) |
 | POST | `/api/competitions` | admin | Crear evento con sus puntos |
 | GET | `/api/competitions/{id}` | auth (opcional) | Detalle con puntos |
-| PATCH | `/api/competitions/{id}` | admin | Editar fechas/nombre/estado |
+| PATCH | `/api/competitions/{id}` | admin | Editar fechas/nombre/estado/descansos |
 | PUT | `/api/competitions/{id}/points` | admin | Reemplazar tabla de puntos |
 | DELETE | `/api/competitions/{id}` | admin | Borrar evento |
 | GET | `/api/competitions/{id}/leaderboard` | participante | Clasificación total y por semanas |
+
+Ejemplo de creación por API:
+
+```json
+POST /api/competitions
+{
+  "gym_id": 1,
+  "name": "Superliga BouldeUp",
+  "start_date": "2026-09-29",
+  "end_date": "2026-11-23",
+  "status": "active",
+  "week_offsets": [5],
+  "points": [{"grade_id": 1, "points": 5}, {"grade_id": 2, "points": 10}]
+}
+```
 
 ## Páginas
 
 - `/competitions`: lista de ligas.
 - `/competitions/{id}`: detalle con puntos por color y clasificación por semanas.
+  Las semanas de descanso se marcan en rojo.
+- Dashboard: sección **Ligas** con eventos **en curso**, **próximas** y
+  **finalizadas**.
 
 ## Cerrar entrenamientos abiertos (cron)
 

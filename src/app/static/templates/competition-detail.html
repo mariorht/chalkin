@@ -110,6 +110,17 @@
 
         .week-tab .now { color: var(--success); }
 
+        .week-tab.rest {
+            color: var(--error);
+            border-style: dashed;
+        }
+
+        .rest-mark {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
         /* Clasificación */
         .leaderboard {
             background: white;
@@ -255,8 +266,8 @@
 
             const tabs = [`<button class="week-tab ${currentWeek === null ? 'active' : ''}" data-week="total">Total</button>`]
                 .concat(board.weeks.map(w => `
-                    <button class="week-tab ${currentWeek === w.week ? 'active' : ''}" data-week="${w.week}">
-                        Semana ${w.week}${w.is_current ? ' <span class="now">●</span>' : ''}
+                    <button class="week-tab ${currentWeek === w.week ? 'active' : ''} ${w.is_rest ? 'rest' : ''}" data-week="${w.week}">
+                        Semana ${w.week}${w.is_current ? ' <span class="now">●</span>' : ''}${w.is_rest ? ' <span class="rest-mark">descanso</span>' : ''}
                     </button>
                 `)).join('');
 

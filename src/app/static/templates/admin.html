@@ -146,6 +146,94 @@
 
         .empty { color: var(--gray); text-align: center; padding: 1rem 0; }
 
+        /* Ligas */
+        .field select {
+            width: 100%;
+            padding: 0.65rem 0.8rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            background: var(--light);
+        }
+
+        .competition-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.85rem 0;
+            border-top: 1px solid var(--gray-light);
+        }
+
+        .competition-row:first-child { border-top: none; }
+        .competition-row .name { color: var(--dark); font-weight: 600; }
+        .competition-row .meta { color: var(--gray); font-size: 0.82rem; }
+
+        .competition-row .tag {
+            display: inline-block;
+            margin-left: 0.4rem;
+            padding: 0.05rem 0.45rem;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .tag-active { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+        .tag-draft { background: rgba(107, 114, 128, 0.15); color: var(--gray); }
+        .tag-finished { background: rgba(26, 26, 46, 0.1); color: var(--dark); }
+
+        .row-actions { display: flex; gap: 0.4rem; }
+
+        .points-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .point-input {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--light);
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            padding: 0.4rem 0.55rem;
+        }
+
+        .point-dot { width: 14px; height: 14px; border-radius: 50%; flex: 0 0 auto; border: 1px solid rgba(0,0,0,0.15); }
+        .point-input .label { flex: 1; font-size: 0.85rem; color: var(--dark); }
+        .point-input input {
+            width: 64px;
+            padding: 0.3rem 0.4rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .week-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 999px;
+            padding: 0.3rem 0.7rem;
+            font-size: 0.8rem;
+            background: white;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .week-chip.off {
+            background: rgba(239, 68, 68, 0.08);
+            color: var(--error);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .week-chip input { accent-color: var(--primary); }
+
         .denied { text-align: center; padding: 2rem; }
         .denied h2 { color: var(--dark); margin-bottom: 0.5rem; }
         .denied p { color: var(--gray); }
@@ -171,6 +259,81 @@
                     <button class="btn btn-search" id="searchBtn" onclick="searchUsers()">Buscar</button>
                 </div>
                 <div class="user-list" id="userList"></div>
+            </div>
+
+            <!-- Ligas / competiciones -->
+            <div class="card">
+                <h3 style="color:var(--dark);font-size:1.1rem;margin-bottom:0.25rem;">Ligas</h3>
+                <p style="color:var(--gray);font-size:0.85rem;margin-bottom:1rem;">
+                    Crea un evento, define su duración, sus semanas de descanso y los puntos por grado.
+                </p>
+
+                <div id="competitionsList"><p class="empty">Cargando…</p></div>
+
+                <button class="btn btn-search" id="newCompetitionBtn" style="margin-top:0.5rem;" onclick="openCompetitionForm()">
+                    + Nueva liga
+                </button>
+
+                <div id="competitionForm" class="result" style="margin-top:1.25rem;">
+                    <h3 id="competitionFormTitle">Nueva liga</h3>
+
+                    <div class="field">
+                        <label>Nombre</label>
+                        <input type="text" id="compName" placeholder="Superliga BouldeUp">
+                    </div>
+
+                    <div class="field">
+                        <label>Gimnasio</label>
+                        <select id="compGym"></select>
+                    </div>
+
+                    <div class="field">
+                        <label>Descripción (opcional)</label>
+                        <input type="text" id="compDescription" placeholder="Liga de boulder por semanas">
+                    </div>
+
+                    <div style="display:flex;gap:0.75rem;">
+                        <div class="field" style="flex:1;">
+                            <label>Inicio</label>
+                            <input type="date" id="compStart">
+                        </div>
+                        <div class="field" style="flex:1;">
+                            <label>Fin</label>
+                            <input type="date" id="compEnd">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>Estado</label>
+                        <select id="compStatus">
+                            <option value="draft">Borrador (no visible)</option>
+                            <option value="active">Activa</option>
+                            <option value="finished">Finalizada</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Puntos por grado</label>
+                        <div id="compPoints"></div>
+                    </div>
+
+                    <div class="field">
+                        <label>Duración y semanas</label>
+                        <p style="color:var(--gray);font-size:0.8rem;margin-bottom:0.5rem;">
+                            Pulsa "Calcular semanas" y desmarca las que sean de descanso
+                            (esas no puntúan y no se podrán marcar bloques).
+                        </p>
+                        <button class="btn" style="background:var(--secondary);color:white;padding:0.55rem 1rem;" onclick="buildWeeks()">
+                            Calcular semanas
+                        </button>
+                        <div id="compWeeks" style="margin-top:0.75rem;display:flex;flex-wrap:wrap;gap:0.4rem;"></div>
+                    </div>
+
+                    <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+                        <button class="btn btn-search" style="flex:1;" onclick="saveCompetition()">Guardar</button>
+                        <button class="btn btn-copy" style="flex:0 0 auto;" onclick="closeCompetitionForm()">Cancelar</button>
+                    </div>
+                </div>
             </div>
 
             <div class="card result" id="result">
@@ -238,6 +401,13 @@
                 if (!response.ok) return;
                 document.getElementById('adminContent').style.display = 'block';
                 searchUsers();
+                await loadCompetitionFormData();
+                loadCompetitions();
+
+                // Permite enlazar directamente a la edición: /admin?edit=<id>
+                const editId = new URLSearchParams(window.location.search).get('edit');
+                if (editId) editCompetition(parseInt(editId, 10));
+                else if (new URLSearchParams(window.location.search).has('new')) openCompetitionForm();
             } catch (e) {
                 showAlert('Error de conexión');
             }
@@ -339,8 +509,263 @@
             return div.innerHTML;
         }
 
+        // ---- Ligas ----
+        let gymsCache = [];
+        let leagueGrades = [];
+        let editingCompetitionId = null;
+
+        async function loadCompetitionFormData() {
+            const gymSelect = document.getElementById('compGym');
+            try {
+                const res = await authFetch(`${API_URL}/gyms`);
+                gymsCache = res.ok ? await res.json() : [];
+                gymSelect.innerHTML = gymsCache.map(g =>
+                    `<option value="${g.id}">${escapeHtml(g.name)}</option>`
+                ).join('');
+            } catch (e) {
+                gymSelect.innerHTML = '<option value="">Error cargando gimnasios</option>';
+            }
+        }
+
+        async function loadLeagueGrades() {
+            const gymId = document.getElementById('compGym').value;
+            const container = document.getElementById('compPoints');
+            container.innerHTML = '<p class="empty">Cargando grados…</p>';
+            if (!gymId) { container.innerHTML = '<p class="empty">Elige un gimnasio</p>'; return; }
+            try {
+                const res = await authFetch(`${API_URL}/gyms/${gymId}/grades`);
+                leagueGrades = res.ok ? await res.json() : [];
+                if (!leagueGrades.length) {
+                    container.innerHTML = '<p class="empty">Este gimnasio no tiene grados</p>';
+                    return;
+                }
+                container.innerHTML = `<div class="points-grid">${leagueGrades.map(g => `
+                    <div class="point-input">
+                        <span class="point-dot" style="background:${escapeHtml(g.color_hex || '#666')}"></span>
+                        <span class="label">${escapeHtml(g.label)}</span>
+                        <input type="number" min="0" step="1" value="0" data-grade-id="${g.id}">
+                    </div>`).join('')}</div>`;
+            } catch (e) {
+                container.innerHTML = '<p class="empty">Error cargando grados</p>';
+            }
+        }
+
+        function statusTag(competition) {
+            const map = { active: 'tag-active', draft: 'tag-draft', finished: 'tag-finished' };
+            const label = { active: 'Activa', draft: 'Borrador', finished: 'Finalizada' };
+            return `<span class="tag ${map[competition.status]}">${label[competition.status]}</span>`;
+        }
+
+        async function loadCompetitions() {
+            const list = document.getElementById('competitionsList');
+            try {
+                const res = await authFetch(`${API_URL}/competitions`);
+                if (!res.ok) { list.innerHTML = '<p class="empty">No se pudieron cargar las ligas</p>'; return; }
+                const competitions = await res.json();
+                if (!competitions.length) { list.innerHTML = '<p class="empty">Todavía no hay ligas</p>'; return; }
+                list.innerHTML = competitions.map(c => `
+                    <div class="competition-row">
+                        <div>
+                            <div class="name">${escapeHtml(c.name)}${statusTag(c)}</div>
+                            <div class="meta">${escapeHtml(c.gym_name || '')} · ${c.start_date} – ${c.end_date} · ${c.total_weeks} semanas${c.week_offsets.length ? `, ${c.week_offsets.length} de descanso` : ''}</div>
+                        </div>
+                        <div class="row-actions">
+                            <button class="btn btn-reset" onclick="editCompetition(${c.id})">Editar</button>
+                            <button class="btn" style="background:var(--error);color:white;padding:0.55rem 1rem;font-size:0.9rem;" onclick="deleteCompetition(${c.id})">Borrar</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                list.innerHTML = '<p class="empty">No se pudieron cargar las ligas</p>';
+            }
+        }
+
+        function openCompetitionForm() {
+            editingCompetitionId = null;
+            document.getElementById('competitionFormTitle').textContent = 'Nueva liga';
+            document.getElementById('compName').value = '';
+            document.getElementById('compDescription').value = '';
+            document.getElementById('compStart').value = '';
+            document.getElementById('compEnd').value = '';
+            document.getElementById('compStatus').value = 'active';
+            document.getElementById('compWeeks').innerHTML = '';
+            loadLeagueGrades();
+            document.getElementById('competitionForm').classList.add('show');
+            document.getElementById('competitionForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function closeCompetitionForm() {
+            document.getElementById('competitionForm').classList.remove('show');
+        }
+
+        async function editCompetition(id) {
+            try {
+                const res = await authFetch(`${API_URL}/competitions/${id}`);
+                if (!res.ok) { showAlert('No se pudo cargar la liga'); return; }
+                const c = await res.json();
+
+                editingCompetitionId = id;
+                document.getElementById('competitionFormTitle').textContent = `Editar ${c.name}`;
+                document.getElementById('compName').value = c.name;
+                document.getElementById('compDescription').value = c.description || '';
+                document.getElementById('compStart').value = c.start_date;
+                document.getElementById('compEnd').value = c.end_date;
+                document.getElementById('compStatus').value = c.status;
+                document.getElementById('compGym').value = c.gym_id;
+
+                await loadLeagueGrades();
+                // Rellenar puntos guardados
+                c.points.forEach(p => {
+                    const input = document.querySelector(`#compPoints input[data-grade-id="${p.grade_id}"]`);
+                    if (input) input.value = p.points;
+                });
+
+                buildWeeks(c.week_offsets || []);
+                document.getElementById('competitionForm').classList.add('show');
+                document.getElementById('competitionForm').scrollIntoView({ behavior: 'smooth' });
+            } catch (e) {
+                showAlert('Error de conexión');
+            }
+        }
+
+        function buildWeeks(offsetWeeks = []) {
+            const start = document.getElementById('compStart').value;
+            const end = document.getElementById('compEnd').value;
+            const container = document.getElementById('compWeeks');
+
+            if (!start || !end) { showAlert('Pon primero las fechas de inicio y fin'); return; }
+            if (end < start) { showAlert('La fecha de fin es anterior al inicio'); return; }
+
+            const msDay = 24 * 60 * 60 * 1000;
+
+            // Parse as UTC to avoid timezone/DST drift, then work with Date.UTC.
+            const [sy, sm, sd] = start.split('-').map(Number);
+            const [ey, em, ed] = end.split('-').map(Number);
+            const startUTC = Date.UTC(sy, sm - 1, sd);
+            const endUTC = Date.UTC(ey, em - 1, ed);
+
+            // Natural weeks, Monday to Sunday. Find the Monday of the week that
+            // contains the start date and derive every week from it.
+            const dow = new Date(startUTC).getUTCDay();        // 0=Sun .. 6=Sat
+            const mondayOffset = (dow === 0) ? -6 : (1 - dow);
+            const baseMondayUTC = startUTC + mondayOffset * msDay;
+
+            // Week 1 goes from the start date to that first Sunday.
+            const firstSundayUTC = baseMondayUTC + 6 * msDay;
+            const totalWeeks = endUTC <= firstSundayUTC
+                ? 1
+                : 2 + Math.floor((endUTC - firstSundayUTC - 1) / (7 * msDay));
+            const offsets = new Set(offsetWeeks.map(Number));
+
+            const fmt = utc => {
+                const d = new Date(utc);
+                const dd = String(d.getUTCDate()).padStart(2, '0');
+                const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+                return `${dd}/${mm}/${d.getUTCFullYear()}`;
+            };
+
+            container.innerHTML = Array.from({ length: totalWeeks }, (_, i) => {
+                const week = i + 1;
+                const weekMondayUTC = baseMondayUTC + i * 7 * msDay;
+                // Week 1 (and a partial last week) are clipped to the event.
+                const wStartUTC = Math.max(weekMondayUTC, startUTC);
+                const wEndUTC = Math.min(weekMondayUTC + 6 * msDay, endUTC);
+                const isOff = offsets.has(week);
+                return `
+                    <label class="week-chip ${isOff ? 'off' : ''}" data-week="${week}">
+                        <input type="checkbox" ${isOff ? '' : 'checked'} onchange="toggleWeek(this, ${week})">
+                        <span>Semana ${week} · ${fmt(wStartUTC)}–${fmt(wEndUTC)}</span>
+                    </label>`;
+            }).join('');
+        }
+
+        function toggleWeek(checkbox, week) {
+            const chip = document.querySelector(`.week-chip[data-week="${week}"]`);
+            chip.classList.toggle('off', !checkbox.checked);
+        }
+
+        function collectPoints() {
+            return Array.from(document.querySelectorAll('#compPoints input[data-grade-id]'))
+                .map(input => ({ grade_id: parseInt(input.dataset.gradeId, 10), points: parseInt(input.value || '0', 10) }))
+                .filter(p => p.points > 0);
+        }
+
+        function collectOffsets() {
+            return Array.from(document.querySelectorAll('#compWeeks .week-chip'))
+                .filter(chip => !chip.querySelector('input').checked)
+                .map(chip => parseInt(chip.dataset.week, 10));
+        }
+
+        async function saveCompetition() {
+            const payload = {
+                name: document.getElementById('compName').value.trim(),
+                gym_id: parseInt(document.getElementById('compGym').value, 10),
+                description: document.getElementById('compDescription').value.trim() || null,
+                start_date: document.getElementById('compStart').value,
+                end_date: document.getElementById('compEnd').value,
+                status: document.getElementById('compStatus').value,
+                week_offsets: collectOffsets(),
+                points: collectPoints()
+            };
+
+            if (!payload.name) { showAlert('Pon un nombre a la liga'); return; }
+            if (!payload.gym_id) { showAlert('Elige un gimnasio'); return; }
+            if (!payload.start_date || !payload.end_date) { showAlert('Pon las fechas de la liga'); return; }
+
+            try {
+                const url = editingCompetitionId
+                    ? `${API_URL}/competitions/${editingCompetitionId}`
+                    : `${API_URL}/competitions`;
+                const method = editingCompetitionId ? 'PATCH' : 'POST';
+
+                const res = await authFetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) { showAlert(data.detail || 'No se pudo guardar la liga'); return; }
+
+                // En edición, PATCH no toca los puntos: los guardamos aparte
+                if (editingCompetitionId) {
+                    const pointsRes = await authFetch(`${API_URL}/competitions/${editingCompetitionId}/points`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(collectPoints())
+                    });
+                    if (!pointsRes.ok) { showAlert('Liga guardada, pero fallaron los puntos'); }
+                }
+
+                showAlert('Liga guardada', 'success');
+                closeCompetitionForm();
+                loadCompetitions();
+            } catch (e) {
+                showAlert('Error de conexión');
+            }
+        }
+
+        async function deleteCompetition(id) {
+            if (!confirm('¿Borrar esta liga? Se perderán sus configuraciones y clasificaciones.')) return;
+            try {
+                const res = await authFetch(`${API_URL}/competitions/${id}`, { method: 'DELETE' });
+                if (res.status === 204 || res.ok) {
+                    showAlert('Liga borrada', 'success');
+                    loadCompetitions();
+                } else {
+                    showAlert('No se pudo borrar');
+                }
+            } catch (e) {
+                showAlert('Error de conexión');
+            }
+        }
+
         document.getElementById('searchInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') searchUsers();
+        });
+
+        document.getElementById('compGym').addEventListener('change', () => {
+            loadLeagueGrades();
+            document.getElementById('compWeeks').innerHTML = '';
         });
 
         init();

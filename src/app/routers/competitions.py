@@ -63,6 +63,7 @@ def _serialize(db: Session, competition: Competition) -> CompetitionResponse:
         status=competition.status,
         is_running=competition.is_running,
         total_weeks=competition.total_weeks,
+        week_offsets=sorted(competition.offset_weeks),
         points=points,
         created_at=competition.created_at,
         updated_at=competition.updated_at,
@@ -138,6 +139,7 @@ def create_competition(
         end_date=data.end_date,
         status=CompetitionStatus(data.status.value),
     )
+    competition.set_offset_weeks(data.week_offsets)
     db.add(competition)
     db.flush()
 
@@ -184,6 +186,9 @@ def update_competition(
     if "status" in update_data and update_data["status"] is not None:
         update_data["status"] = CompetitionStatus(update_data["status"].value)
 
+    # week_offsets is stored as a compact string, not a column value
+    offsets = update_data.pop("week_offsets", None)
+
     start = update_data.get("start_date", competition.start_date)
     end = update_data.get("end_date", competition.end_date)
     if end < start:
@@ -194,6 +199,9 @@ def update_competition(
 
     for field, value in update_data.items():
         setattr(competition, field, value)
+
+    if offsets is not None:
+        competition.set_offset_weeks(offsets)
 
     db.commit()
     db.refresh(competition)
@@ -306,6 +314,7 @@ def leaderboard(
                 start_date=start,
                 end_date=end,
                 is_current=(today == week),
+                is_rest=competition.is_rest_week(week),
             )
         )
         weekly_entries.append(entries_for(weekly.get(week, {})))

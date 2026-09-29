@@ -52,6 +52,11 @@ def _validate_competition_tag(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Session date is outside the competition window",
         )
+    if competition.is_rest_week(competition.week_index(session_date)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="That week is a rest week in the competition",
+        )
 
 
 def is_friend(db: Session, user_id: int, other_user_id: int) -> bool:
