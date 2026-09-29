@@ -7,8 +7,9 @@ suma puntos según su dificultad.
 ## Cómo funciona
 
 - **Evento**: un `Competition` está atado a un gimnasio y tiene fecha de inicio
-  y fin. Las semanas se derivan del calendario (semana 1 empieza en `start_date`,
-  cada 7 días), así que no hay que definir cada semana a mano.
+  y fin. Las semanas son **naturales, de lunes a domingo**: la semana 1 va desde
+  `start_date` hasta el primer domingo, y a partir de ahí cada semana va de lunes
+  a domingo. La primera y la última pueden ser parciales.
 - **Semanas de descanso**: el admin marca qué semanas son de descanso
   (`week_offsets`). En una semana de descanso no se pueden marcar bloques de liga
   ni puntúan.
@@ -16,13 +17,17 @@ suma puntos según su dificultad.
   grados son colores, así que cada color vale lo que el admin decida.
 - **Marcar un bloque**: al registrar un bloque, si la sesión es en el gimnasio
   del evento y la fecha cae dentro del evento (y no es descanso), aparece un
-  toggle "Superliga". Al marcarlo, el ascent guarda `competition_id`.
+  toggle "Superliga". Al marcarlo se pide el **número de bloque** (obligatorio,
+  1..N) y el ascent guarda `competition_id` + `competition_block`.
 - **Participación**: es implícita. En cuanto marcas un bloque de liga, entras en
   la clasificación. Cualquier participante puede ver la clasificación completa
   (no solo amigos).
-- **Puntuación**: un bloque puntúa **una vez por (usuario, grado, día)**. Repetir
-  el mismo bloque el mismo día no vuelve a sumar. Proyectos e intentos no
-  puntúan.
+- **Puntuación**: un bloque puntúa **una vez por (usuario, semana, número de
+  bloque)**. Repetir el mismo bloque no vuelve a sumar, pero el mismo número en
+  otra semana es otro bloque y sí puntúa. Proyectos e intentos no puntúan.
+- **Desglose**: en la pestaña "Total" cada fila de la clasificación se puede
+  pulsar para ver, grado a grado, cuántos bloques resolvió esa persona, qué
+  números de bloque eran (`#1 #4`) y cuántos puntos aporta cada grado.
 
 ## Crear y configurar un evento (panel de administración)
 
@@ -66,6 +71,20 @@ POST /api/competitions
   "points": [{"grade_id": 1, "points": 5}, {"grade_id": 2, "points": 10}]
 }
 ```
+
+Y marcar un bloque de liga al registrarlo:
+
+```json
+POST /api/sessions/{session_id}/ascents
+{
+  "grade_id": 5,
+  "status": "send",
+  "competition_id": 1,
+  "competition_block": 7
+}
+```
+
+`competition_block` es obligatorio cuando `competition_id` viene informado.
 
 ## Páginas
 

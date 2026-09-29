@@ -74,10 +74,12 @@ def upgrade() -> None:
     with op.batch_alter_table("ascents") as batch_op:
         batch_op.add_column(sa.Column("competition_id", sa.Integer(), nullable=True))
         batch_op.create_index("ix_ascents_competition_id", ["competition_id"])
+        batch_op.add_column(sa.Column("competition_block", sa.Integer(), nullable=True))
 
 
 def downgrade() -> None:
     with op.batch_alter_table("ascents") as batch_op:
+        batch_op.drop_column("competition_block")
         batch_op.drop_index("ix_ascents_competition_id")
         batch_op.drop_column("competition_id")
 

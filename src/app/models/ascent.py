@@ -50,6 +50,8 @@ class Ascent(Base):
     competition_id = Column(
         Integer, ForeignKey("competitions.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # League block number within its week (1..N, restarts every week).
+    competition_block = Column(Integer, nullable=True)
 
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)

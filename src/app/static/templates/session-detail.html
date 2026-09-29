@@ -335,18 +335,21 @@
 
         /* League toggle (Superliga) */
         .league-toggle {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.6rem;
             margin-top: 0.9rem;
             padding: 0.75rem 0.9rem;
             border: 1px solid var(--gray-light);
             border-radius: 10px;
-            cursor: pointer;
             background: var(--light);
         }
 
-        .league-toggle input {
+        .league-toggle-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            cursor: pointer;
+        }
+
+        .league-toggle input[type="checkbox"] {
             margin-top: 0.15rem;
             width: 18px;
             height: 18px;
@@ -368,6 +371,34 @@
         .league-toggle-text small {
             font-size: 0.75rem;
             color: var(--gray);
+        }
+
+        .league-block-field {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.65rem;
+            padding-top: 0.65rem;
+            border-top: 1px solid var(--gray-light);
+        }
+
+        .league-block-field.hidden { display: none; }
+
+        .league-block-field label {
+            font-size: 0.8rem;
+            color: var(--gray);
+            font-weight: 600;
+            flex: 0 0 auto;
+        }
+
+        .league-block-field input {
+            width: 84px;
+            padding: 0.4rem 0.5rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            background: white;
         }
 
         .ascent-league {
@@ -1147,13 +1178,20 @@
             </button>
 
             <!-- Etiqueta de liga: solo si hay una competición en este gimnasio -->
-            <label class="league-toggle hidden" id="leagueToggle">
-                <input type="checkbox" id="leagueCheckbox">
-                <span class="league-toggle-text">
-                    <strong id="leagueName">Bloque de liga</strong>
-                    <small id="leagueHint"></small>
-                </span>
-            </label>
+            <div class="league-toggle hidden" id="leagueToggle">
+                <label class="league-toggle-row">
+                    <input type="checkbox" id="leagueCheckbox">
+                    <span class="league-toggle-text">
+                        <strong id="leagueName">Bloque de liga</strong>
+                        <small id="leagueHint"></small>
+                    </span>
+                </label>
+                <div class="league-block-field hidden" id="leagueBlockField">
+                    <label for="leagueBlock">Número de bloque</label>
+                    <input type="number" id="leagueBlock" min="1" step="1" inputmode="numeric"
+                           placeholder="Ej. 3">
+                </div>
+            </div>
         </section>
 
         <section class="ascents-section">
@@ -1602,6 +1640,8 @@
         async function loadLeagueCompetition(gymId, sessionDate) {
             const toggle = document.getElementById('leagueToggle');
             const checkbox = document.getElementById('leagueCheckbox');
+            const blockField = document.getElementById('leagueBlockField');
+            const blockInput = document.getElementById('leagueBlock');
             try {
                 const response = await fetchWithAuth(`${API_URL}/competitions/running?gym_id=${gymId}`);
                 if (!response.ok) return;
@@ -1615,9 +1655,7 @@
                 }
 
                 // ...and it must not be a rest week
-                const startDate = new Date(competition.start_date + 'T00:00:00');
-                const sessionDay = new Date(day + 'T00:00:00');
-                const week = Math.floor((sessionDay - startDate) / (7 * 24 * 60 * 60 * 1000)) + 1;
+                const week = competitionWeekIndex(competition, day);
                 const offsets = competition.week_offsets || [];
                 if (offsets.map(Number).includes(week)) {
                     return;
@@ -1626,14 +1664,31 @@
                 leagueCompetition = competition;
                 document.getElementById('leagueName').textContent = competition.name;
                 document.getElementById('leagueHint').textContent =
-                    'Este bloque puntuará para la liga';
+                    `Semana ${week} de la liga · este bloque puntuará`;
                 toggle.classList.remove('hidden');
                 checkbox.addEventListener('change', () => {
-                    toggle.classList.toggle('checked', checkbox.checked);
+                    blockField.classList.toggle('hidden', !checkbox.checked);
+                    if (!checkbox.checked) {
+                        blockInput.value = '';
+                    }
                 });
             } catch (error) {
                 console.error('Error loading league competition:', error);
             }
+        }
+
+        // Same rule as the backend: natural weeks, Monday to Sunday.
+        function competitionWeekIndex(competition, day) {
+            const [sy, sm, sd] = day.split('-').map(Number);
+            const [cy, cm, cd] = competition.start_date.split('-').map(Number);
+            const dayUTC = Date.UTC(sy, sm - 1, sd);
+            const startUTC = Date.UTC(cy, cm - 1, cd);
+            if (dayUTC < startUTC) return 0;
+            const msDay = 24 * 60 * 60 * 1000;
+            const dow = new Date(startUTC).getUTCDay();
+            const mondayOffset = (dow === 0) ? -6 : (1 - dow);
+            const baseMonday = startUTC + mondayOffset * msDay;
+            return Math.floor((dayUTC - baseMonday) / (7 * msDay)) + 1;
         }
 
         async function loadGrades(gymId) {
@@ -1712,7 +1767,7 @@
                 
                 // League badge for competition-tagged ascents
                 const leagueBadge = ascent.competition_id
-                    ? '<span class="ascent-league" title="Bloque de liga">LIGA</span>'
+                    ? `<span class="ascent-league" title="Bloque de liga">LIGA${ascent.competition_block ? ' #' + escapeHtml(ascent.competition_block) : ''}</span>`
                     : '';
                 
                 // Only show delete button for active sessions
@@ -1827,21 +1882,34 @@
         document.getElementById('addAscentBtn').addEventListener('click', async () => {
             // Allow adding if session is active OR in edit mode
             if (!selectedGradeId || (isSessionEnded && !isEditMode)) return;
-            
+
+            const leagueCheckbox = document.getElementById('leagueCheckbox');
+            const isLeague = !!(leagueCompetition && leagueCheckbox.checked);
+            let blockNumber = null;
+            if (isLeague) {
+                const raw = document.getElementById('leagueBlock').value;
+                blockNumber = parseInt(raw, 10);
+                if (!blockNumber || blockNumber < 1) {
+                    alert('Indica el número del bloque de liga (obligatorio).');
+                    document.getElementById('leagueBlock').focus();
+                    return;
+                }
+            }
+
             try {
                 const response = await fetchWithAuth(`${API_URL}/sessions/${sessionId}/ascents`, {
                     method: 'POST',
                     body: JSON.stringify({
                         grade_id: selectedGradeId,
                         status: selectedStatus,
-                        competition_id: (leagueCompetition && document.getElementById('leagueCheckbox').checked)
-                            ? leagueCompetition.id
-                            : null
+                        competition_id: isLeague ? leagueCompetition.id : null,
+                        competition_block: isLeague ? blockNumber : null
                     })
                 });
-                
+
                 if (response.ok) {
                     loadAscents();
+                    if (isLeague) document.getElementById('leagueBlock').value = '';
                     
                     // Brief visual feedback
                     const btn = document.getElementById('addAscentBtn');
@@ -1849,6 +1917,9 @@
                     setTimeout(() => {
                         btn.textContent = '+ Añadir bloque';
                     }, 1000);
+                } else {
+                    const err = await response.json().catch(() => ({}));
+                    alert(err.detail || 'No se pudo añadir el bloque.');
                 }
             } catch (error) {
                 console.error('Error adding ascent:', error);

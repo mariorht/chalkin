@@ -180,6 +180,51 @@
 
         .leaderboard-points small { color: var(--gray); font-weight: 600; font-size: 0.7rem; }
 
+        /* Fila pulsable + desglose por grado */
+        .leaderboard-row.clickable { cursor: pointer; }
+        .leaderboard-row.clickable:hover { background: rgba(0, 0, 0, 0.02); }
+        .leaderboard-row.me.clickable:hover { background: rgba(255, 107, 53, 0.1); }
+
+        .leaderboard-chevron {
+            color: var(--gray);
+            font-size: 0.8rem;
+            flex: 0 0 auto;
+            transition: transform 0.15s;
+        }
+
+        .leaderboard-row.open .leaderboard-chevron { transform: rotate(180deg); }
+
+        .breakdown-wrap {
+            display: none;
+            padding: 0.25rem 1rem 0.75rem 3.35rem;
+        }
+
+        .breakdown-wrap.open { display: block; }
+
+        .breakdown-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0;
+            font-size: 0.85rem;
+            border-bottom: 1px dashed var(--gray-light);
+        }
+
+        .breakdown-row:last-child { border-bottom: none; }
+
+        .breakdown-label { flex: 0 0 auto; color: var(--dark); min-width: 4.5rem; }
+
+        .breakdown-blocks {
+            flex: 1;
+            color: var(--gray);
+            font-size: 0.75rem;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .breakdown-count { color: var(--gray); font-size: 0.8rem; flex: 0 0 auto; }
+        .breakdown-points { font-weight: 700; color: var(--primary); min-width: 3.5rem; text-align: right; flex: 0 0 auto; }
+
         .empty-state {
             text-align: center;
             padding: 2.5rem 1.5rem;
@@ -232,21 +277,54 @@
             return escapeHtml((user.username || '?').charAt(0).toUpperCase());
         }
 
-        function renderLeaderboard(entries) {
+        function breakdownHtml(entry) {
+            if (!entry.breakdown || entry.breakdown.length === 0) return '';
+            const rows = entry.breakdown.map(b => {
+                const blocks = (b.blocks || []).filter(n => n != null);
+                const blocksLine = blocks.length
+                    ? `<span class="breakdown-blocks">${blocks.map(n => `#${escapeHtml(n)}`).join(' ')}</span>`
+                    : '';
+                return `
+                <div class="breakdown-row">
+                    <span class="point-dot" style="background:${escapeHtml(b.color_hex || '#666')}"></span>
+                    <span class="breakdown-label">${escapeHtml(b.label || 'Grado')}</span>
+                    ${blocksLine}
+                    <span class="breakdown-count">×${b.count}</span>
+                    <span class="breakdown-points">${b.points} pts</span>
+                </div>`;
+            }).join('');
+            return `<div class="breakdown">${rows}</div>`;
+        }
+
+        function renderLeaderboard(entries, expandable) {
             if (entries.length === 0) {
                 return '<div class="empty-state"><p>Todavía no hay bloques de liga registrados.</p></div>';
             }
-            return entries.map((entry, index) => `
-                <div class="leaderboard-row ${entry.is_me ? 'me' : ''}">
-                    <div class="leaderboard-rank">${index + 1}</div>
-                    <div class="leaderboard-avatar">${avatarHtml(entry)}</div>
-                    <div class="leaderboard-name">
-                        ${escapeHtml(entry.username)}
-                        <div class="leaderboard-boulders">${entry.scored_boulders} bloque${entry.scored_boulders === 1 ? '' : 's'}</div>
+            return entries.map((entry, index) => {
+                const hasBreakdown = expandable && entry.breakdown && entry.breakdown.length > 0;
+                return `
+                <div class="leaderboard-entry">
+                    <div class="leaderboard-row ${entry.is_me ? 'me' : ''} ${hasBreakdown ? 'clickable' : ''}"
+                         ${hasBreakdown ? `onclick="toggleBreakdown('breakdown-${entry.user_id}', this)"` : ''}>
+                        <div class="leaderboard-rank">${index + 1}</div>
+                        <div class="leaderboard-avatar">${avatarHtml(entry)}</div>
+                        <div class="leaderboard-name">
+                            ${escapeHtml(entry.username)}
+                            <div class="leaderboard-boulders">${entry.scored_boulders} bloque${entry.scored_boulders === 1 ? '' : 's'}</div>
+                        </div>
+                        <div class="leaderboard-points">${entry.points}<small> pts</small></div>
+                        ${hasBreakdown ? '<span class="leaderboard-chevron">▾</span>' : ''}
                     </div>
-                    <div class="leaderboard-points">${entry.points}<small> pts</small></div>
-                </div>
-            `).join('');
+                    <div class="breakdown-wrap" id="breakdown-${entry.user_id}">${breakdownHtml(entry)}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleBreakdown(id, header) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const open = el.classList.toggle('open');
+            if (header) header.classList.toggle('open', open);
         }
 
         let leaderboardData = null;
@@ -287,7 +365,7 @@
                 ${pointsChips ? `<div class="points-strip">${pointsChips}</div>` : ''}
                 <div class="week-tabs" id="weekTabs">${tabs}</div>
                 <h2 style="font-size:1rem;margin-bottom:0.6rem;">${weekLabel}</h2>
-                <div class="leaderboard" id="leaderboard">${renderLeaderboard(entries)}</div>
+                <div class="leaderboard" id="leaderboard">${renderLeaderboard(entries, currentWeek === null)}</div>
             `;
 
             document.querySelectorAll('.week-tab').forEach(tab => {

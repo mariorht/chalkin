@@ -27,8 +27,11 @@ router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
 def _validate_competition_tag(
     db: Session, competition_id: int, gym_id: int, session_date
-) -> None:
-    """Ensure a league tag points to an active competition of that gym/date."""
+):
+    """Ensure a league tag points to an active competition of that gym/date.
+
+    Returns the resolved Competition, so callers can use its week helpers.
+    """
     from app.models.competition import Competition, CompetitionStatus
 
     competition = db.query(Competition).filter(Competition.id == competition_id).first()
@@ -57,6 +60,7 @@ def _validate_competition_tag(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="That week is a rest week in the competition",
         )
+    return competition
 
 
 def is_friend(db: Session, user_id: int, other_user_id: int) -> bool:
@@ -446,6 +450,11 @@ def add_ascent(
 
     # League tagging: the competition must run at this gym and cover the date.
     if ascent_data.competition_id is not None:
+        if ascent_data.competition_block is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="competition_block is required for league ascents",
+            )
         _validate_competition_tag(
             db, ascent_data.competition_id, session.gym_id, session.date
         )

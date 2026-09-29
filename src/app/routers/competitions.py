@@ -23,6 +23,7 @@ from app.schemas.competition import (
     CompetitionWeekResponse,
     CompetitionLeaderboard,
     LeaderboardEntry,
+    GradeBreakdown,
 )
 from app.services import competition as comp_service
 
@@ -282,7 +283,40 @@ def leaderboard(
     overall = data["overall"]
     weekly = data["weekly"]
 
-    def entries_for(bucket: dict[int, dict]) -> List[LeaderboardEntry]:
+    # Grade info for the breakdown (label/colour) and points per grade
+    grades = {
+        g.id: g
+        for g in db.query(Grade).filter(Grade.gym_id == competition.gym_id).all()
+    }
+    points_by_grade = comp_service.competition_points_map(db, competition.id)
+
+    def breakdown_for(values: dict) -> List[GradeBreakdown]:
+        items = []
+        for grade_id, info in values.get("by_grade", {}).items():
+            grade = grades.get(grade_id)
+            count = info["count"]
+            # Block numbers, sorted by (week, block). Legacy rows without a
+            # block number simply produce an empty list.
+            blocks = sorted(
+                (week, block)
+                for week, nums in info.get("blocks", {}).items()
+                for block in nums
+            )
+            items.append(
+                GradeBreakdown(
+                    grade_id=grade_id,
+                    label=grade.label if grade else None,
+                    color_hex=grade.color_hex if grade else None,
+                    count=count,
+                    points=points_by_grade.get(grade_id, 0) * count,
+                    blocks=[block for _, block in blocks],
+                )
+            )
+        # Hardest grades first (by points per boulder, then count)
+        items.sort(key=lambda b: (-b.points, b.label or ""))
+        return items
+
+    def entries_for(bucket: dict[int, dict], with_breakdown: bool = False) -> List[LeaderboardEntry]:
         entries = []
         for user_id, values in bucket.items():
             user = users.get(user_id)
@@ -296,6 +330,7 @@ def leaderboard(
                     points=values["points"],
                     scored_boulders=len(values["scored"]),
                     is_me=user_id == current_user.id,
+                    breakdown=breakdown_for(values) if with_breakdown else [],
                 )
             )
         entries.sort(key=lambda e: (-e.points, -e.scored_boulders, e.username.lower()))
@@ -326,7 +361,7 @@ def leaderboard(
         status=competition.status,
         weeks=weeks,
         weekly=weekly_entries,
-        total=entries_for(overall),
+        total=entries_for(overall, with_breakdown=True),
     )
 
 
