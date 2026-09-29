@@ -249,6 +249,20 @@
             vertical-align: middle;
         }
 
+        .league-item .league-tag {
+            display: inline-block;
+            margin-left: 0.4rem;
+            padding: 0.05rem 0.4rem;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 999px;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.75);
+            vertical-align: middle;
+        }
+
         /* Sessions List */
         .sessions-list {
             background: white;
@@ -1126,7 +1140,8 @@
             }
         }
 
-        // Mostrar las ligas relevantes: en curso, próximas y finalizadas
+        // Mostrar las ligas relevantes: en curso, próximas, finalizadas y,
+        // para admins, los borradores (que aún no están publicados).
         async function loadActiveLeague() {
             try {
                 const response = await fetchWithAuth(`${API_URL}/competitions`);
@@ -1135,29 +1150,37 @@
                 if (!competitions.length) return;
 
                 const today = new Date().toISOString().slice(0, 10);
-                const running = competitions.filter(c => c.status === 'active' && c.start_date <= today && c.end_date >= today);
-                const upcoming = competitions.filter(c => c.start_date > today);
-                const past = competitions.filter(c => c.status === 'finished' || c.end_date < today);
+
+                // Los borradores van siempre a su propio grupo: si no, uno en
+                // curso no encajaría en ningún grupo (no es 'active' pero ya ha
+                // empezado) y uno futuro se vendería como liga publicada.
+                const drafts = competitions.filter(c => c.status === 'draft');
+                const published = competitions.filter(c => c.status !== 'draft');
+
+                const running = published.filter(c => c.status === 'active' && c.start_date <= today && c.end_date >= today);
+                const upcoming = published.filter(c => c.start_date > today);
+                const past = published.filter(c => c.status === 'finished' || c.end_date < today);
 
                 const fmt = iso => new Date(iso + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' });
 
-                const group = (title, items, metaFn, isRunning) => {
+                const group = (title, items, metaFn, options = {}) => {
                     if (!items.length) return '';
                     return `
                         <div class="league-group">
                             <div class="league-group-label">${title}</div>
                             ${items.map(c => `
                                 <a class="league-item" href="/competitions/${c.id}">
-                                    <span class="league-name">${isRunning ? '<span class="league-dot"></span>' : ''}${escapeHtml(c.name)}</span>
+                                    <span class="league-name">${options.running ? '<span class="league-dot"></span>' : ''}${escapeHtml(c.name)}${options.tag ? `<span class="league-tag">${escapeHtml(options.tag)}</span>` : ''}</span>
                                     <span class="league-meta">${metaFn(c)}</span>
                                 </a>`).join('')}
                         </div>`;
                 };
 
                 document.getElementById('leagueGroups').innerHTML =
-                    group('En curso', running, c => `termina ${fmt(c.end_date)}`, true)
-                    + group('Próximas', upcoming, c => `empieza ${fmt(c.start_date)}`, false)
-                    + group('Finalizadas', past, c => `terminó ${fmt(c.end_date)}`, false);
+                    group('En curso', running, c => `termina ${fmt(c.end_date)}`, { running: true })
+                    + group('Próximas', upcoming, c => `empieza ${fmt(c.start_date)}`)
+                    + group('Borradores', drafts, c => `${fmt(c.start_date)} – ${fmt(c.end_date)}`, { tag: 'Borrador' })
+                    + group('Finalizadas', past, c => `terminó ${fmt(c.end_date)}`);
                 document.getElementById('leagueSection').style.display = 'block';
             } catch (error) {
                 console.error('Error loading leagues:', error);

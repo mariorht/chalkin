@@ -97,6 +97,11 @@
         .competition-badge.running { background: rgba(34, 197, 94, 0.12); color: var(--success); }
         .competition-badge.finished { background: rgba(107, 114, 128, 0.12); color: var(--gray); }
         .competition-badge.weeks { background: rgba(46, 196, 182, 0.12); color: var(--secondary); }
+        .competition-badge.draft {
+            background: rgba(107, 114, 128, 0.12);
+            color: var(--gray);
+            border: 1px dashed var(--gray-light);
+        }
 
         .empty-state {
             text-align: center;
@@ -158,11 +163,13 @@
 
                 container.innerHTML = competitions.map(competition => {
                     const running = competition.is_running;
-                    const badge = running
-                        ? '<span class="competition-badge running">En curso</span>'
-                        : (competition.status === 'finished'
-                            ? '<span class="competition-badge finished">Finalizada</span>'
-                            : '<span class="competition-badge finished">Próximamente</span>');
+                    const badge = competition.status === 'draft'
+                        ? '<span class="competition-badge draft">Borrador · no visible</span>'
+                        : (running
+                            ? '<span class="competition-badge running">En curso</span>'
+                            : (competition.status === 'finished'
+                                ? '<span class="competition-badge finished">Finalizada</span>'
+                                : '<span class="competition-badge finished">Próximamente</span>'));
                     return `
                         <div class="competition-card" onclick="window.location.href='/competitions/${competition.id}'">
                             <h2>${escapeHtml(competition.name)}</h2>
