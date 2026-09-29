@@ -231,6 +231,94 @@
             color: var(--gray);
         }
 
+        /* Gráfico de evolución semanal */
+        .chart-section {
+            margin-top: 1.5rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            padding: 1.1rem 1.1rem 0.9rem;
+        }
+
+        .chart-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .chart-head h3 { font-size: 1rem; font-weight: 700; color: var(--dark); }
+        .chart-head .chart-hint { font-size: 0.75rem; color: var(--gray); }
+
+        .chart-people {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .person-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            border: 1px solid var(--gray-light);
+            background: white;
+            border-radius: 999px;
+            padding: 0.3rem 0.7rem;
+            font-size: 0.78rem;
+            color: var(--gray);
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .person-chip.on {
+            background: var(--dark);
+            border-color: var(--dark);
+            color: white;
+        }
+
+        .person-chip .chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex: 0 0 auto;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 0.6rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.78rem;
+            color: var(--gray);
+        }
+
+        .legend-item .legend-line {
+            width: 14px;
+            height: 3px;
+            border-radius: 2px;
+            flex: 0 0 auto;
+        }
+
+        .legend-item .legend-total { color: var(--dark); font-weight: 700; }
+
+        #weeklyChart { width: 100%; }
+        #weeklyChart svg { display: block; width: 100%; height: auto; }
+
+        .chart-empty {
+            padding: 1.5rem 0;
+            text-align: center;
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
         .empty-state h2 { color: var(--dark); margin: 0.5rem 0 0.35rem; font-size: 1.05rem; }
         .empty-state a {
             display: inline-block;
@@ -327,6 +415,211 @@
             if (header) header.classList.toggle('open', open);
         }
 
+        // --- Gráfico de evolución semanal ---
+
+        const CHART_COLORS = [
+            '#FF6B35', '#2EC4B6', '#1A1A2E', '#F59E0B',
+            '#3B82F6', '#22C55E', '#8B5CF6', '#EC4899'
+        ];
+
+        // Selected user ids for the chart. null = not initialised yet.
+        let chartSelection = null;
+        const MAX_AUTO_SELECTED = 6;
+
+        function colorForUser(userId) {
+            const index = (leaderboardData.board.total || [])
+                .findIndex(e => e.user_id === userId);
+            return CHART_COLORS[(index < 0 ? 0 : index) % CHART_COLORS.length];
+        }
+
+        // Points per week for every participant. null = rest week (no data).
+        function weeklySeries() {
+            const board = leaderboardData.board;
+            const series = {};
+            board.total.forEach(entry => {
+                series[entry.user_id] = { entry: entry, points: [] };
+            });
+            board.weeks.forEach((week, i) => {
+                const byUser = {};
+                (board.weekly[i] || []).forEach(e => { byUser[e.user_id] = e.points; });
+                Object.keys(series).forEach(id => {
+                    if (week.is_rest) {
+                        series[id].points.push(null);
+                    } else {
+                        series[id].points.push(byUser[id] != null ? byUser[id] : 0);
+                    }
+                });
+            });
+            return series;
+        }
+
+        function defaultSelection() {
+            const total = leaderboardData.board.total || [];
+            const ids = total.slice(0, MAX_AUTO_SELECTED).map(e => e.user_id);
+            const me = (leaderboardData.board.total || []).find(e => e.is_me);
+            if (me && !ids.includes(me.user_id)) ids.push(me.user_id);
+            return new Set(ids);
+        }
+
+        function toggleChartPerson(userId) {
+            if (!chartSelection) chartSelection = defaultSelection();
+            if (chartSelection.has(userId)) {
+                if (chartSelection.size === 1) return;   // always keep one
+                chartSelection.delete(userId);
+            } else {
+                chartSelection.add(userId);
+            }
+            renderChart();
+        }
+
+        function niceMax(value) {
+            if (value <= 5) return 5;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+            const step = magnitude / 2;
+            return Math.ceil(value / step) * step;
+        }
+
+        function drawChart() {
+            const host = document.getElementById('weeklyChart');
+            if (!host) return;
+
+            const board = leaderboardData.board;
+            const weeks = board.weeks || [];
+            const series = weeklySeries();
+            const chosen = Object.keys(series)
+                .map(Number)
+                .filter(id => !chartSelection || chartSelection.has(id));
+
+            // Last week worth plotting: the last week with actual points, so we
+            // do not draw a misleading drop to zero over unplayed weeks.
+            let lastIndex = -1;
+            Object.values(series).forEach(s => {
+                s.points.forEach((p, i) => {
+                    if (p !== null && p > 0) lastIndex = Math.max(lastIndex, i);
+                });
+            });
+            if (lastIndex < 0) {
+                host.innerHTML = '<div class="chart-empty">Todavía no hay puntos por semana que representar.</div>';
+                return;
+            }
+
+            const width = Math.max(260, host.clientWidth || 320);
+            const height = 210;
+            const padL = 38, padR = 14, padT = 14, padB = 34;
+            const plotW = width - padL - padR;
+            const plotH = height - padT - padB;
+            const n = weeks.length;
+
+            let maxValue = 0;
+            chosen.forEach(id => {
+                series[id].points.forEach((p, i) => {
+                    if (i <= lastIndex && p !== null && p > maxValue) maxValue = p;
+                });
+            });
+            const top = niceMax(maxValue);
+
+            const x = i => (n > 1 ? padL + (plotW * i) / (n - 1) : padL + plotW / 2);
+            const y = v => padT + plotH - (plotH * v) / top;
+
+            let svg = `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Puntos por semana">`;
+
+            // Rest week bands
+            weeks.forEach((week, i) => {
+                if (!week.is_rest) return;
+                const half = n > 1 ? plotW / (n - 1) / 2 : plotW / 2;
+                svg += `<rect x="${Math.max(padL - 4, x(i) - half)}" y="${padT}" `
+                    + `width="${Math.max(half * 2, 8)}" height="${plotH}" fill="#F3F4F6"></rect>`;
+            });
+
+            // Grid + Y labels
+            for (let g = 0; g <= 4; g++) {
+                const value = Math.round((top / 4) * g);
+                const gy = y(value);
+                svg += `<line x1="${padL}" y1="${gy}" x2="${width - padR}" y2="${gy}" `
+                    + `stroke="#E5E7EB" stroke-width="1"></line>`;
+                svg += `<text x="${padL - 7}" y="${gy + 3}" font-size="10" fill="#9CA3AF" `
+                    + `text-anchor="end">${value}</text>`;
+            }
+
+            // Week labels (thin out when there are many weeks)
+            const stepLabel = n > 8 ? 2 : 1;
+            weeks.forEach((week, i) => {
+                if (i % stepLabel !== 0 && i !== lastIndex) return;
+                if (week.is_rest) {
+                    svg += `<text x="${x(i)}" y="${height - 14}" font-size="9" fill="#EF4444" `
+                        + `text-anchor="middle">descanso</text>`;
+                    return;
+                }
+                svg += `<text x="${x(i)}" y="${height - 14}" font-size="10" fill="#6B7280" `
+                    + `text-anchor="middle">S${week.week}</text>`;
+            });
+
+            // Series
+            chosen.forEach(id => {
+                const color = colorForUser(id);
+                const points = series[id].points;
+                let path = '';
+                let started = false;
+                points.forEach((p, i) => {
+                    if (i > lastIndex || p === null) return;
+                    path += (started ? ' L ' : ' M ') + x(i) + ' ' + y(p);
+                    started = true;
+                });
+                if (!started) return;
+                svg += `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" `
+                    + `stroke-linejoin="round" stroke-linecap="round"></path>`;
+                points.forEach((p, i) => {
+                    if (i > lastIndex || p === null) return;
+                    svg += `<circle cx="${x(i)}" cy="${y(p)}" r="3" fill="${color}"></circle>`;
+                });
+            });
+
+            svg += '</svg>';
+            host.innerHTML = svg;
+        }
+
+        function renderChart() {
+            const board = leaderboardData.board;
+            if (!chartSelection) chartSelection = defaultSelection();
+
+            const total = board.total || [];
+            const chips = total.map(entry => {
+                const on = chartSelection.has(entry.user_id);
+                return `
+                    <button type="button" class="person-chip ${on ? 'on' : ''}" data-user="${entry.user_id}">
+                        <span class="chip-dot" style="background:${colorForUser(entry.user_id)}"></span>
+                        ${escapeHtml(entry.username)}
+                    </button>`;
+            }).join('');
+
+            const legend = total.filter(e => chartSelection.has(e.user_id)).map(entry => `
+                <span class="legend-item">
+                    <span class="legend-line" style="background:${colorForUser(entry.user_id)}"></span>
+                    ${escapeHtml(entry.username)}
+                    <span class="legend-total">${entry.points}</span>
+                </span>`).join('');
+
+            const section = document.getElementById('chartSection');
+            if (!section) return;
+            section.innerHTML = `
+                <div class="chart-head">
+                    <h3>Evolución semanal</h3>
+                    <span class="chart-hint">Toca a quién comparar</span>
+                </div>
+                <div class="chart-people">${chips}</div>
+                <div id="weeklyChart"></div>
+                <div class="chart-legend">${legend}</div>
+            `;
+
+            section.querySelectorAll('.person-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    toggleChartPerson(parseInt(chip.dataset.user, 10));
+                });
+            });
+
+            drawChart();
+        }
+
         let leaderboardData = null;
 
         function render() {
@@ -366,7 +659,10 @@
                 <div class="week-tabs" id="weekTabs">${tabs}</div>
                 <h2 style="font-size:1rem;margin-bottom:0.6rem;">${weekLabel}</h2>
                 <div class="leaderboard" id="leaderboard">${renderLeaderboard(entries, currentWeek === null)}</div>
+                <div class="chart-section" id="chartSection"></div>
             `;
+
+            renderChart();
 
             document.querySelectorAll('.week-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
@@ -413,6 +709,14 @@
                 container.innerHTML = '<div class="empty-state"><h2>No se pudo cargar la liga</h2></div>';
             }
         }
+
+        // Repaint the chart when the viewport changes width
+        let chartResizeTimer;
+        window.addEventListener('resize', () => {
+            if (!leaderboardData) return;
+            clearTimeout(chartResizeTimer);
+            chartResizeTimer = setTimeout(drawChart, 150);
+        });
 
         load();
     </script>
