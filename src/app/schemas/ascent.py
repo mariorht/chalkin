@@ -23,6 +23,8 @@ class AscentBase(BaseModel):
     attempts: int = Field(default=1, ge=1)
     notes: Optional[str] = None
     photo_url: Optional[str] = Field(None, max_length=500)
+    # When set, the ascent scores for that competition (league block).
+    competition_id: Optional[int] = None
 
 
 class AscentCreate(AscentBase):
@@ -37,6 +39,7 @@ class AscentUpdate(BaseModel):
     attempts: Optional[int] = Field(None, ge=1)
     notes: Optional[str] = None
     photo_url: Optional[str] = Field(None, max_length=500)
+    competition_id: Optional[int] = None
 
 
 class AscentResponse(AscentBase):

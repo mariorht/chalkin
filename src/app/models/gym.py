@@ -46,6 +46,7 @@ class Gym(Base):
     home_users = relationship("User", back_populates="home_gym")
     grades = relationship("Grade", back_populates="gym", cascade="all, delete-orphan")
     sessions = relationship("Session", back_populates="gym", cascade="all, delete-orphan")
+    competitions = relationship("Competition", back_populates="gym", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Gym {self.name}>"

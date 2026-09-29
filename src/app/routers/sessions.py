@@ -25,6 +25,35 @@ from app.schemas.sense_rep import SenseRepCreate, SenseRepResponse
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
 
+def _validate_competition_tag(
+    db: Session, competition_id: int, gym_id: int, session_date
+) -> None:
+    """Ensure a league tag points to an active competition of that gym/date."""
+    from app.models.competition import Competition, CompetitionStatus
+
+    competition = db.query(Competition).filter(Competition.id == competition_id).first()
+    if not competition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+    if competition.gym_id != gym_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Competition does not belong to the session's gym",
+        )
+    if competition.status != CompetitionStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Competition is not active",
+        )
+    if not competition.contains(session_date):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Session date is outside the competition window",
+        )
+
+
 def is_friend(db: Session, user_id: int, other_user_id: int) -> bool:
     """Check if two users are friends."""
     if user_id == other_user_id:
@@ -409,7 +438,13 @@ def add_ascent(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Grade does not belong to the session's gym"
         )
-    
+
+    # League tagging: the competition must run at this gym and cover the date.
+    if ascent_data.competition_id is not None:
+        _validate_competition_tag(
+            db, ascent_data.competition_id, session.gym_id, session.date
+        )
+
     ascent = Ascent(
         session_id=session_id,
         **ascent_data.model_dump()

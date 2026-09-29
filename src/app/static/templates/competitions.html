@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ligas - Chalkin</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/logoChalkin_invertido_16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/logoChalkin_invertido_32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logoChalkin_invertido_180.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1A1A2E">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Chalkin">
+
+    <link rel="stylesheet" href="/static/css/app-shell.css">
+    <link rel="stylesheet" href="/static/css/cards.css">
+    <link rel="stylesheet" href="/static/css/flat.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+            --gray-light: #E5E7EB;
+            --error: #EF4444;
+            --success: #22C55E;
+            --flash: #F59E0B;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+        }
+
+        .main-container {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            padding-bottom: 90px;
+        }
+
+        .page-header { margin-bottom: 1.25rem; }
+        .page-header h1 { color: var(--dark); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+        .page-header p { color: var(--gray); margin-top: 0.35rem; font-size: 0.9rem; }
+
+        .competition-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .competition-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+        }
+
+        .competition-card h2 {
+            font-size: 1.15rem;
+            color: var(--dark);
+            margin-bottom: 0.2rem;
+        }
+
+        .competition-meta {
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        .competition-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.7rem;
+        }
+
+        .competition-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+        }
+
+        .competition-badge.running { background: rgba(34, 197, 94, 0.12); color: var(--success); }
+        .competition-badge.finished { background: rgba(107, 114, 128, 0.12); color: var(--gray); }
+        .competition-badge.weeks { background: rgba(46, 196, 182, 0.12); color: var(--secondary); }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--gray);
+        }
+
+        .empty-state h2 { color: var(--dark); margin: 0.75rem 0 0.4rem; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="page-header">
+            <h1>Ligas</h1>
+            <p>Eventos y competiciones en tus gimnasios</p>
+        </div>
+        <div id="competitionsList">
+            <div class="empty-state">Cargando…</div>
+        </div>
+    </div>
+
+    <script src="/static/js/app-shell.js"></script>
+    <script>
+        AppShell.init({ activePage: 'competitions' });
+
+        const API_URL = '/api';
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/[&<>"']/g, c => (
+                { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+            ));
+        }
+
+        function formatDate(iso) {
+            if (!iso) return '';
+            const d = new Date(iso + 'T00:00:00');
+            return d.toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        async function loadCompetitions() {
+            const container = document.getElementById('competitionsList');
+            try {
+                const response = await AppShell.fetchWithAuth(`${API_URL}/competitions`);
+                if (!response || !response.ok) {
+                    container.innerHTML = '<div class="empty-state">No se pudieron cargar las ligas.</div>';
+                    return;
+                }
+
+                const competitions = await response.json();
+                if (competitions.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h2>No hay ligas activas</h2>
+                            <p>Cuando tu gimnasio cree un evento aparecerá aquí.</p>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = competitions.map(competition => {
+                    const running = competition.is_running;
+                    const badge = running
+                        ? '<span class="competition-badge running">En curso</span>'
+                        : (competition.status === 'finished'
+                            ? '<span class="competition-badge finished">Finalizada</span>'
+                            : '<span class="competition-badge finished">Próximamente</span>');
+                    return `
+                        <div class="competition-card" onclick="window.location.href='/competitions/${competition.id}'">
+                            <h2>${escapeHtml(competition.name)}</h2>
+                            <div class="competition-meta">
+                                ${escapeHtml(competition.gym_name || '')} ·
+                                ${formatDate(competition.start_date)} – ${formatDate(competition.end_date)}
+                            </div>
+                            <div class="competition-badges">
+                                ${badge}
+                                <span class="competition-badge weeks">${competition.total_weeks} semanas</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading competitions:', error);
+                container.innerHTML = '<div class="empty-state">No se pudieron cargar las ligas.</div>';
+            }
+        }
+
+        loadCompetitions();
+    </script>
+</body>
+</html>

@@ -993,6 +993,16 @@
                 </div>
             </div>
         </section>
+
+        <!-- Ligas activas en tus gimnasios -->
+        <section id="leagueSection" style="display: none; margin-top: 1.5rem;">
+            <div class="admin-tools-card">
+                <div class="section-header" style="margin-bottom: 0;">
+                    <h2 id="leagueTitle">Liga</h2>
+                    <a href="/competitions" id="leagueLink">Ver clasificación</a>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script src="/static/js/icons.js"></script>
@@ -1038,6 +1048,22 @@
                 }
             } catch (error) {
                 console.error('Error checking admin status:', error);
+            }
+        }
+
+        // Mostrar un acceso directo a la liga en curso (si hay alguna)
+        async function loadActiveLeague() {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/competitions`);
+                if (!response || !response.ok) return;
+                const competitions = await response.json();
+                const running = competitions.find(c => c.is_running);
+                if (!running) return;
+                document.getElementById('leagueTitle').textContent = running.name;
+                document.getElementById('leagueLink').href = `/competitions/${running.id}`;
+                document.getElementById('leagueSection').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading active league:', error);
             }
         }
 
@@ -1576,6 +1602,7 @@
         loadActivityChart();
         loadFriendRequests();
         loadAdminStatus();
+        loadActiveLeague();
         
         // Redimensionar gráfico al cambiar tamaño de ventana
         let resizeTimeout;

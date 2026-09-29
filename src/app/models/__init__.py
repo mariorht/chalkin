@@ -11,6 +11,7 @@ from app.models.invitation import Invitation
 from app.models.session_exercise import SessionExercise
 from app.models.password_reset import PasswordResetToken
 from app.models.sense_rep import SenseRep
+from app.models.competition import Competition, CompetitionPoint, CompetitionStatus
 
 __all__ = [
 	"User",
@@ -25,4 +26,7 @@ __all__ = [
 	"SessionExercise",
 	"PasswordResetToken",
 	"SenseRep",
+	"Competition",
+	"CompetitionPoint",
+	"CompetitionStatus",
 ]

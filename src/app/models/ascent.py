@@ -6,6 +6,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, Text
 from sqlalchemy.orm import relationship
 import enum
 
+
 from app.db.base import Base
 
 
@@ -43,13 +44,20 @@ class Ascent(Base):
     
     # Optional: notes about the climb
     notes = Column(Text, nullable=True)
-    
+
+    # Competition (league) tagging. When set, this ascent scores points for
+    # that competition. The id doubles as the flag (NULL = not a league block).
+    competition_id = Column(
+        Integer, ForeignKey("competitions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
     session = relationship("Session", back_populates="ascents")
     grade = relationship("Grade", back_populates="ascents")
+    competition = relationship("Competition")
     
     def __repr__(self):
         return f"<Ascent {self.id} - {self.status.value}>"

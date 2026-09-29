@@ -333,6 +333,56 @@
             cursor: not-allowed;
         }
 
+        /* League toggle (Superliga) */
+        .league-toggle {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            margin-top: 0.9rem;
+            padding: 0.75rem 0.9rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 10px;
+            cursor: pointer;
+            background: var(--light);
+        }
+
+        .league-toggle input {
+            margin-top: 0.15rem;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            flex: 0 0 auto;
+        }
+
+        .league-toggle-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.25;
+        }
+
+        .league-toggle-text strong {
+            font-size: 0.92rem;
+            color: var(--dark);
+        }
+
+        .league-toggle-text small {
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+
+        .ascent-league {
+            display: inline-block;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            padding: 0 0.3rem;
+            margin-left: 0.35rem;
+            vertical-align: middle;
+        }
+
         /* Ascents list */
         .ascents-section {
             background: white;
@@ -1095,6 +1145,15 @@
             <button class="add-btn" id="addAscentBtn" disabled>
                 + Añadir bloque
             </button>
+
+            <!-- Etiqueta de liga: solo si hay una competición en este gimnasio -->
+            <label class="league-toggle hidden" id="leagueToggle">
+                <input type="checkbox" id="leagueCheckbox">
+                <span class="league-toggle-text">
+                    <strong id="leagueName">Bloque de liga</strong>
+                    <small id="leagueHint"></small>
+                </span>
+            </label>
         </section>
 
         <section class="ascents-section">
@@ -1226,6 +1285,8 @@
         let startTime = null;
         let isSessionEnded = false;
         let isEditMode = false;
+        // Competición de liga activa en el gimnasio de esta sesión (o null).
+        let leagueCompetition = null;
 
         // Timer (only for active sessions)
         function updateTimer() {
@@ -1365,6 +1426,10 @@
                 // Load grades for this gym (home activities have no grades)
                 if (session.gym_id) {
                     await loadGrades(session.gym_id);
+                    // Show the league toggle only for own, editable sessions
+                    if (isOwnSession) {
+                        await loadLeagueCompetition(session.gym_id, session.date);
+                    }
                 }
                 
                 // Load ascents from session data
@@ -1534,6 +1599,34 @@
             }
         }
 
+        async function loadLeagueCompetition(gymId, sessionDate) {
+            const toggle = document.getElementById('leagueToggle');
+            const checkbox = document.getElementById('leagueCheckbox');
+            try {
+                const response = await fetchWithAuth(`${API_URL}/competitions/running?gym_id=${gymId}`);
+                if (!response.ok) return;
+                const competition = await response.json();
+                if (!competition) return;
+
+                // The session date must fall inside the event window
+                const day = (sessionDate || '').slice(0, 10);
+                if (day < competition.start_date || day > competition.end_date) {
+                    return;
+                }
+
+                leagueCompetition = competition;
+                document.getElementById('leagueName').textContent = competition.name;
+                document.getElementById('leagueHint').textContent =
+                    'Este bloque puntuará para la liga';
+                toggle.classList.remove('hidden');
+                checkbox.addEventListener('change', () => {
+                    toggle.classList.toggle('checked', checkbox.checked);
+                });
+            } catch (error) {
+                console.error('Error loading league competition:', error);
+            }
+        }
+
         async function loadGrades(gymId) {
             try {
                 const response = await fetch(`${API_URL}/gyms/${gymId}/grades`);
@@ -1608,6 +1701,11 @@
                 
                 const time = parseUTCDate(ascent.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
                 
+                // League badge for competition-tagged ascents
+                const leagueBadge = ascent.competition_id
+                    ? '<span class="ascent-league" title="Bloque de liga">LIGA</span>'
+                    : '';
+                
                 // Only show delete button for active sessions
                 // Show delete button if session is active OR in edit mode
                 const showDelete = !isSessionEnded || isEditMode;
@@ -1619,7 +1717,7 @@
                             ${escapeHtml(grade.label || '?')}
                         </div>
                         <div class="ascent-info">
-                            <div class="grade-label">${escapeHtml(grade.label || 'Grado')}</div>
+                            <div class="grade-label">${escapeHtml(grade.label || 'Grado')} ${leagueBadge}</div>
                             <div class="time">${time}</div>
                         </div>
                         <div class="ascent-status">${statusIcon}</div>
@@ -1726,7 +1824,10 @@
                     method: 'POST',
                     body: JSON.stringify({
                         grade_id: selectedGradeId,
-                        status: selectedStatus
+                        status: selectedStatus,
+                        competition_id: (leagueCompetition && document.getElementById('leagueCheckbox').checked)
+                            ? leagueCompetition.id
+                            : null
                     })
                 });
                 
