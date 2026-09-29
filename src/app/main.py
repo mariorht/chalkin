@@ -22,6 +22,7 @@ from app.routers.notifications import router as notifications_router
 from app.routers.strava import router as strava_router
 from app.routers.invitations import router as invitations_router
 from app.routers.admin import router as admin_router
+from app.routers.competitions import router as competitions_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -69,6 +70,7 @@ app.include_router(notifications_router, prefix="/api")
 app.include_router(strava_router, prefix="/api")
 app.include_router(invitations_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
+app.include_router(competitions_router, prefix="/api")
 
 # Set the correct paths for static files and templates
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -212,6 +214,18 @@ def serve_feed():
 def serve_stats():
     """Serve the statistics page."""
     return os.path.join(template_dir, "stats.html")
+
+
+@app.get("/competitions", response_class=FileResponse)
+def serve_competitions():
+    """Serve the competitions (league) page."""
+    return os.path.join(template_dir, "competitions.html")
+
+
+@app.get("/competitions/{competition_id}", response_class=FileResponse)
+def serve_competition_detail(competition_id: int):
+    """Serve the competition detail page (tagging + leaderboard)."""
+    return os.path.join(template_dir, "competition-detail.html")
 
 
 @app.get("/profile", response_class=FileResponse)

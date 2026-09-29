@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liga - Chalkin</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/logoChalkin_invertido_16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/logoChalkin_invertido_32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/logoChalkin_invertido_180.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1A1A2E">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Chalkin">
+
+    <link rel="stylesheet" href="/static/css/app-shell.css">
+    <link rel="stylesheet" href="/static/css/cards.css">
+    <link rel="stylesheet" href="/static/css/flat.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #2EC4B6;
+            --dark: #1A1A2E;
+            --light: #F7F7F7;
+            --gray: #6B7280;
+            --gray-light: #E5E7EB;
+            --error: #EF4444;
+            --success: #22C55E;
+            --flash: #F59E0B;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+        }
+
+        .main-container {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            padding-bottom: 90px;
+        }
+
+        .page-header { margin-bottom: 1rem; }
+        .page-header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+        .page-header p { color: var(--gray); margin-top: 0.35rem; font-size: 0.9rem; }
+
+        /* Puntos por grado */
+        .points-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0 1.25rem;
+        }
+
+        .point-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: white;
+            border-radius: 10px;
+            padding: 0.4rem 0.7rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            font-size: 0.82rem;
+        }
+
+        .point-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex: 0 0 auto;
+        }
+
+        .point-chip b { color: var(--dark); }
+        .point-chip span { color: var(--gray); }
+
+        /* Selector de semanas */
+        .week-tabs {
+            display: flex;
+            gap: 0.4rem;
+            overflow-x: auto;
+            padding-bottom: 0.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .week-tab {
+            flex: 0 0 auto;
+            border: 1px solid var(--gray-light);
+            background: white;
+            color: var(--gray);
+            border-radius: 999px;
+            padding: 0.4rem 0.9rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .week-tab.active {
+            background: var(--dark);
+            color: white;
+            border-color: var(--dark);
+        }
+
+        .week-tab .now { color: var(--success); }
+
+        /* Clasificación */
+        .leaderboard {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+
+        .leaderboard-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .leaderboard-row:last-child { border-bottom: none; }
+        .leaderboard-row.me { background: rgba(255, 107, 53, 0.06); }
+
+        .leaderboard-rank {
+            width: 1.6rem;
+            text-align: center;
+            font-weight: 800;
+            color: var(--gray);
+            flex: 0 0 auto;
+        }
+
+        .leaderboard-row:nth-child(1) .leaderboard-rank { color: var(--flash); }
+        .leaderboard-row:nth-child(2) .leaderboard-rank { color: #9CA3AF; }
+        .leaderboard-row:nth-child(3) .leaderboard-rank { color: #B45309; }
+
+        .leaderboard-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--dark);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            overflow: hidden;
+            flex: 0 0 auto;
+        }
+
+        .leaderboard-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .leaderboard-name { flex: 1; font-weight: 600; }
+        .leaderboard-boulders { color: var(--gray); font-size: 0.78rem; font-weight: 400; }
+
+        .leaderboard-points {
+            font-weight: 800;
+            font-size: 1.05rem;
+            color: var(--primary);
+        }
+
+        .leaderboard-points small { color: var(--gray); font-weight: 600; font-size: 0.7rem; }
+
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1.5rem;
+            color: var(--gray);
+        }
+
+        .empty-state h2 { color: var(--dark); margin: 0.5rem 0 0.35rem; font-size: 1.05rem; }
+        .empty-state a {
+            display: inline-block;
+            margin-top: 0.8rem;
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="competitionContent">
+            <div class="empty-state">Cargando…</div>
+        </div>
+    </div>
+
+    <script src="/static/js/app-shell.js"></script>
+    <script>
+        AppShell.init({ activePage: 'competitions' });
+
+        const API_URL = '/api';
+        const competitionId = window.location.pathname.split('/').pop();
+
+        let currentWeek = null;   // null = total
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/[&<>"']/g, c => (
+                { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+            ));
+        }
+
+        function formatDay(iso) {
+            if (!iso) return '';
+            const d = new Date(iso + 'T00:00:00');
+            return d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
+        }
+
+        function avatarHtml(user) {
+            if (user.profile_picture) {
+                return `<img src="${escapeHtml(user.profile_picture)}" alt="${escapeHtml(user.username)}">`;
+            }
+            return escapeHtml((user.username || '?').charAt(0).toUpperCase());
+        }
+
+        function renderLeaderboard(entries) {
+            if (entries.length === 0) {
+                return '<div class="empty-state"><p>Todavía no hay bloques de liga registrados.</p></div>';
+            }
+            return entries.map((entry, index) => `
+                <div class="leaderboard-row ${entry.is_me ? 'me' : ''}">
+                    <div class="leaderboard-rank">${index + 1}</div>
+                    <div class="leaderboard-avatar">${avatarHtml(entry)}</div>
+                    <div class="leaderboard-name">
+                        ${escapeHtml(entry.username)}
+                        <div class="leaderboard-boulders">${entry.scored_boulders} bloque${entry.scored_boulders === 1 ? '' : 's'}</div>
+                    </div>
+                    <div class="leaderboard-points">${entry.points}<small> pts</small></div>
+                </div>
+            `).join('');
+        }
+
+        let leaderboardData = null;
+
+        function render() {
+            const container = document.getElementById('competitionContent');
+            const competition = leaderboardData.competition;
+            const board = leaderboardData.board;
+
+            const pointsChips = competition.points.map(p => `
+                <div class="point-chip">
+                    <span class="point-dot" style="background:${escapeHtml(p.color_hex || '#666')}"></span>
+                    <b>${escapeHtml(p.label || 'Grado')}</b>
+                    <span>${p.points} pts</span>
+                </div>
+            `).join('');
+
+            const tabs = [`<button class="week-tab ${currentWeek === null ? 'active' : ''}" data-week="total">Total</button>`]
+                .concat(board.weeks.map(w => `
+                    <button class="week-tab ${currentWeek === w.week ? 'active' : ''}" data-week="${w.week}">
+                        Semana ${w.week}${w.is_current ? ' <span class="now">●</span>' : ''}
+                    </button>
+                `)).join('');
+
+            const entries = currentWeek === null
+                ? board.total
+                : (board.weekly[currentWeek - 1] || []);
+
+            const weekLabel = currentWeek === null
+                ? 'Clasificación del evento'
+                : `Semana ${currentWeek} · ${formatDay(board.weeks[currentWeek - 1].start_date)} – ${formatDay(board.weeks[currentWeek - 1].end_date)}`;
+
+            container.innerHTML = `
+                <div class="page-header">
+                    <h1>${escapeHtml(competition.name)}</h1>
+                    <p>${escapeHtml(competition.gym_name || '')} · ${formatDay(competition.start_date)} – ${formatDay(competition.end_date)}</p>
+                </div>
+                ${pointsChips ? `<div class="points-strip">${pointsChips}</div>` : ''}
+                <div class="week-tabs" id="weekTabs">${tabs}</div>
+                <h2 style="font-size:1rem;margin-bottom:0.6rem;">${weekLabel}</h2>
+                <div class="leaderboard" id="leaderboard">${renderLeaderboard(entries)}</div>
+            `;
+
+            document.querySelectorAll('.week-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const value = tab.dataset.week;
+                    currentWeek = value === 'total' ? null : parseInt(value, 10);
+                    render();
+                });
+            });
+        }
+
+        async function load() {
+            const container = document.getElementById('competitionContent');
+            try {
+                const compRes = await AppShell.fetchWithAuth(`${API_URL}/competitions/${competitionId}`);
+                if (!compRes || compRes.status === 404) {
+                    container.innerHTML = '<div class="empty-state"><h2>Liga no encontrada</h2></div>';
+                    return;
+                }
+                const competition = await compRes.json();
+
+                const boardRes = await AppShell.fetchWithAuth(`${API_URL}/competitions/${competitionId}/leaderboard`);
+                if (boardRes && boardRes.status === 403) {
+                    container.innerHTML = `
+                        <div class="page-header">
+                            <h1>${escapeHtml(competition.name)}</h1>
+                            <p>${escapeHtml(competition.gym_name || '')}</p>
+                        </div>
+                        <div class="empty-state">
+                            <h2>Solo para participantes</h2>
+                            <p>Registra tu primer bloque de liga en el gimnasio para entrar en la clasificación.</p>
+                            <a href="/sessions">Ver mis sesiones</a>
+                        </div>`;
+                    return;
+                }
+                if (!boardRes || !boardRes.ok) {
+                    container.innerHTML = '<div class="empty-state"><h2>No se pudo cargar la clasificación</h2></div>';
+                    return;
+                }
+
+                leaderboardData = { competition, board: await boardRes.json() };
+                render();
+            } catch (error) {
+                console.error('Error loading competition:', error);
+                container.innerHTML = '<div class="empty-state"><h2>No se pudo cargar la liga</h2></div>';
+            }
+        }
+
+        load();
+    </script>
+</body>
+</html>
