@@ -186,6 +186,69 @@
             font-size: 0.9rem;
         }
 
+        /* Section MOSTRADA para la liga en el dashboard */
+        .league-card {
+            background: var(--header-bg, #1A1A2E);
+            border-radius: 16px;
+            padding: 1.1rem 1.25rem;
+            border: none;
+        }
+
+        .league-card .section-header h2 {
+            color: #FFFFFF !important;
+            font-size: 1.1rem;
+        }
+
+        .league-card .section-header a {
+            color: var(--secondary, #2EC4B6) !important;
+            font-weight: 600;
+        }
+
+        .league-group {
+            margin-top: 0.7rem;
+        }
+
+        .league-group-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 0.15rem;
+        }
+
+        .league-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.55rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            color: #FFFFFF;
+            text-decoration: none;
+        }
+
+        .league-item:first-of-type { border-top: none; }
+        .league-item:hover .league-name { text-decoration: underline; }
+
+        .league-item .league-name { font-weight: 600; }
+
+        .league-item .league-meta {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .league-item .league-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success, #22C55E);
+            margin-right: 0.4rem;
+            vertical-align: middle;
+        }
+
         /* Sessions List */
         .sessions-list {
             background: white;
@@ -926,12 +989,12 @@
 
         <!-- Ligas en tus gimnasios (arriba, para verlas al entrar) -->
         <section id="leagueSection" style="display: none;">
-            <div class="admin-tools-card">
+            <div class="league-card">
                 <div class="section-header" style="margin-bottom: 0;">
                     <h2>Ligas</h2>
                     <a href="/competitions">Ver todas</a>
                 </div>
-                <div id="leagueGroups" style="margin-top:0.75rem;"></div>
+                <div id="leagueGroups"></div>
             </div>
         </section>
 
@@ -1078,23 +1141,23 @@
 
                 const fmt = iso => new Date(iso + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' });
 
-                const group = (title, items, metaFn) => {
+                const group = (title, items, metaFn, isRunning) => {
                     if (!items.length) return '';
                     return `
-                        <div style="margin-top:0.6rem;">
-                            <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--gray);margin-bottom:0.3rem;">${title}</div>
+                        <div class="league-group">
+                            <div class="league-group-label">${title}</div>
                             ${items.map(c => `
-                                <a href="/competitions/${c.id}" style="display:flex;justify-content:space-between;gap:0.5rem;padding:0.4rem 0;color:var(--dark);text-decoration:none;border-top:1px solid var(--gray-light);">
-                                    <span>${escapeHtml(c.name)}</span>
-                                    <span style="color:var(--gray);font-size:0.8rem;">${metaFn(c)}</span>
+                                <a class="league-item" href="/competitions/${c.id}">
+                                    <span class="league-name">${isRunning ? '<span class="league-dot"></span>' : ''}${escapeHtml(c.name)}</span>
+                                    <span class="league-meta">${metaFn(c)}</span>
                                 </a>`).join('')}
                         </div>`;
                 };
 
                 document.getElementById('leagueGroups').innerHTML =
-                    group('En curso', running, c => `${fmt(c.end_date)}`)
-                    + group('Próximas', upcoming, c => `Empieza ${fmt(c.start_date)}`)
-                    + group('Finalizadas', past, c => `${fmt(c.end_date)}`);
+                    group('En curso', running, c => `termina ${fmt(c.end_date)}`, true)
+                    + group('Próximas', upcoming, c => `empieza ${fmt(c.start_date)}`, false)
+                    + group('Finalizadas', past, c => `terminó ${fmt(c.end_date)}`, false);
                 document.getElementById('leagueSection').style.display = 'block';
             } catch (error) {
                 console.error('Error loading leagues:', error);
