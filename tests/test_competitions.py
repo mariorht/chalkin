@@ -359,17 +359,18 @@ class TestLeaderboard:
         competition = self._setup(
             client, db, auth_headers, test_user, test_gym, test_grades
         )
-        # Two sessions in different weeks (event starts 7 days ago => week 1
-        # covers [start, start+6], week 2 starts at "today").
+        # Two sessions in different weeks, using the actual week bounds.
+        w1_start, _ = competition.week_bounds(1)
+        w2_start, _ = competition.week_bounds(2)
         week1 = Session(
             user_id=test_user.id,
             gym_id=test_gym.id,
-            date=competition.start_date + timedelta(days=1),
+            date=w1_start,
         )
         week2 = Session(
             user_id=test_user.id,
             gym_id=test_gym.id,
-            date=competition.start_date + timedelta(days=8),
+            date=w2_start,
         )
         db.add_all([week1, week2])
         db.commit()
@@ -466,3 +467,135 @@ class TestLeaderboard:
     def test_leaderboard_not_found(self, client, auth_headers):
         response = client.get("/api/competitions/99999/leaderboard", headers=auth_headers)
         assert response.status_code == 404
+
+
+class TestRestWeeks:
+    """Rest weeks: no tagging and no points."""
+
+    def _competition_with_rest(self, db, gym_id, *, rest_week=2, start_offset_days=-7):
+        today = date.today()
+        competition = Competition(
+            gym_id=gym_id,
+            name="Con descanso",
+            start_date=today + timedelta(days=start_offset_days),
+            end_date=today + timedelta(days=42),
+            status=CompetitionStatus.ACTIVE,
+        )
+        competition.set_offset_weeks([rest_week])
+        db.add(competition)
+        db.commit()
+        db.refresh(competition)
+        return competition
+
+    def test_offset_weeks_helpers(self, db, test_gym):
+        competition = self._competition_with_rest(db, test_gym.id)
+        assert competition.offset_weeks == {2}
+        assert competition.is_rest_week(2) is True
+        assert competition.is_rest_week(1) is False
+        assert competition.is_active_week(2) is False
+        assert competition.is_active_week(1) is True
+
+    def test_offsets_survive_roundtrip(self, client, db, test_gym):
+        headers = _admin_headers(client, db)
+        start = date.today()
+        response = client.post(
+            "/api/competitions",
+            headers=headers,
+            json={
+                "gym_id": test_gym.id,
+                "name": "Con descansos",
+                "start_date": str(start),
+                "end_date": str(start + timedelta(days=60)),
+                "status": "active",
+                "week_offsets": [3, 1],
+            },
+        )
+        assert response.status_code == 201
+        assert response.json()["week_offsets"] == [1, 3]
+
+    def test_cannot_tag_ascent_in_rest_week(
+        self, client, db, auth_headers, test_user, test_gym, test_grades
+    ):
+        # Event starts today, so "today" is week 1. Mark week 1 as rest.
+        competition = self._competition_with_rest(
+            db, test_gym.id, rest_week=1, start_offset_days=0
+        )
+        session = Session(user_id=test_user.id, gym_id=test_gym.id)
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+
+        response = client.post(
+            f"/api/sessions/{session.id}/ascents",
+            headers=auth_headers,
+            json={
+                "grade_id": test_grades[0].id,
+                "status": "send",
+                "competition_id": competition.id,
+            },
+        )
+        assert response.status_code == 400
+
+    def test_rest_week_points_do_not_count(
+        self, client, db, auth_headers, test_user, test_gym, test_grades
+    ):
+        competition = self._competition_with_rest(db, test_gym.id, rest_week=2)
+        db.add(
+            CompetitionPoint(
+                competition_id=competition.id, grade_id=test_grades[0].id, points=10
+            )
+        )
+        db.commit()
+
+        # Week 1 scores
+        active_start, _ = competition.week_bounds(1)
+        rest_start, _ = competition.week_bounds(2)
+        active_session = Session(
+            user_id=test_user.id,
+            gym_id=test_gym.id,
+            date=active_start,
+        )
+        # Week 2 is rest: tag it directly (bypassing the API check) to make
+        # sure the leaderboard itself ignores it.
+        rest_session = Session(
+            user_id=test_user.id,
+            gym_id=test_gym.id,
+            date=rest_start,
+        )
+        db.add_all([active_session, rest_session])
+        db.commit()
+        db.refresh(active_session)
+        db.refresh(rest_session)
+
+        for session in (active_session, rest_session):
+            db.add(
+                Ascent(
+                    session_id=session.id,
+                    grade_id=test_grades[0].id,
+                    status=AscentStatus.SEND,
+                    competition_id=competition.id,
+                )
+            )
+        db.commit()
+
+        board = client.get(
+            f"/api/competitions/{competition.id}/leaderboard", headers=auth_headers
+        ).json()
+        assert board["total"][0]["points"] == 10  # only the active week
+        assert board["weeks"][1]["is_rest"] is True
+        assert board["weeks"][1]["week"] == 2
+
+    def test_running_skips_rest_week(
+        self, client, db, auth_headers, test_gym
+    ):
+        # Rest week is the current one, so the toggle should not be offered
+        # for a gym with only that event.
+        competition = self._competition_with_rest(db, test_gym.id, rest_week=2)
+        response = client.get(
+            f"/api/competitions/running?gym_id={test_gym.id}", headers=auth_headers
+        )
+        # Falls back to the most recent active event, but the frontend will
+        # hide the toggle using week_offsets (returned in the payload).
+        assert response.status_code == 200
+        assert response.json()["week_offsets"] == [2]
+

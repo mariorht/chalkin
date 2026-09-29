@@ -42,6 +42,8 @@ class CompetitionCreate(CompetitionBase):
     """Schema for creating a competition (admin)."""
     gym_id: int
     status: CompetitionStatus = CompetitionStatus.DRAFT
+    # Rest weeks (1-based week numbers) where the event is paused
+    week_offsets: List[int] = []
     points: List[CompetitionPointItem] = []
 
 
@@ -52,6 +54,7 @@ class CompetitionUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: Optional[CompetitionStatus] = None
+    week_offsets: Optional[List[int]] = None
 
 
 class CompetitionResponse(CompetitionBase):
@@ -62,6 +65,7 @@ class CompetitionResponse(CompetitionBase):
     status: CompetitionStatus
     is_running: bool = False
     total_weeks: int = 0
+    week_offsets: List[int] = []
     points: List[CompetitionPointResponse] = []
     created_at: datetime
     updated_at: datetime
@@ -75,6 +79,7 @@ class CompetitionWeekResponse(BaseModel):
     start_date: date
     end_date: date
     is_current: bool = False
+    is_rest: bool = False
 
 
 class LeaderboardEntry(BaseModel):

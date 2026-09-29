@@ -924,6 +924,17 @@
             </a>
         </section>
 
+        <!-- Ligas en tus gimnasios (arriba, para verlas al entrar) -->
+        <section id="leagueSection" style="display: none;">
+            <div class="admin-tools-card">
+                <div class="section-header" style="margin-bottom: 0;">
+                    <h2>Ligas</h2>
+                    <a href="/competitions">Ver todas</a>
+                </div>
+                <div id="leagueGroups" style="margin-top:0.75rem;"></div>
+            </div>
+        </section>
+
         <!-- Activity Calendar Section -->
         <section class="activity-calendar-section">
             <div class="calendar-header">
@@ -994,13 +1005,14 @@
             </div>
         </section>
 
-        <!-- Ligas activas en tus gimnasios -->
+        <!-- Ligas en tus gimnasios -->
         <section id="leagueSection" style="display: none; margin-top: 1.5rem;">
             <div class="admin-tools-card">
                 <div class="section-header" style="margin-bottom: 0;">
-                    <h2 id="leagueTitle">Liga</h2>
-                    <a href="/competitions" id="leagueLink">Ver clasificación</a>
+                    <h2>Ligas</h2>
+                    <a href="/competitions">Ver todas</a>
                 </div>
+                <div id="leagueGroups" style="margin-top:0.75rem;"></div>
             </div>
         </section>
     </main>
@@ -1051,19 +1063,41 @@
             }
         }
 
-        // Mostrar un acceso directo a la liga en curso (si hay alguna)
+        // Mostrar las ligas relevantes: en curso, próximas y finalizadas
         async function loadActiveLeague() {
             try {
                 const response = await fetchWithAuth(`${API_URL}/competitions`);
                 if (!response || !response.ok) return;
                 const competitions = await response.json();
-                const running = competitions.find(c => c.is_running);
-                if (!running) return;
-                document.getElementById('leagueTitle').textContent = running.name;
-                document.getElementById('leagueLink').href = `/competitions/${running.id}`;
+                if (!competitions.length) return;
+
+                const today = new Date().toISOString().slice(0, 10);
+                const running = competitions.filter(c => c.status === 'active' && c.start_date <= today && c.end_date >= today);
+                const upcoming = competitions.filter(c => c.start_date > today);
+                const past = competitions.filter(c => c.status === 'finished' || c.end_date < today);
+
+                const fmt = iso => new Date(iso + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' });
+
+                const group = (title, items, metaFn) => {
+                    if (!items.length) return '';
+                    return `
+                        <div style="margin-top:0.6rem;">
+                            <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--gray);margin-bottom:0.3rem;">${title}</div>
+                            ${items.map(c => `
+                                <a href="/competitions/${c.id}" style="display:flex;justify-content:space-between;gap:0.5rem;padding:0.4rem 0;color:var(--dark);text-decoration:none;border-top:1px solid var(--gray-light);">
+                                    <span>${escapeHtml(c.name)}</span>
+                                    <span style="color:var(--gray);font-size:0.8rem;">${metaFn(c)}</span>
+                                </a>`).join('')}
+                        </div>`;
+                };
+
+                document.getElementById('leagueGroups').innerHTML =
+                    group('En curso', running, c => `${fmt(c.end_date)}`)
+                    + group('Próximas', upcoming, c => `Empieza ${fmt(c.start_date)}`)
+                    + group('Finalizadas', past, c => `${fmt(c.end_date)}`);
                 document.getElementById('leagueSection').style.display = 'block';
             } catch (error) {
-                console.error('Error loading active league:', error);
+                console.error('Error loading leagues:', error);
             }
         }
 

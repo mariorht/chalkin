@@ -1614,6 +1614,15 @@
                     return;
                 }
 
+                // ...and it must not be a rest week
+                const startDate = new Date(competition.start_date + 'T00:00:00');
+                const sessionDay = new Date(day + 'T00:00:00');
+                const week = Math.floor((sessionDay - startDate) / (7 * 24 * 60 * 60 * 1000)) + 1;
+                const offsets = competition.week_offsets || [];
+                if (offsets.map(Number).includes(week)) {
+                    return;
+                }
+
                 leagueCompetition = competition;
                 document.getElementById('leagueName').textContent = competition.name;
                 document.getElementById('leagueHint').textContent =

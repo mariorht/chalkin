@@ -32,6 +32,7 @@ def upgrade() -> None:
         sa.Column("description", sa.String(length=500), nullable=True),
         sa.Column("start_date", sa.Date(), nullable=False),
         sa.Column("end_date", sa.Date(), nullable=False),
+        sa.Column("week_offsets", sa.String(length=255), nullable=True),
         sa.Column(
             "status",
             sa.Enum("DRAFT", "ACTIVE", "FINISHED", name="competitionstatus"),

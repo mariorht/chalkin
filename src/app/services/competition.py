@@ -112,7 +112,8 @@ def standings(db: Session, competition: Competition) -> dict:
         points = points_by_grade.get(grade.id, 0)
         user_id = session.user_id
         week = competition.week_index(session.date)
-        if week < 1:
+        # Rest weeks score nothing
+        if week < 1 or competition.is_rest_week(week):
             continue
         key = _dedup_key(user_id, grade.id, session.date)
 
@@ -156,14 +157,15 @@ def participant_users(db: Session, competition_id: int) -> list[User]:
 
 
 def active_competition_for_gym(db: Session, gym_id: int) -> Optional[Competition]:
-    """The competition running today at a gym, if any.
+    """The competition available to tag at a gym right now.
 
-    Prefers an event whose window contains today and is active. Falls back to
-    the most recent active event at the gym (so the UI can still offer tagging
-    right before/after, letting the date filters decide what actually scores).
+    Prefers an event whose window contains today and is active, and that is
+    not in a rest week. Falls back to the most recent active event at the gym
+    (so the UI can still show the league, letting the date filters decide what
+    actually scores).
     """
     today = date.today()
-    running = (
+    running_candidates = (
         db.query(Competition)
         .filter(
             Competition.gym_id == gym_id,
@@ -172,10 +174,11 @@ def active_competition_for_gym(db: Session, gym_id: int) -> Optional[Competition
             Competition.end_date >= today,
         )
         .order_by(Competition.start_date.desc())
-        .first()
+        .all()
     )
-    if running:
-        return running
+    for competition in running_candidates:
+        if not competition.is_rest_week(competition.week_index(today)):
+            return competition
 
     return (
         db.query(Competition)
