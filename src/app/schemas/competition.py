@@ -82,6 +82,17 @@ class CompetitionWeekResponse(BaseModel):
     is_rest: bool = False
 
 
+class GradeBreakdown(BaseModel):
+    """How many boulders of a grade a participant has scored."""
+    grade_id: int
+    label: Optional[str] = None
+    color_hex: Optional[str] = None
+    count: int = 0
+    points: int = 0
+    # League block numbers scored for this grade (sorted, de-duplicated)
+    blocks: List[int] = []
+
+
 class LeaderboardEntry(BaseModel):
     """One participant's standing in the leaderboard."""
     user_id: int
@@ -91,6 +102,8 @@ class LeaderboardEntry(BaseModel):
     # Deduplicated count of scoring boulders (repeat attempts count once)
     scored_boulders: int = 0
     is_me: bool = False
+    # Per-grade breakdown (only filled for the total standings)
+    breakdown: List[GradeBreakdown] = []
 
 
 class CompetitionLeaderboard(BaseModel):

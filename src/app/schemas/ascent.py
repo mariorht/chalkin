@@ -25,6 +25,8 @@ class AscentBase(BaseModel):
     photo_url: Optional[str] = Field(None, max_length=500)
     # When set, the ascent scores for that competition (league block).
     competition_id: Optional[int] = None
+    # League block number within its week (1..N). Required when tagging.
+    competition_block: Optional[int] = Field(None, ge=1, le=999)
 
 
 class AscentCreate(AscentBase):
@@ -40,6 +42,7 @@ class AscentUpdate(BaseModel):
     notes: Optional[str] = None
     photo_url: Optional[str] = Field(None, max_length=500)
     competition_id: Optional[int] = None
+    competition_block: Optional[int] = Field(None, ge=1, le=999)
 
 
 class AscentResponse(AscentBase):

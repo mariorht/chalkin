@@ -156,10 +156,12 @@ class TestLeagueTagging:
                 "grade_id": test_grades[1].id,
                 "status": "send",
                 "competition_id": competition.id,
+                "competition_block": 3,
             },
         )
         assert response.status_code == 201
         assert response.json()["competition_id"] == competition.id
+        assert response.json()["competition_block"] == 3
 
     def test_cannot_tag_ascent_from_other_gym(
         self, client: TestClient, db, auth_headers, test_user, test_gym, create_gym, test_grades
@@ -178,6 +180,7 @@ class TestLeagueTagging:
                 "grade_id": test_grades[0].id,
                 "status": "send",
                 "competition_id": competition.id,
+                "competition_block": 1,
             },
         )
         assert response.status_code == 400
@@ -198,9 +201,53 @@ class TestLeagueTagging:
                 "grade_id": test_grades[0].id,
                 "status": "send",
                 "competition_id": competition.id,
+                "competition_block": 1,
             },
         )
         assert response.status_code == 400
+
+    def test_block_number_is_required(
+        self, client: TestClient, db, auth_headers, test_user, test_gym, test_grades
+    ):
+        """Tagging a league ascent without a block number is rejected."""
+        competition = _make_competition(db, test_gym.id)
+        session = Session(user_id=test_user.id, gym_id=test_gym.id)
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+
+        response = client.post(
+            f"/api/sessions/{session.id}/ascents",
+            headers=auth_headers,
+            json={
+                "grade_id": test_grades[0].id,
+                "status": "send",
+                "competition_id": competition.id,
+            },
+        )
+        assert response.status_code == 400
+        assert "competition_block" in response.json()["detail"]
+
+    def test_block_number_must_be_positive(
+        self, client: TestClient, db, auth_headers, test_user, test_gym, test_grades
+    ):
+        competition = _make_competition(db, test_gym.id)
+        session = Session(user_id=test_user.id, gym_id=test_gym.id)
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+
+        response = client.post(
+            f"/api/sessions/{session.id}/ascents",
+            headers=auth_headers,
+            json={
+                "grade_id": test_grades[0].id,
+                "status": "send",
+                "competition_id": competition.id,
+                "competition_block": 0,
+            },
+        )
+        assert response.status_code == 422
 
     def test_running_competition_endpoint(
         self, client: TestClient, db, auth_headers, test_gym
@@ -248,13 +295,17 @@ class TestLeaderboard:
         return competition
 
     def _add_tagged_ascent(
-        self, db, competition, session, grade, status=AscentStatus.SEND
+        self, db, competition, session, grade, status=AscentStatus.SEND, block=None
     ):
+        """Add a scored ascent. ``block`` defaults to a unique number."""
+        if block is None:
+            block = 1000 + (db.query(Ascent).count() + 1)
         ascent = Ascent(
             session_id=session.id,
             grade_id=grade.id,
             status=status,
             competition_id=competition.id,
+            competition_block=block,
         )
         db.add(ascent)
         db.commit()
@@ -284,9 +335,10 @@ class TestLeaderboard:
         assert total[0]["scored_boulders"] == 2
         assert total[0]["is_me"] is True
 
-    def test_repeat_same_grade_same_day_counts_once(
+    def test_repeat_same_block_counts_once(
         self, client, db, auth_headers, test_user, test_gym, test_grades
     ):
+        """Three sends of block #1 in the same week score only once."""
         competition = self._setup(
             client, db, auth_headers, test_user, test_gym, test_grades
         )
@@ -295,9 +347,9 @@ class TestLeaderboard:
         db.commit()
         db.refresh(session)
 
-        self._add_tagged_ascent(db, competition, session, test_grades[1])
-        self._add_tagged_ascent(db, competition, session, test_grades[1])
-        self._add_tagged_ascent(db, competition, session, test_grades[1])
+        self._add_tagged_ascent(db, competition, session, test_grades[1], block=1)
+        self._add_tagged_ascent(db, competition, session, test_grades[1], block=1)
+        self._add_tagged_ascent(db, competition, session, test_grades[1], block=1)
 
         response = client.get(
             f"/api/competitions/{competition.id}/leaderboard", headers=auth_headers
@@ -305,6 +357,118 @@ class TestLeaderboard:
         total = response.json()["total"]
         assert total[0]["points"] == 20  # not 60
         assert total[0]["scored_boulders"] == 1
+
+    def test_different_blocks_same_grade_score_separately(
+        self, client, db, auth_headers, test_user, test_gym, test_grades
+    ):
+        """Two different block numbers of the same grade both score."""
+        competition = self._setup(
+            client, db, auth_headers, test_user, test_gym, test_grades
+        )
+        session = Session(user_id=test_user.id, gym_id=test_gym.id)
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+
+        self._add_tagged_ascent(db, competition, session, test_grades[1], block=1)
+        self._add_tagged_ascent(db, competition, session, test_grades[1], block=2)
+
+        response = client.get(
+            f"/api/competitions/{competition.id}/leaderboard", headers=auth_headers
+        )
+        total = response.json()["total"]
+        assert total[0]["points"] == 40
+        assert total[0]["scored_boulders"] == 2
+
+    def test_same_block_number_in_different_weeks_scores_twice(
+        self, client, db, auth_headers, test_user, test_gym, test_grades
+    ):
+        """Block #1 of week 1 and block #1 of week 2 are different boulders."""
+        competition = self._setup(
+            client, db, auth_headers, test_user, test_gym, test_grades
+        )
+        w1_start, _ = competition.week_bounds(1)
+        w2_start, _ = competition.week_bounds(2)
+        s1 = Session(user_id=test_user.id, gym_id=test_gym.id, date=w1_start)
+        s2 = Session(user_id=test_user.id, gym_id=test_gym.id, date=w2_start)
+        db.add_all([s1, s2])
+        db.commit()
+        db.refresh(s1)
+        db.refresh(s2)
+
+        self._add_tagged_ascent(db, competition, s1, test_grades[1], block=1)
+        self._add_tagged_ascent(db, competition, s2, test_grades[1], block=1)
+
+        response = client.get(
+            f"/api/competitions/{competition.id}/leaderboard", headers=auth_headers
+        )
+        total = response.json()["total"]
+        assert total[0]["points"] == 40
+        assert total[0]["scored_boulders"] == 2
+
+    def test_breakdown_lists_grades(
+        self, client, db, auth_headers, test_user, test_gym, test_grades
+    ):
+        """The total standings include a per-grade breakdown."""
+        competition = self._setup(
+            client, db, auth_headers, test_user, test_gym, test_grades
+        )
+        session = Session(user_id=test_user.id, gym_id=test_gym.id)
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+
+        self._add_tagged_ascent(db, competition, session, test_grades[0], block=1)  # 10
+        self._add_tagged_ascent(db, competition, session, test_grades[0], block=2)  # 10
+        self._add_tagged_ascent(db, competition, session, test_grades[2], block=3)  # 30
+
+        response = client.get(
+            f"/api/competitions/{competition.id}/leaderboard", headers=auth_headers
+        )
+        entry = response.json()["total"][0]
+        breakdown = entry["breakdown"]
+        assert len(breakdown) == 2
+
+        # Hardest grade first
+        assert breakdown[0]["grade_id"] == test_grades[2].id
+        assert breakdown[0]["count"] == 1
+        assert breakdown[0]["points"] == 30
+        assert breakdown[0]["label"] == test_grades[2].label
+        assert breakdown[0]["color_hex"] == test_grades[2].color_hex
+
+        assert breakdown[1]["grade_id"] == test_grades[0].id
+        assert breakdown[1]["count"] == 2
+        assert breakdown[1]["points"] == 20
+
+    def test_breakdown_lists_block_numbers(
+        self, client, db, auth_headers, test_user, test_gym, test_grades
+    ):
+        """The breakdown reports which league block numbers were scored."""
+        competition = self._setup(
+            client, db, auth_headers, test_user, test_gym, test_grades
+        )
+        w1_start, _ = competition.week_bounds(1)
+        w2_start, _ = competition.week_bounds(2)
+        s1 = Session(user_id=test_user.id, gym_id=test_gym.id, date=w1_start)
+        s2 = Session(user_id=test_user.id, gym_id=test_gym.id, date=w2_start)
+        db.add_all([s1, s2])
+        db.commit()
+        db.refresh(s1)
+        db.refresh(s2)
+
+        # Same grade in two different blocks of week 1, plus one in week 2
+        self._add_tagged_ascent(db, competition, s1, test_grades[0], block=3)
+        self._add_tagged_ascent(db, competition, s1, test_grades[0], block=7)
+        self._add_tagged_ascent(db, competition, s2, test_grades[0], block=1)
+
+        response = client.get(
+            f"/api/competitions/{competition.id}/leaderboard", headers=auth_headers
+        )
+        breakdown = response.json()["total"][0]["breakdown"]
+        assert len(breakdown) == 1
+        assert breakdown[0]["count"] == 3
+        # Block numbers sorted by (week, block): week 1 has 3 and 7, week 2 has 1
+        assert breakdown[0]["blocks"] == [3, 7, 1]
 
     def test_project_does_not_score(
         self, client, db, auth_headers, test_user, test_gym, test_grades
@@ -532,6 +696,7 @@ class TestRestWeeks:
                 "grade_id": test_grades[0].id,
                 "status": "send",
                 "competition_id": competition.id,
+                "competition_block": 1,
             },
         )
         assert response.status_code == 400
@@ -567,13 +732,14 @@ class TestRestWeeks:
         db.refresh(active_session)
         db.refresh(rest_session)
 
-        for session in (active_session, rest_session):
+        for idx, session in enumerate([active_session, rest_session], start=1):
             db.add(
                 Ascent(
                     session_id=session.id,
                     grade_id=test_grades[0].id,
                     status=AscentStatus.SEND,
                     competition_id=competition.id,
+                    competition_block=idx,
                 )
             )
         db.commit()

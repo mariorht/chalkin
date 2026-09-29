@@ -65,12 +65,16 @@ def scoring_ascents_query(db: Session, competition_id: int):
     )
 
 
-def _dedup_key(user_id: int, grade_id: int, day: date):
-    """A boulder is identified by (user, grade, day) within the event.
+def _dedup_key(user_id: int, week: int, block: Optional[int], grade_id: int, day: date):
+    """Identity of a league boulder for scoring purposes.
 
-    The app has no per-boulder catalogue, so the same grade on the same day is
-    treated as the same physical block: repeating it does not score twice.
+    A league boulder is identified by its week number and its block number.
+    Repetitions of the same block do not score twice. If an old ascent has no
+    block number (data from before the field existed), fall back to
+    (grade, day) so it still counts once.
     """
+    if block is not None:
+        return (user_id, week, block)
     return (user_id, grade_id, day)
 
 
@@ -84,8 +88,9 @@ def _accumulate(rows, points_by_grade: dict[int, int], competition: Competition)
     for ascent, session, grade in rows:
         points = points_by_grade.get(grade.id, 0)
         user_id = session.user_id
+        week = competition.week_index(session.date)
         bucket = totals.setdefault(user_id, {"points": 0, "scored": set()})
-        key = _dedup_key(user_id, grade.id, session.date)
+        key = _dedup_key(user_id, week, ascent.competition_block, grade.id, session.date)
         if key in bucket["scored"]:
             continue
         bucket["scored"].add(key)
@@ -98,8 +103,8 @@ def standings(db: Session, competition: Competition) -> dict:
     Build the full standings for a competition.
 
     Returns a dict with:
-    - ``overall``: {user_id: {"points", "boulders"}}
-    - ``weekly``: {week_number: {user_id: {"points", "boulders"}}}
+    - ``overall``: {user_id: {"points", "scored", "by_grade"}}
+    - ``weekly``: {week_number: {user_id: {"points", "scored", "by_grade"}}}
     """
     points_by_grade = competition_points_map(db, competition.id)
     query = scoring_ascents_query(db, competition.id)
@@ -108,6 +113,22 @@ def standings(db: Session, competition: Competition) -> dict:
     overall: dict[int, dict] = {}
     weekly: dict[int, dict[int, dict]] = {}
 
+    def empty_bucket():
+        # by_grade: {grade_id: {"count": n, "blocks": {week: [block, ...]}}}
+        return {"points": 0, "scored": set(), "by_grade": {}}
+
+    def add(bucket, key, grade_id, points, week, block):
+        if key in bucket["scored"]:
+            return
+        bucket["scored"].add(key)
+        bucket["points"] += points
+        grade_entry = bucket["by_grade"].setdefault(
+            grade_id, {"count": 0, "blocks": {}}
+        )
+        grade_entry["count"] += 1
+        if block is not None:
+            grade_entry["blocks"].setdefault(week, set()).add(block)
+
     for ascent, session, grade in rows:
         points = points_by_grade.get(grade.id, 0)
         user_id = session.user_id
@@ -115,18 +136,20 @@ def standings(db: Session, competition: Competition) -> dict:
         # Rest weeks score nothing
         if week < 1 or competition.is_rest_week(week):
             continue
-        key = _dedup_key(user_id, grade.id, session.date)
+        key = _dedup_key(
+            user_id, week, ascent.competition_block, grade.id, session.date
+        )
 
-        bucket = overall.setdefault(user_id, {"points": 0, "scored": set()})
-        if key not in bucket["scored"]:
-            bucket["scored"].add(key)
-            bucket["points"] += points
+        add(
+            overall.setdefault(user_id, empty_bucket()),
+            key, grade.id, points, week, ascent.competition_block,
+        )
 
         week_bucket = weekly.setdefault(week, {})
-        wb = week_bucket.setdefault(user_id, {"points": 0, "scored": set()})
-        if key not in wb["scored"]:
-            wb["scored"].add(key)
-            wb["points"] += points
+        add(
+            week_bucket.setdefault(user_id, empty_bucket()),
+            key, grade.id, points, week, ascent.competition_block,
+        )
 
     return {"overall": overall, "weekly": weekly}
 
