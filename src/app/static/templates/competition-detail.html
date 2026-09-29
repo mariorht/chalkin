@@ -319,6 +319,122 @@
             font-size: 0.85rem;
         }
 
+        .person-chip.more {
+            background: var(--light);
+            border-style: dashed;
+            color: var(--gray);
+            font-weight: 700;
+        }
+
+        .person-chip.more:hover { border-color: var(--dark); color: var(--dark); }
+
+        /* Hoja para elegir participantes cuando hay muchos */
+        .people-sheet {
+            position: fixed;
+            inset: 0;
+            z-index: 1100;
+            display: none;
+        }
+
+        .people-sheet.open { display: block; }
+
+        .sheet-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .sheet-panel {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            max-width: 760px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 18px 18px 0 0;
+            padding: 1.1rem 1.1rem 1.4rem;
+            max-height: 78vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sheet-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .sheet-head h4 { font-size: 1rem; font-weight: 700; color: var(--dark); }
+
+        .sheet-done {
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.45rem 0.95rem;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+
+        .sheet-search {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            margin-bottom: 0.7rem;
+        }
+
+        .sheet-list { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+        .sheet-person {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            width: 100%;
+            padding: 0.65rem 0.2rem;
+            border: none;
+            border-top: 1px solid var(--gray-light);
+            background: none;
+            font-family: inherit;
+            font-size: 0.92rem;
+            color: var(--dark);
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .sheet-check {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 1.5px solid var(--gray-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: white;
+            flex: 0 0 auto;
+        }
+
+        .sheet-person.on .sheet-check {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .sheet-name { flex: 1; }
+        .sheet-points { color: var(--gray); font-size: 0.82rem; }
+
+        .sheet-empty {
+            padding: 1.5rem 0;
+            text-align: center;
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
         .empty-state h2 { color: var(--dark); margin: 0.5rem 0 0.35rem; font-size: 1.05rem; }
         .empty-state a {
             display: inline-block;
@@ -424,7 +540,10 @@
 
         // Selected user ids for the chart. null = not initialised yet.
         let chartSelection = null;
-        const MAX_AUTO_SELECTED = 6;
+        // Chips shown inline; the rest live in the searchable sheet.
+        const MAX_CHIPS = 6;
+        // A chart with many lines is unreadable, so cap how many can be shown.
+        const MAX_SELECTED = 8;
 
         function colorForUser(userId) {
             const index = (leaderboardData.board.total || [])
@@ -432,22 +551,30 @@
             return CHART_COLORS[(index < 0 ? 0 : index) % CHART_COLORS.length];
         }
 
-        // Points per week for every participant. null = rest week (no data).
+        // Accumulated points per week for every participant.
+        // Values are cumulative: each week adds the points earned that week to
+        // the previous total. A rest week keeps the accumulated total (no break
+        // in the line) and is drawn inactive.
         function weeklySeries() {
             const board = leaderboardData.board;
             const series = {};
             board.total.forEach(entry => {
-                series[entry.user_id] = { entry: entry, points: [] };
+                series[entry.user_id] = { entry: entry, points: [], weekly: [] };
             });
             board.weeks.forEach((week, i) => {
                 const byUser = {};
                 (board.weekly[i] || []).forEach(e => { byUser[e.user_id] = e.points; });
                 Object.keys(series).forEach(id => {
+                    const previous = i > 0 ? series[id].points[i - 1] : 0;
+                    const base = previous != null ? previous : 0;
                     if (week.is_rest) {
-                        series[id].points.push(null);
-                    } else {
-                        series[id].points.push(byUser[id] != null ? byUser[id] : 0);
+                        series[id].weekly.push(null);
+                        series[id].points.push(base);
+                        return;
                     }
+                    const weekPoints = byUser[id] != null ? byUser[id] : 0;
+                    series[id].weekly.push(weekPoints);
+                    series[id].points.push(base + weekPoints);
                 });
             });
             return series;
@@ -455,8 +582,8 @@
 
         function defaultSelection() {
             const total = leaderboardData.board.total || [];
-            const ids = total.slice(0, MAX_AUTO_SELECTED).map(e => e.user_id);
-            const me = (leaderboardData.board.total || []).find(e => e.is_me);
+            const ids = total.slice(0, MAX_CHIPS).map(e => e.user_id);
+            const me = total.find(e => e.is_me);
             if (me && !ids.includes(me.user_id)) ids.push(me.user_id);
             return new Set(ids);
         }
@@ -467,9 +594,68 @@
                 if (chartSelection.size === 1) return;   // always keep one
                 chartSelection.delete(userId);
             } else {
+                if (chartSelection.size >= MAX_SELECTED) {
+                    flashChartHint(`Máximo ${MAX_SELECTED} a la vez`);
+                    return;
+                }
                 chartSelection.add(userId);
             }
             renderChart();
+        }
+
+        function flashChartHint(message) {
+            const hint = document.querySelector('#chartSection .chart-hint');
+            if (!hint) return;
+            const original = hint.textContent;
+            hint.textContent = message;
+            setTimeout(() => { hint.textContent = original; }, 2000);
+        }
+
+        // --- Selector de participantes (para when there are many) ---
+
+        function openPeopleSheet() {
+            renderPeopleSheet(document.getElementById('peopleSearch').value || '');
+            const sheet = document.getElementById('peopleSheet');
+            sheet.classList.add('open');
+            sheet.setAttribute('aria-hidden', 'false');
+        }
+
+        function closePeopleSheet() {
+            const sheet = document.getElementById('peopleSheet');
+            if (!sheet) return;
+            sheet.classList.remove('open');
+            sheet.setAttribute('aria-hidden', 'true');
+        }
+
+        function renderPeopleSheet(query) {
+            const list = document.getElementById('peopleList');
+            if (!list) return;
+            const term = (query || '').trim().toLowerCase();
+            const entries = (leaderboardData.board.total || []).filter(
+                e => !term || e.username.toLowerCase().includes(term)
+            );
+
+            if (entries.length === 0) {
+                list.innerHTML = '<div class="sheet-empty">Nadie coincide</div>';
+                return;
+            }
+
+            list.innerHTML = entries.map(entry => {
+                const on = chartSelection && chartSelection.has(entry.user_id);
+                return `
+                    <button type="button" class="sheet-person ${on ? 'on' : ''}" data-user="${entry.user_id}">
+                        <span class="sheet-check">${on ? '✓' : ''}</span>
+                        <span class="sheet-name">${escapeHtml(entry.username)}</span>
+                        <span class="sheet-points">${entry.points}</span>
+                    </button>`;
+            }).join('');
+
+            list.querySelectorAll('.sheet-person').forEach(row => {
+                row.addEventListener('click', () => {
+                    toggleChartPerson(parseInt(row.dataset.user, 10));
+                    renderPeopleSheet(document.getElementById('peopleSearch').value || '');
+                });
+            });
         }
 
         function niceMax(value) {
@@ -490,11 +676,12 @@
                 .map(Number)
                 .filter(id => !chartSelection || chartSelection.has(id));
 
-            // Last week worth plotting: the last week with actual points, so we
-            // do not draw a misleading drop to zero over unplayed weeks.
+            // Last week worth plotting: the last week where somebody actually
+            // earned points, so we do not draw a misleading line over weeks
+            // that have not been played yet.
             let lastIndex = -1;
             Object.values(series).forEach(s => {
-                s.points.forEach((p, i) => {
+                s.weekly.forEach((p, i) => {
                     if (p !== null && p > 0) lastIndex = Math.max(lastIndex, i);
                 });
             });
@@ -554,10 +741,12 @@
                     + `text-anchor="middle">S${week.week}</text>`;
             });
 
-            // Series
+            // Series (accumulated). The line runs through rest weeks without
+            // breaking; their marker is drawn hollow to show no points there.
             chosen.forEach(id => {
                 const color = colorForUser(id);
                 const points = series[id].points;
+                const weekly = series[id].weekly;
                 let path = '';
                 let started = false;
                 points.forEach((p, i) => {
@@ -570,7 +759,10 @@
                     + `stroke-linejoin="round" stroke-linecap="round"></path>`;
                 points.forEach((p, i) => {
                     if (i > lastIndex || p === null) return;
-                    svg += `<circle cx="${x(i)}" cy="${y(p)}" r="3" fill="${color}"></circle>`;
+                    const isRest = weekly[i] === null;
+                    svg += isRest
+                        ? `<circle cx="${x(i)}" cy="${y(p)}" r="3" fill="#FFFFFF" stroke="${color}" stroke-width="2"></circle>`
+                        : `<circle cx="${x(i)}" cy="${y(p)}" r="3" fill="${color}"></circle>`;
                 });
             });
 
@@ -583,7 +775,10 @@
             if (!chartSelection) chartSelection = defaultSelection();
 
             const total = board.total || [];
-            const chips = total.map(entry => {
+            const shown = total.slice(0, MAX_CHIPS);
+            const hiddenCount = total.length - shown.length;
+
+            const chips = shown.map(entry => {
                 const on = chartSelection.has(entry.user_id);
                 return `
                     <button type="button" class="person-chip ${on ? 'on' : ''}" data-user="${entry.user_id}">
@@ -592,6 +787,10 @@
                     </button>`;
             }).join('');
 
+            const moreBtn = hiddenCount > 0
+                ? `<button type="button" class="person-chip more" id="openPeopleSheet">+${hiddenCount} más</button>`
+                : '';
+
             const legend = total.filter(e => chartSelection.has(e.user_id)).map(entry => `
                 <span class="legend-item">
                     <span class="legend-line" style="background:${colorForUser(entry.user_id)}"></span>
@@ -599,19 +798,43 @@
                     <span class="legend-total">${entry.points}</span>
                 </span>`).join('');
 
+            const selectedCount = chartSelection.size;
+
             const section = document.getElementById('chartSection');
             if (!section) return;
             section.innerHTML = `
                 <div class="chart-head">
-                    <h3>Evolución semanal</h3>
-                    <span class="chart-hint">Toca a quién comparar</span>
+                    <h3>Puntos acumulados</h3>
+                    <span class="chart-hint">${selectedCount} de ${total.length} · toca a quién comparar</span>
                 </div>
-                <div class="chart-people">${chips}</div>
+                <div class="chart-people">${chips}${moreBtn}</div>
                 <div id="weeklyChart"></div>
                 <div class="chart-legend">${legend}</div>
+                <div class="people-sheet" id="peopleSheet" aria-hidden="true">
+                    <div class="sheet-backdrop" onclick="closePeopleSheet()"></div>
+                    <div class="sheet-panel">
+                        <div class="sheet-head">
+                            <h4>Comparar con…</h4>
+                            <button type="button" class="sheet-done" onclick="closePeopleSheet()">Listo</button>
+                        </div>
+                        <input type="text" id="peopleSearch" class="sheet-search"
+                               placeholder="Buscar persona…" autocomplete="off">
+                        <div class="sheet-list" id="peopleList"></div>
+                    </div>
+                </div>
             `;
 
-            section.querySelectorAll('.person-chip').forEach(chip => {
+            const moreButton = document.getElementById('openPeopleSheet');
+            if (moreButton) {
+                moreButton.addEventListener('click', openPeopleSheet);
+            }
+
+            const search = document.getElementById('peopleSearch');
+            if (search) {
+                search.addEventListener('input', () => renderPeopleSheet(search.value));
+            }
+
+            section.querySelectorAll('.person-chip[data-user]').forEach(chip => {
                 chip.addEventListener('click', () => {
                     toggleChartPerson(parseInt(chip.dataset.user, 10));
                 });
