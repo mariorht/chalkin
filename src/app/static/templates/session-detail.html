@@ -1323,6 +1323,9 @@
         let startTime = null;
         let isSessionEnded = false;
         let isEditMode = false;
+        // True si la sesión es del usuario actual. Las de otros usuarios son
+        // solo de lectura, aunque estén en curso.
+        let isOwnSession = true;
         // Competición de liga activa en el gimnasio de esta sesión (o null).
         let leagueCompetition = null;
 
@@ -1407,7 +1410,7 @@
                 applyActivityType(session.activity_type === 'home');
                 
                 // Check if this is someone else's session
-                const isOwnSession = session.is_own !== false;
+                isOwnSession = session.is_own !== false;
                 
                 // Update UI based on session state and ownership
                 if (!isOwnSession) {
@@ -1770,9 +1773,9 @@
                     ? `<span class="ascent-league" title="Bloque de liga">LIGA${ascent.competition_block ? ' #' + escapeHtml(ascent.competition_block) : ''}</span>`
                     : '';
                 
-                // Only show delete button for active sessions
-                // Show delete button if session is active OR in edit mode
-                const showDelete = !isSessionEnded || isEditMode;
+                // Only the owner can delete blocks: a friend's in-progress
+                // session is read-only, so the trash button must not appear.
+                const showDelete = isOwnSession && (!isSessionEnded || isEditMode);
                 const deleteBtn = showDelete ? `<button class="ascent-delete" onclick="deleteAscent(${ascent.id})"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : '';
                 
                 return `
