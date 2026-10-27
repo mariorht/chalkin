@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db.base import get_db
 from app.core.deps import get_current_user, get_optional_user
+from app.core.permissions import can_delete_gym, can_edit_gym
 from app.models.user import User
 from app.models.gym import Gym
 from app.models.grade import Grade
@@ -79,6 +80,9 @@ def update_gym(
 ):
     """
     Update a gym's information.
+
+    Unverified gyms can be fixed by any authenticated user; verified ones are
+    admin-only.
     """
     gym = db.query(Gym).filter(Gym.id == gym_id).first()
     
@@ -86,6 +90,12 @@ def update_gym(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Gym not found"
+        )
+
+    if not can_edit_gym(current_user, gym):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This gym is verified: only admins can edit it",
         )
     
     update_data = gym_data.model_dump(exclude_unset=True)
@@ -105,8 +115,17 @@ def delete_gym(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Delete a gym.
+    Delete a gym (admin only).
+
+    This cascades to the gym's sessions, ascents and competitions, so it is
+    restricted to admins even for unverified gyms.
     """
+    if not can_delete_gym(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can delete a gym",
+        )
+
     gym = db.query(Gym).filter(Gym.id == gym_id).first()
     
     if not gym:

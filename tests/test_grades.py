@@ -108,3 +108,88 @@ class TestGrades:
         assert "V0" in labels
         assert "V1" in labels
         assert "V2" in labels
+
+
+class TestGradePermissions:
+    """Grades follow the verified-gym rule, and history is protected."""
+
+    def test_can_edit_grades_of_unverified_gym(self, client, auth_headers, test_gym):
+        response = client.post(
+            "/api/grades",
+            headers=auth_headers,
+            json={
+                "gym_id": test_gym.id,
+                "label": "Morado",
+                "relative_difficulty": 9,
+                "order": 9,
+            },
+        )
+        assert response.status_code == 201
+
+    def test_cannot_edit_grades_of_verified_gym(
+        self, client, db, auth_headers, test_gym
+    ):
+        test_gym.is_verified = True
+        db.commit()
+
+        response = client.post(
+            "/api/grades",
+            headers=auth_headers,
+            json={
+                "gym_id": test_gym.id,
+                "label": "Morado",
+                "relative_difficulty": 9,
+                "order": 9,
+            },
+        )
+        assert response.status_code == 403
+
+    def test_cannot_update_grade_of_verified_gym(
+        self, client, db, auth_headers, test_gym, test_grades
+    ):
+        test_gym.is_verified = True
+        db.commit()
+
+        response = client.patch(
+            f"/api/grades/{test_grades[0].id}",
+            headers=auth_headers,
+            json={"label": "Cambiado"},
+        )
+        assert response.status_code == 403
+
+    def test_cannot_bulk_create_grades_of_verified_gym(
+        self, client, db, auth_headers, test_gym
+    ):
+        test_gym.is_verified = True
+        db.commit()
+
+        response = client.post(
+            "/api/grades/bulk",
+            headers=auth_headers,
+            json={
+                "gym_id": test_gym.id,
+                "grades": [{"label": "V0", "relative_difficulty": 1, "order": 0}],
+            },
+        )
+        assert response.status_code == 403
+
+    def test_cannot_delete_grade_used_by_ascents(
+        self, client, db, auth_headers, test_gym, test_grades, test_session
+    ):
+        """Deleting a grade in use would cascade to the ascent history."""
+        from app.models.ascent import Ascent
+
+        db.add(Ascent(session_id=test_session.id, grade_id=test_grades[0].id))
+        db.commit()
+
+        response = client.delete(
+            f"/api/grades/{test_grades[0].id}", headers=auth_headers
+        )
+        assert response.status_code == 409
+        assert db.query(Ascent).count() == 1
+
+    def test_can_delete_unused_grade(self, client, auth_headers, test_gym, test_grades):
+        response = client.delete(
+            f"/api/grades/{test_grades[0].id}", headers=auth_headers
+        )
+        assert response.status_code == 204

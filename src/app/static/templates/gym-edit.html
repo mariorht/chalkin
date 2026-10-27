@@ -63,6 +63,74 @@
             margin-bottom: 0.5rem;
         }
 
+        /* Estado de verificación dentro de la página de edición */
+        .gym-status {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            background: rgba(245, 158, 11, 0.12);
+            color: #92400E;
+            font-size: 0.9rem;
+        }
+
+        .gym-status.verified {
+            background: rgba(34, 197, 94, 0.12);
+            color: #166534;
+        }
+
+        .gym-status .badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .gym-status .btn-verify {
+            margin-left: auto;
+            border: none;
+            border-radius: 8px;
+            padding: 0.45rem 0.85rem;
+            font-weight: 600;
+            font-size: 0.82rem;
+            cursor: pointer;
+            background: var(--dark);
+            color: white;
+        }
+
+        .gym-status .btn-verify.unverify {
+            background: white;
+            color: var(--gray);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+        }
+
+        .readonly-notice {
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-left: 4px solid var(--primary);
+            border-radius: 12px;
+            padding: 1.1rem 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .readonly-notice strong {
+            display: block;
+            color: var(--dark);
+            margin-bottom: 0.3rem;
+        }
+
+        .readonly-notice p {
+            color: var(--gray);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
         .page-header p {
             color: var(--gray);
         }
@@ -562,10 +630,18 @@
                 <h1><svg viewBox="0 0 24 24" fill="currentColor" style="width:24px;height:24px;vertical-align:middle;margin-right:8px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>Editar gimnasio</h1>
                 <p>Modifica la información del rocódromo</p>
             </div>
-            <button class="btn-delete" onclick="showDeleteModal()"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Eliminar</button>
+            <button class="btn-delete" id="deleteGymBtn" style="display:none;" onclick="showDeleteModal()"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Eliminar</button>
         </div>
 
-        <div class="card">
+        <div id="gymStatus" class="gym-status"></div>
+
+        <div id="readOnlyNotice" class="readonly-notice" style="display:none;">
+            <strong id="readOnlyName">Gimnasio verificado</strong>
+            <p>Este gimnasio está verificado: solo un administrador puede modificarlo.
+               Si ves algún dato incorrecto, avisa a un administrador para que lo corrija.</p>
+        </div>
+
+        <div class="card" id="gymCard">
             <div id="alert" class="alert"></div>
 
             <form id="gymForm">
@@ -632,7 +708,7 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/dashboard'">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/gyms'">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="submitBtn">Guardar cambios</button>
                 </div>
             </form>
@@ -665,6 +741,9 @@
         let gradeCounter = 0;
         let gymId = null;
         let existingGrades = [];
+        // Admin-only actions: editing a verified gym and deleting a gym.
+        let isAdmin = false;
+        let currentGym = null;
 
         // Get gym ID from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -672,6 +751,72 @@
 
         if (!gymId) {
             window.location.href = '/dashboard';
+        }
+
+        async function loadAdminStatus() {
+            try {
+                const res = await fetch(`${API_URL}/admin/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                isAdmin = res.ok;
+            } catch (e) {
+                isAdmin = false;
+            }
+        }
+
+        async function setVerification(verified, btn) {
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                const res = await fetch(`${API_URL}/admin/gyms/${gymId}/verification`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ is_verified: verified })
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    showAlert(data.detail || 'No se pudo cambiar la verificación');
+                    btn.disabled = false;
+                    btn.textContent = original;
+                    return;
+                }
+                window.location.reload();
+            } catch (e) {
+                showAlert('Error de conexión');
+                btn.disabled = false;
+                btn.textContent = original;
+            }
+        }
+
+        function renderGymStatus(gym) {
+            const status = document.getElementById('gymStatus');
+            status.className = `gym-status${gym.is_verified ? ' verified' : ''}`;
+
+            const label = gym.is_verified
+                ? '<span class="badge">Verificado</span> Solo un administrador puede editarlo.'
+                : '<span class="badge">Sin verificar</span> Cualquier usuario puede editarlo hasta que un administrador lo verifique.';
+
+            const verifyBtn = isAdmin
+                ? `<button type="button" class="btn-verify ${gym.is_verified ? 'unverify' : ''}"
+                           onclick="setVerification(${gym.is_verified ? 'false' : 'true'}, this)">
+                       ${gym.is_verified ? 'Quitar verificación' : 'Verificar gimnasio'}
+                   </button>`
+                : '';
+
+            status.innerHTML = `${label}${verifyBtn}`;
+        }
+
+        function applyEditPermissions(gym) {
+            const canEdit = !gym.is_verified || isAdmin;
+            document.getElementById('gymForm').style.display = canEdit ? '' : 'none';
+            document.getElementById('readOnlyNotice').style.display = canEdit ? 'none' : 'block';
+            // Deleting a gym is admin-only
+            document.getElementById('deleteGymBtn').style.display = isAdmin ? '' : 'none';
+            return canEdit;
         }
 
         function showDeleteModal() {
@@ -796,6 +941,18 @@
                 }
 
                 const gym = await response.json();
+                currentGym = gym;
+
+                // The delete button and the verify control depend on being admin
+                renderGymStatus(gym);
+                const canEdit = applyEditPermissions(gym);
+
+                if (!canEdit) {
+                    // Verified gym viewed by a regular user: read-only summary
+                    document.getElementById('readOnlyName').textContent = gym.name;
+                    hideLoadingOverlay();
+                    return;
+                }
 
                 // Fill form
                 document.getElementById('name').value = gym.name;
@@ -867,39 +1024,81 @@
                     throw new Error(error.detail || 'Error al actualizar el gimnasio');
                 }
 
-                // Update grades - delete existing and create new ones
-                // First delete all existing grades
-                for (const grade of existingGrades) {
-                    await fetch(`${API_URL}/grades/${grade.id}`, {
-                        method: 'DELETE',
+                // Grades are updated in place, keeping their ids: deleting and
+                // recreating them would orphan (and therefore delete) every
+                // ascent that references them.
+
+                // 1. Grades already in the gym: PATCH
+                for (const grade of grades.filter(g => g.id)) {
+                    const res = await fetch(`${API_URL}/grades/${grade.id}`, {
+                        method: 'PATCH',
                         headers: {
+                            'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
-                        }
+                        },
+                        body: JSON.stringify({
+                            label: grade.label,
+                            color_hex: grade.color_hex,
+                            relative_difficulty: grade.relative_difficulty,
+                            order: grade.order
+                        })
                     });
+                    if (!res.ok) {
+                        const error = await res.json().catch(() => ({}));
+                        // Plain text (shown via textContent), not HTML.
+                        throw new Error(error.detail || 'Error al actualizar el grado "' + grade.label + '"');
+                    }
                 }
 
-                // Create new grades
-                const gradesResponse = await fetch(`${API_URL}/grades/bulk`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        gym_id: parseInt(gymId),
-                        grades: grades
-                    })
-                });
+                // 2. New grades: create them one by one so we learn their ids
+                for (const grade of grades.filter(g => !g.id)) {
+                    const res = await fetch(`${API_URL}/grades`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            gym_id: parseInt(gymId),
+                            label: grade.label,
+                            color_hex: grade.color_hex,
+                            relative_difficulty: grade.relative_difficulty,
+                            order: grade.order
+                        })
+                    });
+                    if (!res.ok) {
+                        const error = await res.json().catch(() => ({}));
+                        throw new Error(error.detail || 'Error al crear el grado "' + grade.label + '"');
+                    }
+                }
 
-                if (!gradesResponse.ok) {
-                    const error = await gradesResponse.json();
-                    throw new Error(error.detail || 'Error al actualizar los grados');
+                // 3. Removed grades: delete only those no longer in the form.
+                //    The backend refuses (409) if an ascent still uses them.
+                const keptIds = new Set(grades.filter(g => g.id).map(g => g.id));
+                const removed = existingGrades.filter(g => !keptIds.has(g.id));
+
+                for (const grade of removed) {
+                    const res = await fetch(`${API_URL}/grades/${grade.id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.status === 409) {
+                        const error = await res.json().catch(() => ({}));
+                        throw new Error(
+                            error.detail ||
+                            'El grado "' + grade.label + '" tiene bloques registrados y no se puede borrar'
+                        );
+                    }
+                    if (!res.ok && res.status !== 204) {
+                        const error = await res.json().catch(() => ({}));
+                        throw new Error(error.detail || 'Error al borrar el grado "' + grade.label + '"');
+                    }
                 }
 
                 showAlert('¡Gimnasio actualizado correctamente!', 'success');
 
                 setTimeout(() => {
-                    window.location.href = '/dashboard';
+                    window.location.href = '/gyms';
                 }, 1500);
 
             } catch (error) {
@@ -1053,8 +1252,12 @@
             }
         });
 
-        // Load gym data when page loads
-        loadGym();
+        // Load gym data when page loads (admin status first: it decides what
+        // the user is allowed to see and do)
+        (async () => {
+            await loadAdminStatus();
+            loadGym();
+        })();
     </script>
 </body>
 </html>
