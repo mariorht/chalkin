@@ -704,3 +704,206 @@ select {
     font-weight: 600 !important;
     color: var(--ink) !important;
 }
+
+/* --- 19. Gimnasios: alta y edición --- */
+/* Las dos pantallas de gimnasio mantienen su propio CSS antiguo (tarjetas,
+   sombras, inputs gruesos). Aquí se aplanan y se arregla el móvil. */
+.gym-form .page-header h1 {
+    font-size: 1.5rem !important;
+    letter-spacing: -0.02em;
+}
+
+.gym-form .form-section h2 {
+    font-size: 0.72rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted) !important;
+    border-bottom: var(--hairline) !important;
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.gym-form .form-group label {
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
+.gym-form .form-group input,
+.gym-form .form-group select,
+.gym-form .form-group textarea,
+.gym-form .grade-item input,
+.gym-form .map-search-container input {
+    border-width: 1px !important;
+    border-color: var(--border) !important;
+    border-radius: 8px !important;
+    background: var(--surface) !important;
+    box-shadow: none !important;
+}
+
+.gym-form .form-group input:focus,
+.gym-form .form-group select:focus,
+.gym-form .form-group textarea:focus,
+.gym-form .grade-item input:focus,
+.gym-form .map-search-container input:focus {
+    border-color: var(--primary) !important;
+    box-shadow: none !important;
+}
+
+/* Escala de grados: sección plana, sin tarjeta gris */
+.gym-form .grades-section {
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 1rem 0 0 !important;
+    border-top: var(--hairline);
+    margin-top: 0.5rem !important;
+}
+
+.gym-form .grades-header {
+    gap: 0.75rem;
+}
+
+.gym-form .grades-header h3 {
+    font-size: 0.95rem !important;
+}
+
+/* Cada grado: fila con hairline en vez de tarjeta con sombra */
+.gym-form .grade-item {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border-bottom: var(--hairline);
+    padding: 0.7rem 0 !important;
+    margin-bottom: 0 !important;
+    gap: 0.75rem;
+}
+
+.gym-form .grade-item:last-child {
+    border-bottom: none;
+}
+
+.gym-form .grade-color-picker {
+    flex: 0 0 48px !important;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 8px !important;
+}
+
+.gym-form .grade-item .grade-difficulty {
+    flex: 0 0 80px !important;
+    width: 80px !important;
+}
+
+.gym-form .grade-labels {
+    padding: 0 !important;
+    gap: 0.75rem;
+}
+
+.gym-form .grade-labels span:nth-child(1) { width: 48px; }
+.gym-form .grade-labels span:nth-child(3) { width: 80px; }
+.gym-form .grade-labels span:nth-child(4) { width: 30px; }
+
+/* Coordenadas: sin tarjeta y sin apretar el texto */
+.gym-form .coords-display {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.35rem 1rem !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    border-top: var(--hairline);
+    padding: 0.6rem 0 !important;
+    margin-top: 0.6rem !important;
+}
+
+.gym-form .coords-display span {
+    min-width: 0;
+}
+
+.gym-form .coords-display span:first-child {
+    flex: 1 1 100%;
+    overflow-wrap: anywhere;
+}
+
+.gym-form #map {
+    border: var(--hairline) !important;
+    border-radius: 8px !important;
+}
+
+/* Avisos: planos, con barra lateral en vez de tarjeta */
+.gym-form .gym-status {
+    background: transparent !important;
+    border-radius: 0 !important;
+    border-left: 3px solid currentColor;
+    padding: 0.6rem 0 0.6rem 0.8rem !important;
+}
+
+.gym-form .readonly-notice {
+    background: transparent !important;
+    border: none !important;
+    border-left: 3px solid var(--primary) !important;
+    border-radius: 0 !important;
+    padding: 0.6rem 0 0.6rem 0.8rem !important;
+}
+
+@media (max-width: 600px) {
+    /* Cabecera de la escala: título y botón sin pelearse por el ancho */
+    .gym-form .grades-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .gym-form .grades-header h3 {
+        white-space: nowrap;
+    }
+
+    .gym-form .btn-add-grade {
+        width: 100%;
+        white-space: nowrap;
+    }
+
+    /* Las etiquetas de columna ya no aplican: en móvil es una rejilla */
+    .gym-form .grade-labels {
+        display: none !important;
+    }
+
+    .gym-form .grade-item {
+        display: grid !important;
+        grid-template-columns: 48px minmax(0, 1fr) auto;
+        grid-template-areas:
+            "color name remove"
+            "color diff remove";
+        align-items: center;
+        column-gap: 0.75rem;
+        row-gap: 0.5rem;
+    }
+
+    .gym-form .grade-color-picker {
+        grid-area: color;
+        width: 48px !important;
+        height: 48px !important;
+        min-height: 0;
+        align-self: center;
+    }
+
+    .gym-form .grade-item input[type="text"] {
+        grid-area: name;
+        width: 100%;
+    }
+
+    .gym-form .grade-item .grade-difficulty {
+        grid-area: diff;
+        width: 100% !important;
+        flex: 1 1 auto !important;
+    }
+
+    .gym-form .grade-item .btn-remove-grade {
+        grid-area: remove;
+    }
+
+    .gym-form .form-actions {
+        flex-direction: column;
+    }
+
+    .gym-form .form-actions .btn {
+        width: 100%;
+    }
+}
