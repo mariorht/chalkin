@@ -7,96 +7,91 @@ on:
       - completed
     branches:
       - main
+  # Permite lanzarlo a mano para probar el deploy sin esperar a un push
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Solo deploy si los tests pasaron
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Solo deploy si los tests pasaron (o si se lanza a mano)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
+      # El servidor no tiene salida IPv4 (solo IPv6 + una IPv4 interna sin NAT),
+      # así que no puede hacer `git fetch`. Enviamos el código desde el runner,
+      # que sí tiene internet, y desplegamos el commit exacto que pasó los tests.
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
       - name: Setup WARP for IPv6 support
         uses: fscarmen/warp-on-actions@v1.3
         with:
           mode: client # Usar modo cliente en lugar de wireguard para evitar problemas de dependencias
-        
+
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Para IPv6, usar formato directo sin -H (que no funciona bien con IPv6)
           ssh-keyscan ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-      
+
       - name: Deploy to server
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
-          # Si SERVER_HOST contiene ':', es IPv6 y necesita corchetes para SSH
-          if [[ $SERVER_HOST == *":"* ]]; then
-            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
-              set -e
-              # Crear directorio de backups si no existe
-              mkdir -p ~/db_backup
-              
-              # Hacer backup de la base de datos con timestamp
-              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-              DB_SOURCE=$(docker volume inspect chalkin_chalkin_data -f '{{ .Mountpoint }}' 2>/dev/null || echo "~/chalkin/src/data")
-              
-              if [ -f "${DB_SOURCE}/chalkin.db" ]; then
-                cp ${DB_SOURCE}/chalkin.db ~/db_backup/chalkin_${TIMESTAMP}.db
-                echo "✅ Backup creado: chalkin_${TIMESTAMP}.db"
-              else
-                echo "⚠️  Base de datos no encontrada en ${DB_SOURCE}"
-              fi
-              
-              # Mantener solo los 30 backups más recientes
-              cd ~/db_backup
-              ls -t chalkin_*.db 2>/dev/null | tail -n +31 | xargs -r rm
-              echo "📦 Backups actuales: $(ls -1 chalkin_*.db 2>/dev/null | wc -l)"
-              
-              # Deploy
-              cd ~/chalkin
-              # Traer main exacto descartando cambios locales del clon de despliegue.
-              # Antes, un fichero trackeado modificado (p. ej. backup.sh) abortaba
-              # `git pull` y, sin `set -e`, el deploy quedaba "success" pero sin desplegar.
-              git fetch origin main
-              git reset --hard origin/main
-              docker compose -f docker-compose.prod.yml up -d --build
-              docker compose -f docker-compose.prod.yml exec -T api alembic upgrade head
-              echo "✅ Deployed at $(date) [$(git rev-parse --short HEAD)]"
-          EOF
+          set -euo pipefail
+
+          # rsync necesita corchetes para una IPv6 literal
+          if [[ "$SERVER_HOST" == *":"* ]]; then
+            DEST="${SERVER_USER}@[${SERVER_HOST}]:~/chalkin/"
           else
-            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
-              set -e
-              # Crear directorio de backups si no existe
-              mkdir -p ~/db_backup
-              
-              # Hacer backup de la base de datos con timestamp
-              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-              DB_SOURCE=$(docker volume inspect chalkin_chalkin_data -f '{{ .Mountpoint }}' 2>/dev/null || echo "~/chalkin/src/data")
-              
-              if [ -f "${DB_SOURCE}/chalkin.db" ]; then
-                cp ${DB_SOURCE}/chalkin.db ~/db_backup/chalkin_${TIMESTAMP}.db
-                echo "✅ Backup creado: chalkin_${TIMESTAMP}.db"
-              else
-                echo "⚠️  Base de datos no encontrada en ${DB_SOURCE}"
-              fi
-              
-              # Mantener solo los 30 backups más recientes
-              cd ~/db_backup
-              ls -t chalkin_*.db 2>/dev/null | tail -n +31 | xargs -r rm
-              echo "📦 Backups actuales: $(ls -1 chalkin_*.db 2>/dev/null | wc -l)"
-              
-              # Deploy
-              cd ~/chalkin
-              # Traer main exacto descartando cambios locales del clon de despliegue.
-              # Antes, un fichero trackeado modificado (p. ej. backup.sh) abortaba
-              # `git pull` y, sin `set -e`, el deploy quedaba "success" pero sin desplegar.
-              git fetch origin main
-              git reset --hard origin/main
-              docker compose -f docker-compose.prod.yml up -d --build
-              docker compose -f docker-compose.prod.yml exec -T api alembic upgrade head
-              echo "✅ Deployed at $(date) [$(git rev-parse --short HEAD)]"
-          EOF
+            DEST="${SERVER_USER}@${SERVER_HOST}:~/chalkin/"
           fi
+
+          # Copiamos el árbol de trabajo. Se excluyen los ficheros que viven solo
+          # en el servidor: secretos (.env), certificados y datos.
+          rsync -rlptz --delete \
+            --exclude '.git' \
+            --exclude '.env' \
+            --exclude '.env.save' \
+            --exclude 'certs' \
+            --exclude 'venv' \
+            --exclude 'data' \
+            --exclude 'src/data' \
+            --exclude '__pycache__' \
+            --exclude '.pytest_cache' \
+            --exclude '.ruff_cache' \
+            --exclude '*.pyc' \
+            --exclude '*.db' \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./ "$DEST"
+
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
+            set -e
+            # Crear directorio de backups si no existe
+            mkdir -p ~/db_backup
+
+            # Hacer backup de la base de datos con timestamp
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            DB_SOURCE=$(docker volume inspect chalkin_chalkin_data -f '{{ .Mountpoint }}' 2>/dev/null || echo "~/chalkin/src/data")
+
+            if [ -f "${DB_SOURCE}/chalkin.db" ]; then
+              cp ${DB_SOURCE}/chalkin.db ~/db_backup/chalkin_${TIMESTAMP}.db
+              echo "✅ Backup creado: chalkin_${TIMESTAMP}.db"
+            else
+              echo "⚠️  Base de datos no encontrada en ${DB_SOURCE}"
+            fi
+
+            # Mantener solo los 30 backups más recientes
+            cd ~/db_backup
+            ls -t chalkin_*.db 2>/dev/null | tail -n +31 | xargs -r rm
+            echo "📦 Backups actuales: $(ls -1 chalkin_*.db 2>/dev/null | wc -l)"
+
+            # Reconstruir y migrar
+            cd ~/chalkin
+            docker compose -f docker-compose.prod.yml up -d --build
+            docker compose -f docker-compose.prod.yml exec -T api alembic upgrade head
+            echo "✅ Deployed at $(date)"
+          EOF
