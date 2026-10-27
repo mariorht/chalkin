@@ -15,8 +15,10 @@ from app.db.base import get_db
 from app.core.deps import get_current_admin
 from app.core.security import hash_token
 from app.models.user import User
+from app.models.gym import Gym
 from app.models.password_reset import PasswordResetToken
 from app.schemas.admin import AdminUserResult, PasswordResetLink
+from app.schemas.gym import GymResponse, GymVerificationUpdate
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -28,6 +30,34 @@ RESET_TOKEN_TTL_MINUTES = 60
 def admin_me(current_admin: User = Depends(get_current_admin)):
     """Return the current admin. Used by the admin page to gate access."""
     return current_admin
+
+
+@router.patch("/gyms/{gym_id}/verification", response_model=GymResponse)
+def set_gym_verification(
+    gym_id: int,
+    data: GymVerificationUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """
+    Verify or unverify a gym (admin only).
+
+    Verified gyms can no longer be edited by regular users.
+    """
+    gym = db.query(Gym).filter(Gym.id == gym_id).first()
+    if not gym:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Gym not found",
+        )
+
+    gym.is_verified = data.is_verified
+    gym.verified_at = datetime.utcnow() if data.is_verified else None
+
+    db.commit()
+    db.refresh(gym)
+
+    return gym
 
 
 @router.get("/users", response_model=List[AdminUserResult])

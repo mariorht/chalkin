@@ -7,12 +7,22 @@ from sqlalchemy.orm import Session
 
 from app.db.base import get_db
 from app.core.deps import get_current_user
+from app.core.permissions import can_edit_gym
 from app.models.user import User
 from app.models.gym import Gym
 from app.models.grade import Grade
 from app.schemas.grade import GradeCreate, GradeResponse, GradeUpdate, BulkGradeCreate
 
 router = APIRouter(prefix="/grades", tags=["Grades"])
+
+
+def _require_editable_gym(user: User, gym: Gym) -> None:
+    """Grades are part of a gym's configuration, so the gym rule applies."""
+    if not can_edit_gym(user, gym):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This gym is verified: only admins can edit its grades",
+        )
 
 
 @router.post("", response_model=GradeResponse, status_code=status.HTTP_201_CREATED)
@@ -31,6 +41,8 @@ def create_grade(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Gym not found"
         )
+
+    _require_editable_gym(current_user, gym)
     
     grade = Grade(**grade_data.model_dump())
     db.add(grade)
@@ -73,6 +85,9 @@ def update_grade(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Grade not found"
         )
+
+    gym = db.query(Gym).filter(Gym.id == grade.gym_id).first()
+    _require_editable_gym(current_user, gym)
     
     update_data = grade_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -92,6 +107,9 @@ def delete_grade(
 ):
     """
     Delete a grade.
+
+    Refused while ascents reference it: deleting a grade cascades to those
+    ascents, which would silently destroy climbing history.
     """
     grade = db.query(Grade).filter(Grade.id == grade_id).first()
     
@@ -99,6 +117,21 @@ def delete_grade(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Grade not found"
+        )
+
+    gym = db.query(Gym).filter(Gym.id == grade.gym_id).first()
+    _require_editable_gym(current_user, gym)
+
+    from app.models.ascent import Ascent
+
+    in_use = db.query(Ascent).filter(Ascent.grade_id == grade.id).count()
+    if in_use:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"This grade is used by {in_use} ascent(s); "
+                "it cannot be deleted without losing history"
+            ),
         )
     
     db.delete(grade)
@@ -127,6 +160,8 @@ def create_grades_bulk(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Gym not found"
         )
+
+    _require_editable_gym(current_user, gym)
     
     grades = [
         Grade(gym_id=bulk_data.gym_id, **g.model_dump()) 

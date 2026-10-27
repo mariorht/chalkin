@@ -42,10 +42,17 @@ class GymUpdate(BaseModel):
 class GymResponse(GymBase):
     """Schema for gym responses."""
     id: int
+    is_verified: bool = False
+    verified_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class GymVerificationUpdate(BaseModel):
+    """Admin-only payload to verify or unverify a gym."""
+    is_verified: bool
 
 
 class GymWithGrades(GymResponse):

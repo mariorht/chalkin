@@ -157,6 +157,46 @@
             color: var(--primary);
         }
 
+        /* Estado de verificación */
+        .gym-badge {
+            display: inline-block;
+            margin-bottom: 0.5rem;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .gym-badge.verified {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--success, #22C55E);
+        }
+
+        .gym-badge.unverified {
+            background: rgba(245, 158, 11, 0.14);
+            color: #B45309;
+        }
+
+        .gym-actions .btn-verify {
+            flex: 0 0 auto;
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background: var(--dark);
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .gym-actions .btn-verify.unverify {
+            background: white;
+            color: var(--gray);
+            border-color: #E5E7EB;
+        }
+
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -195,9 +235,48 @@
         
         const API_URL = '/api';
         const token = AppShell.token;
+        // Admins can edit verified gyms and toggle their verification.
+        let isAdmin = false;
 
         async function fetchWithAuth(url, options = {}) {
             return AppShell.fetchWithAuth(url, options);
+        }
+
+        async function loadAdminStatus() {
+            try {
+                const res = await fetchWithAuth(`${API_URL}/admin/me`);
+                isAdmin = !!(res && res.ok);
+            } catch (e) {
+                isAdmin = false;
+            }
+        }
+
+        async function setVerification(gymId, verified, btn) {
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                const res = await fetchWithAuth(
+                    `${API_URL}/admin/gyms/${gymId}/verification`,
+                    {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ is_verified: verified })
+                    }
+                );
+                if (!res || !res.ok) {
+                    const data = res ? await res.json().catch(() => ({})) : {};
+                    alert(data.detail || 'No se pudo cambiar la verificación');
+                    btn.disabled = false;
+                    btn.textContent = original;
+                    return;
+                }
+                loadGyms();
+            } catch (e) {
+                console.error('Error setting verification:', e);
+                btn.disabled = false;
+                btn.textContent = original;
+            }
         }
 
         async function loadGyms() {
@@ -233,9 +312,26 @@
                     ).join('');
                     
                     const moreGrades = gym.grades.length > 8 ? `<span class="grade-pill">+${gym.grades.length - 8}</span>` : '';
-                    
+
+                    // Unverified gyms are open to everyone; verified ones are admin-only.
+                    const canEdit = !gym.is_verified || isAdmin;
+                    const badge = gym.is_verified
+                        ? '<span class="gym-badge verified">Verificado</span>'
+                        : '<span class="gym-badge unverified">Sin verificar</span>';
+                    const editLink = canEdit
+                        ? `<a href="/gyms/edit?id=${gym.id}" class="btn-outline">
+                               <svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px;vertical-align:-2px;margin-right:4px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>Editar</a>`
+                        : '';
+                    const verifyBtn = isAdmin
+                        ? `<button type="button" class="btn-verify ${gym.is_verified ? 'unverify' : ''}"
+                                   onclick="setVerification(${gym.id}, ${gym.is_verified ? 'false' : 'true'}, this)">
+                               ${gym.is_verified ? 'Quitar verificación' : 'Verificar'}
+                           </button>`
+                        : '';
+
                     return `
                         <div class="gym-card">
+                            ${badge}
                             <h3>${escapeHtml(gym.name)}</h3>
                             <div class="gym-location">
                                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${escapeHtml(gym.location || 'Sin ubicación')}
@@ -248,6 +344,8 @@
                             </div>
                             <div class="gym-actions">
                                 <a href="/sessions/new?gym=${gym.id}" class="btn-outline"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>Iniciar sesión</a>
+                                ${editLink}
+                                ${verifyBtn}
                             </div>
                         </div>
                     `;
@@ -258,7 +356,10 @@
             }
         }
 
-        loadGyms();
+        (async () => {
+            await loadAdminStatus();
+            loadGyms();
+        })();
     </script>
 </body>
 </html>

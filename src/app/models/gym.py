@@ -2,7 +2,7 @@
 Gym model - climbing gyms/rocódromos.
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Float, Enum
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, Float, Enum
 from sqlalchemy.orm import relationship
 import enum
 
@@ -37,6 +37,11 @@ class Gym(Base):
         default=GradingSystemType.COLORS,
         nullable=False
     )
+
+    # Verification: while a gym is unverified any authenticated user may fix
+    # its data. Once an admin verifies it, only admins can edit it.
+    is_verified = Column(Boolean, default=False, nullable=False, index=True)
+    verified_at = Column(DateTime, nullable=True)
     
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
