@@ -49,8 +49,138 @@ const AppShell = {
         
         // Añadir clase al body
         document.body.classList.add('has-app-shell');
-        
+
+        // Decoración de Halloween (29-31 de octubre), cada vez que se abre
+        // el dashboard.
+        this.startHalloween(options.activePage || '');
+
         return true;
+    },
+
+    // Animación de murciélagos para Halloween. Se lanza cada vez que se abre
+    // el dashboard (29-31 de octubre), con un vuelo en tres dimensiones.
+    startHalloween: function(activePage) {
+        if (activePage !== 'dashboard') return;
+
+        const now = new Date();
+        const isHalloween = now.getMonth() === 9 && now.getDate() >= 29 && now.getDate() <= 31;
+        if (!isHalloween) return;
+
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            #halloween-bats {
+                position: fixed;
+                inset: 0;
+                overflow: hidden;
+                pointer-events: none;
+                z-index: 9000;
+                perspective: 900px;
+            }
+            #halloween-bats .bat {
+                position: absolute;
+                top: var(--top);
+                left: var(--start);
+                width: var(--size);
+                height: var(--size);
+                color: #1A1A2E;
+                opacity: 0;
+                transform-style: preserve-3d;
+                animation: halloween-fly var(--duration) ease-in-out var(--delay) forwards;
+                will-change: transform, opacity;
+            }
+            #halloween-bats .bat-flip { width: 100%; height: 100%; }
+            #halloween-bats .from-right .bat-flip { transform: scaleX(-1); }
+            #halloween-bats svg {
+                display: block;
+                width: 100%;
+                height: 100%;
+                animation: halloween-flap .18s ease-in-out infinite alternate;
+            }
+            @keyframes halloween-fly {
+                0% {
+                    opacity: 0;
+                    transform: translate3d(0, 0, 0) rotateZ(0deg) scale(.7);
+                }
+                12% { opacity: .9; }
+                32% {
+                    transform: translate3d(var(--x1), var(--y1), 55px)
+                               rotateZ(var(--r1)) scale(1.08);
+                }
+                56% {
+                    transform: translate3d(var(--x2), var(--y2), 90px)
+                               rotateZ(var(--r2)) scale(1.16);
+                }
+                78% {
+                    opacity: .9;
+                    transform: translate3d(var(--x3), var(--y1), 45px)
+                               rotateZ(var(--r1)) scale(1.02);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translate3d(var(--dx), var(--drift), 0)
+                               rotateZ(0deg) scale(.72);
+                }
+            }
+            @keyframes halloween-flap {
+                from { transform: scaleY(1); }
+                to   { transform: scaleY(.7); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        const layer = document.createElement('div');
+        layer.id = 'halloween-bats';
+        layer.setAttribute('aria-hidden', 'true');
+
+        const batSvg = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4c-.6 0-1 .4-1.2 1C9.5 3.7 7.4 3 5 3 3.5 3 2 3.3.5 3.9 2.2 5 3.4 6.3 4 7.8c-1 .2-1.9.7-2.7 1.4 2 .4 3.5 1.3 4.5 2.7-.7.7-1.2 1.6-1.5 2.6 1.8-.5 3.3-.4 4.6.3 1.2.6 2.2 1.6 3.1 3 1-1.4 1.9-2.4 3.1-3 1.3-.7 2.8-.8 4.6-.3-.3-1-.8-1.9-1.5-2.6 1-1.4 2.5-2.3 4.5-2.7-.8-.7-1.7-1.2-2.7-1.4.6-1.5 1.8-2.8 3.5-3.9C20.5 3.3 19 3 17.5 3c-2.4 0-4.5.7-5.8 2-.2-.6-.6-1-1.2-1z"/></svg>';
+
+        const vw = window.innerWidth;
+        const count = vw < 600 ? 6 : 10;
+
+        for (let i = 0; i < count; i++) {
+            const fromLeft = Math.random() > 0.5;
+            const size = 16 + Math.random() * 16;
+            const top = 8 + Math.random() * 78;
+            const duration = 2.8 + Math.random() * 1.8;
+            const delay = Math.random() * 1.2;
+
+            // Trayectoria: cruza la pantalla con dos desvíos verticales y
+            // ligera inclinación, como si planease.
+            const startX = fromLeft ? -48 : vw + 48;
+            const dx = fromLeft ? vw + 96 : -(vw + 96);
+            const y1 = Math.random() * 14 - 7;
+            const y2 = Math.random() * 20 - 10;
+            const drift = Math.random() * 16 - 8;
+            const r1 = Math.random() * 18 - 9;
+            const r2 = Math.random() * 24 - 12;
+
+            const bat = document.createElement('div');
+            bat.className = 'bat' + (fromLeft ? ' from-left' : ' from-right');
+            bat.style.setProperty('--size', `${size}px`);
+            bat.style.setProperty('--top', `${top}vh`);
+            bat.style.setProperty('--duration', `${duration}s`);
+            bat.style.setProperty('--delay', `${delay}s`);
+            bat.style.setProperty('--start', `${startX}px`);
+            bat.style.setProperty('--dx', `${dx}px`);
+            bat.style.setProperty('--x1', `${dx * 0.32}px`);
+            bat.style.setProperty('--x2', `${dx * 0.56}px`);
+            bat.style.setProperty('--x3', `${dx * 0.78}px`);
+            bat.style.setProperty('--y1', `${y1}vh`);
+            bat.style.setProperty('--y2', `${y2}vh`);
+            bat.style.setProperty('--drift', `${drift}vh`);
+            bat.style.setProperty('--r1', `${r1}deg`);
+            bat.style.setProperty('--r2', `${r2}deg`);
+            bat.innerHTML = `<div class="bat-flip">${batSvg}</div>`;
+            layer.appendChild(bat);
+        }
+
+        document.body.appendChild(layer);
+        // Limpieza por si alguna animación no termina
+        setTimeout(() => layer.remove(), 8000);
     },
 
     // Registrar service worker y suscribir push
