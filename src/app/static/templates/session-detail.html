@@ -1697,17 +1697,20 @@
         async function loadGrades(gymId) {
             try {
                 const response = await fetch(`${API_URL}/gyms/${gymId}/grades`);
+                // Keep every grade in `grades` so old ascents can still show
+                // their colour and label, but only active ones are selectable.
                 grades = await response.json();
+                const selectable = grades.filter(g => g.is_active !== false);
                 
                 // Render grade selector (hidden initially for ended sessions)
                 const container = document.getElementById('gradesGrid');
                 
-                if (grades.length === 0) {
+                if (selectable.length === 0) {
                     container.innerHTML = '<p>No hay grados configurados</p>';
                     return;
                 }
                 
-                container.innerHTML = grades.map(grade => `
+                container.innerHTML = selectable.map(grade => `
                     <button type="button" class="grade-btn" 
                             data-grade-id="${grade.id}"
                             style="background: ${escapeHtml(grade.color_hex || '#666')}">

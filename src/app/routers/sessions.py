@@ -448,6 +448,12 @@ def add_ascent(
             detail="Grade does not belong to the session's gym"
         )
 
+    if not grade.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Este grado está archivado y no admite bloques nuevos"
+        )
+
     # League tagging: the competition must run at this gym and cover the date.
     if ascent_data.competition_id is not None:
         if ascent_data.competition_block is None:

@@ -635,7 +635,7 @@
 
             gradeItems.forEach((item, index) => {
                 const color = item.querySelector('input[type="color"]').value;
-                const label = item.querySelector('input[type="text"]').value;
+                const label = item.querySelector('input[type="text"]').value.trim();
                 const difficulty = parseInt(item.querySelector('input[type="number"]').value);
 
                 if (label) {
@@ -685,6 +685,17 @@
             if (grades.length === 0) {
                 showAlert('Añade al menos un grado');
                 return;
+            }
+
+            // Los nombres de grado deben ser únicos dentro del gimnasio
+            const seen = new Set();
+            for (const grade of grades) {
+                const key = grade.label.toLowerCase();
+                if (seen.has(key)) {
+                    showAlert('Hay dos grados con el mismo nombre: "' + grade.label + '". Los nombres deben ser únicos.');
+                    return;
+                }
+                seen.add(key);
             }
 
             setLoading(true);
