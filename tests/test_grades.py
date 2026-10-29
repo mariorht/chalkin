@@ -173,10 +173,10 @@ class TestGradePermissions:
         )
         assert response.status_code == 403
 
-    def test_cannot_delete_grade_used_by_ascents(
+    def test_delete_grade_in_use_archives_it(
         self, client, db, auth_headers, test_gym, test_grades, test_session
     ):
-        """Deleting a grade in use would cascade to the ascent history."""
+        """A grade with history is archived, never deleted."""
         from app.models.ascent import Ascent
 
         db.add(Ascent(session_id=test_session.id, grade_id=test_grades[0].id))
@@ -185,11 +185,145 @@ class TestGradePermissions:
         response = client.delete(
             f"/api/grades/{test_grades[0].id}", headers=auth_headers
         )
-        assert response.status_code == 409
+        assert response.status_code == 204
+
+        db.refresh(test_grades[0])
+        assert test_grades[0].is_active is False
+        # The ascent survives and still resolves its grade
         assert db.query(Ascent).count() == 1
+        assert db.query(Ascent).first().grade.label == test_grades[0].label
 
     def test_can_delete_unused_grade(self, client, auth_headers, test_gym, test_grades):
         response = client.delete(
             f"/api/grades/{test_grades[0].id}", headers=auth_headers
         )
         assert response.status_code == 204
+
+        # No history: the row is really gone
+        assert client.get(f"/api/grades/{test_grades[0].id}").status_code == 404
+
+    def test_archived_grade_cannot_be_used_for_new_ascents(
+        self, client, db, auth_headers, test_gym, test_grades, test_session
+    ):
+        test_grades[0].is_active = False
+        db.commit()
+
+        response = client.post(
+            f"/api/sessions/{test_session.id}/ascents",
+            headers=auth_headers,
+            json={"grade_id": test_grades[0].id, "status": "send"},
+        )
+        assert response.status_code == 400
+        assert "archivado" in response.json()["detail"]
+
+    def test_admin_can_restore_archived_grade(
+        self, client, db, create_user, test_gym, test_grades
+    ):
+        admin = create_user(
+            username="grade_admin", email="grade_admin@test.com", password="password123"
+        )
+        admin.is_admin = True
+        db.commit()
+        login = client.post(
+            "/api/auth/login",
+            json={"email": "grade_admin@test.com", "password": "password123"},
+        )
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        test_grades[0].is_active = False
+        db.commit()
+
+        response = client.post(
+            f"/api/grades/{test_grades[0].id}/restore", headers=headers
+        )
+        assert response.status_code == 200
+        assert response.json()["is_active"] is True
+
+    def test_non_admin_cannot_restore_grade(
+        self, client, db, auth_headers, test_gym, test_grades
+    ):
+        test_grades[0].is_active = False
+        db.commit()
+
+        response = client.post(
+            f"/api/grades/{test_grades[0].id}/restore", headers=auth_headers
+        )
+        assert response.status_code == 403
+
+
+class TestGradeDuplicates:
+    """A gym cannot hold two grades with the same label."""
+
+    def test_duplicate_label_rejected(self, client, auth_headers, test_gym, test_grades):
+        response = client.post(
+            "/api/grades",
+            headers=auth_headers,
+            json={
+                "gym_id": test_gym.id,
+                "label": test_grades[0].label,
+                "relative_difficulty": 9,
+                "order": 9,
+            },
+        )
+        assert response.status_code == 409
+        assert test_grades[0].label in response.json()["detail"]
+
+    def test_duplicate_ignores_case_and_spaces(
+        self, client, auth_headers, test_gym, test_grades
+    ):
+        response = client.post(
+            "/api/grades",
+            headers=auth_headers,
+            json={
+                "gym_id": test_gym.id,
+                "label": f"  {test_grades[0].label.upper()}  ",
+                "relative_difficulty": 9,
+                "order": 9,
+            },
+        )
+        assert response.status_code == 409
+
+    def test_rename_to_existing_label_rejected(
+        self, client, auth_headers, test_gym, test_grades
+    ):
+        response = client.patch(
+            f"/api/grades/{test_grades[1].id}",
+            headers=auth_headers,
+            json={"label": test_grades[0].label},
+        )
+        assert response.status_code == 409
+
+    def test_bulk_with_repeated_labels_rejected(
+        self, client, auth_headers, test_gym
+    ):
+        response = client.post(
+            "/api/grades/bulk",
+            headers=auth_headers,
+            json={
+                "gym_id": test_gym.id,
+                "grades": [
+                    {"label": "Principiante", "relative_difficulty": 1, "order": 1},
+                    {"label": "principiante", "relative_difficulty": 1, "order": 2},
+                ],
+            },
+        )
+        assert response.status_code == 400
+
+    def test_creating_a_label_of_an_archived_grade_is_rejected(
+        self, client, db, auth_headers, test_gym, test_grades
+    ):
+        test_grades[0].is_active = False
+        db.commit()
+
+        response = client.post(
+            "/api/grades",
+            headers=auth_headers,
+            json={
+                "gym_id": test_gym.id,
+                "label": test_grades[0].label,
+                "relative_difficulty": 9,
+                "order": 9,
+            },
+        )
+        assert response.status_code == 409
+        assert "archivado" in response.json()["detail"]

@@ -704,6 +704,14 @@
                         <div id="gradesList">
                             <!-- Grades will be loaded here -->
                         </div>
+
+                        <div id="archivedToggleWrap" class="archived-toggle" style="display:none;">
+                            <label>
+                                <input type="checkbox" id="showArchived" onchange="toggleArchived()">
+                                Ver archivados (<span id="archivedCount">0</span>)
+                            </label>
+                        </div>
+                        <div id="archivedList" class="archived-list" style="display:none;"></div>
                     </div>
                 </div>
 
@@ -792,8 +800,48 @@
             }
         }
 
-        function renderGymStatus(gym) {
-            const status = document.getElementById('gymStatus');
+        function initArchived(gym) {
+            const archived = (gym.grades || []).filter(g => g.is_active === false);
+            const wrap = document.getElementById('archivedToggleWrap');
+            if (!isAdmin || archived.length === 0) return;
+
+            document.getElementById('archivedCount').textContent = archived.length;
+            document.getElementById('archivedList').innerHTML = archived.map(g => `
+                <div class="archived-item">
+                    <span class="archived-color" style="background:${escapeHtml(g.color_hex || '#666')}"></span>
+                    <span class="archived-info">
+                        <strong>${escapeHtml(g.label)}</strong>
+                        <small>Dificultad ${g.relative_difficulty} · archivado</small>
+                    </span>
+                    <button type="button" class="archived-restore" onclick="restoreGrade(${g.id})">Restaurar</button>
+                </div>`).join('');
+            wrap.style.display = '';
+        }
+
+        function toggleArchived() {
+            const on = document.getElementById('showArchived').checked;
+            document.getElementById('archivedList').style.display = on ? '' : 'none';
+        }
+
+        async function restoreGrade(id) {
+            if (!confirm('¿Restaurar este grado? Volverá a estar disponible para nuevos bloques.')) return;
+            try {
+                const res = await fetch(`${API_URL}/grades/${id}/restore`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    showAlert(data.detail || 'No se pudo restaurar el grado');
+                    return;
+                }
+                window.location.reload();
+            } catch (e) {
+                showAlert('Error de conexión');
+            }
+        }
+
+        function renderGymStatus(gym) {            const status = document.getElementById('gymStatus');
             status.className = `gym-status${gym.is_verified ? ' verified' : ''}`;
 
             const label = gym.is_verified
@@ -878,7 +926,7 @@
 
             gradeItems.forEach((item, index) => {
                 const color = item.querySelector('input[type="color"]').value;
-                const label = item.querySelector('input[type="text"]').value;
+                const label = item.querySelector('input[type="text"]').value.trim();
                 const difficulty = parseInt(item.querySelector('input[type="number"]').value);
                 const existingId = item.dataset.gradeId;
 
@@ -967,14 +1015,16 @@
                     document.getElementById('longitude').value = gym.longitude;
                 }
 
-                // Load grades
-                existingGrades = gym.grades || [];
+                // Load active grades into the form (archived ones are read-only)
+                existingGrades = (gym.grades || []).filter(g => g.is_active !== false);
                 if (existingGrades.length > 0) {
                     existingGrades.sort((a, b) => a.order - b.order);
                     existingGrades.forEach(grade => {
                         addGrade(grade.color_hex, grade.label, grade.relative_difficulty, grade.id);
                     });
                 }
+
+                initArchived(gym);
 
                 // Initialize map after loading data
                 initMap(gym.latitude, gym.longitude, gym.location);
@@ -996,6 +1046,17 @@
             if (grades.length === 0) {
                 showAlert('Añade al menos un grado');
                 return;
+            }
+
+            // Los nombres de grado deben ser únicos dentro del gimnasio
+            const seen = new Set();
+            for (const grade of grades) {
+                const key = grade.label.toLowerCase();
+                if (seen.has(key)) {
+                    showAlert('Hay dos grados con el mismo nombre: "' + grade.label + '". Los nombres deben ser únicos.');
+                    return;
+                }
+                seen.add(key);
             }
 
             setLoading(true);

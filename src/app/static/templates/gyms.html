@@ -302,7 +302,7 @@
                 // Load grades for each gym
                 const gymsWithGrades = await Promise.all(gyms.map(async gym => {
                     const gradesRes = await fetch(`${API_URL}/gyms/${gym.id}/grades`);
-                    const grades = await gradesRes.json();
+                    const grades = (await gradesRes.json()).filter(g => g.is_active !== false);
                     return { ...gym, grades };
                 }));
                 

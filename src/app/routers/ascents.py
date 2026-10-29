@@ -74,6 +74,12 @@ def update_ascent(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Grade does not belong to the session's gym"
             )
+
+        if not grade.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Este grado está archivado y no admite bloques nuevos"
+            )
     
     update_data = ascent_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():

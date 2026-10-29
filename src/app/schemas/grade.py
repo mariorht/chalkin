@@ -75,6 +75,7 @@ class GradeResponse(GradeBase):
     """Schema for grade responses."""
     id: int
     gym_id: int
+    is_active: bool = True
     created_at: datetime
     updated_at: datetime
 

@@ -3,7 +3,7 @@ Grade model - difficulty levels within a gym.
 This is the KEY model for solving the "each gym grades differently" problem.
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Boolean
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
@@ -37,6 +37,10 @@ class Grade(Base):
     
     # Order within the gym's scale (for sorting)
     order = Column(Integer, default=0)
+
+    # Archived grades are hidden from new ascents but kept so the history that
+    # references them still renders. Only admins can list/restore them.
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
     
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
