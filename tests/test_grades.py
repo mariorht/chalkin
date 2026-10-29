@@ -327,3 +327,46 @@ class TestGradeDuplicates:
         )
         assert response.status_code == 409
         assert "archivado" in response.json()["detail"]
+
+    def test_editing_a_legacy_duplicate_label_is_allowed(
+        self, client, db, auth_headers, test_gym
+    ):
+        """A gym with old duplicate rows must still be editable.
+
+        The check only runs when the label changes, so cleaning up legacy
+        duplicates (removing them from the form) does not hit a false 409.
+        """
+        from app.models.grade import Grade
+
+        first = Grade(gym_id=test_gym.id, label="Principiante", relative_difficulty=1, order=1)
+        second = Grade(gym_id=test_gym.id, label="Principiante", relative_difficulty=1, order=2)
+        db.add_all([first, second])
+        db.commit()
+        db.refresh(first)
+
+        response = client.patch(
+            f"/api/grades/{first.id}",
+            headers=auth_headers,
+            json={"label": "Principiante", "relative_difficulty": 2},
+        )
+        assert response.status_code == 200
+        assert response.json()["relative_difficulty"] == 2
+
+    def test_renaming_a_legacy_duplicate_to_a_new_label_is_allowed(
+        self, client, db, auth_headers, test_gym
+    ):
+        from app.models.grade import Grade
+
+        first = Grade(gym_id=test_gym.id, label="Principiante", relative_difficulty=1, order=1)
+        second = Grade(gym_id=test_gym.id, label="Principiante", relative_difficulty=1, order=2)
+        db.add_all([first, second])
+        db.commit()
+        db.refresh(first)
+
+        response = client.patch(
+            f"/api/grades/{first.id}",
+            headers=auth_headers,
+            json={"label": "Iniciación"},
+        )
+        assert response.status_code == 200
+        assert response.json()["label"] == "Iniciación"
