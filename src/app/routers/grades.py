@@ -140,15 +140,19 @@ def update_grade(
     update_data = grade_data.model_dump(exclude_unset=True)
 
     if update_data.get("label") is not None:
-        update_data["label"] = update_data["label"].strip()
-        if not update_data["label"]:
+        new_label = update_data["label"].strip()
+        if not new_label:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El nombre del grado no puede estar vacío",
             )
-        _reject_duplicate(
-            db, grade.gym_id, update_data["label"], exclude_id=grade.id
-        )
+        update_data["label"] = new_label
+
+        # Solo comprobar si el nombre cambia. Los gimnasios con duplicados
+        # heredados tienen que poder editarse (por ejemplo, para quitar los
+        # repetidos) sin que el chequeo choque con los que se van a borrar.
+        if _label_key(new_label) != _label_key(grade.label):
+            _reject_duplicate(db, grade.gym_id, new_label, exclude_id=grade.id)
 
     for field, value in update_data.items():
         setattr(grade, field, value)
